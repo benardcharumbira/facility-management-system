@@ -2,20 +2,26 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { createQueryClient } from '@/shared/api';
 import { ConfirmProvider, SnackbarProvider, useSnackbar } from '@/shared/components';
 import { theme } from './theme';
 
-export function AppProviders({ children }: { children: ReactNode }) {
+interface AppProvidersProps {
+  children: ReactNode;
+  /** Supply a client (tests); otherwise one is created with the standard defaults. */
+  queryClient?: QueryClient;
+}
+
+export function AppProviders({ children, queryClient }: AppProvidersProps) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterLuxon}>
         <SnackbarProvider>
           <ConfirmProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider queryClient={queryClient}>{children}</QueryProvider>
           </ConfirmProvider>
         </SnackbarProvider>
       </LocalizationProvider>
@@ -23,10 +29,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
   );
 }
 
-function QueryProvider({ children }: { children: ReactNode }) {
+function QueryProvider({
+  children,
+  queryClient: provided,
+}: {
+  children: ReactNode;
+  queryClient?: QueryClient;
+}) {
   const { notify } = useSnackbar();
-  const [queryClient] = useState(() =>
+  const [created] = useState(() =>
     createQueryClient({ onError: (problem) => notify(problem.detail ?? problem.title, 'error') }),
   );
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={provided ?? created}>{children}</QueryClientProvider>;
 }

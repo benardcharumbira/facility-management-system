@@ -12,6 +12,7 @@ const SignInPage = lazy(() => import('./routes/SignInPage'));
 const SignUpPage = lazy(() => import('./routes/SignUpPage'));
 const NotFoundPage = lazy(() => import('./routes/NotFoundPage'));
 const FacilitiesPage = lazy(() => import('@/features/facilities/pages/FacilitiesPage'));
+const FacilityDetailPage = lazy(() => import('@/features/facilities/pages/FacilityDetailPage'));
 const BookingsPage = lazy(() => import('@/features/bookings/pages/BookingsPage'));
 const NewBookingPage = lazy(() => import('@/features/bookings/pages/NewBookingPage'));
 const BookingDetailPage = lazy(() => import('@/features/bookings/pages/BookingDetailPage'));
@@ -39,6 +40,7 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <RoleRedirect /> },
               { path: 'facilities', element: <FacilitiesPage /> },
+              { path: 'facilities/:id', element: <FacilityDetailPage /> },
               { path: 'bookings/:id', element: <BookingDetailPage /> },
               {
                 element: <RequireRole roles={ACCESS.bookers} />,
