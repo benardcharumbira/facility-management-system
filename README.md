@@ -170,6 +170,40 @@ provisional and listed in `provisionalFields`; there are still no photographs.
 - **Review states:** `/facilities/nope` (not found), `?mock=error` (error, retry), and the 600ms
   development latency shows the skeleton.
 
+## Availability calendar
+
+The availability section of the facility detail page. The contract is
+`src/shared/api/contracts/availability.ts` (`GET /facilities/:id/availability?from&to`, at most 62
+days); the mock engine in `src/mocks/availability.ts` implements the behaviour the backend must:
+operating hours, closures, buffer expansion, hierarchy blocking, overlap resolution and merging.
+The client renders what it is given and never derives blocking from the hierarchy.
+
+- **Why a day is unavailable is always said, in words.** Booked, held, set-up or clear-down time,
+  blocked by a related space (naming it: "Unavailable, City Hall is booked", in both directions),
+  closed (the reason, e.g. "Public holiday: Day of Reconciliation" or "Maintenance"), and past or
+  too far ahead. Each also has its own pattern and icon, so none relies on colour. The legend names
+  all of them.
+- **Time zone.** Instants are UTC ISO on the wire; every date, time and selection is in the
+  facility's zone, which the API returns. Nothing uses the browser's zone, except the very first
+  month before the zone is known (the browser's current month). Tests run under other system zones.
+- **URL state.** `month`, `date` (the open day panel) and `startsAt`/`endsAt` (UTC instants). The
+  selection is a **range of two instants**, not a date plus times, so multi day selection is an
+  extension of this shape. A `Selection` is `{ start, end }` everywhere.
+- **Hand off.** "Request booking" goes to `/bookings/new?facilityId=&startsAt=&endsAt=` (placeholder
+  route). The page says once, beside the action, that availability is not a reservation.
+- **Selection is constrained, not validated afterwards.** The time selectors offer only valid
+  choices (opening hours, unavailable time, minimum notice, minimum duration) and state the rule
+  that limits the choice. A selection arriving by URL that overlaps a booking is flagged.
+- **Rules.** Minimum notice (48 hours), horizon (90 days) and minimum duration (60 minutes) are
+  served by the mock and provisional. `minimumDurationMinutes` is an addition to the brief's shape.
+- **Mock data** is relative to today and covers this month and the next two: a full day City Hall
+  booking (its three spaces blocked), a Mitchell Wing partial booking (City Hall blocked, Loch Wing
+  free), set-up and clear-down around a Rothdene Hall booking, an expiring hold, a public holiday,
+  a maintenance blackout, a weekend only venue (Sicelo Hall), a busy week and a free week. Every
+  booking is invented.
+- Keyboard: arrows move by day and week, Page Up and Page Down by month, Home and End to the ends
+  of the week; Enter opens the day panel, Escape closes it and focus returns to the day.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).

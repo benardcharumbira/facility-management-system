@@ -53,6 +53,15 @@ Sicelo Hall, Lakeside Hall.
     booking (deposits, minimum notice, set-up and clean-up time, alcohol or noise rules)? We show
     these as a short notice on the venue page.
 
+12. **Booking rules.** How much notice is required before a booking, how far ahead can people
+    book, and what is the shortest booking? We have assumed 48 hours, 90 days and 1 hour.
+
+13. **Set-up and clear-down time.** Does the venue need time before and after an event, and how
+    long, per venue? Do pending requests hold the time, and for how long?
+
+14. **Closures.** Which public holidays close the venues, and how are maintenance closures
+    recorded? We have assumed all venues close on South African public holidays.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

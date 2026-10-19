@@ -54,6 +54,48 @@ Styling uses only the semantic tokens in `src/app/theme/theme.css`. Radix UI sup
 | `DetailSkeleton`  | `sections?`. Built on `DetailLayout`, so it matches the loaded page.                                  |
 | `NotFoundState`   | `title`, `description?`, `action: {label, to, state?}`                                                |
 
+## Calendar primitives (`calendar/`)
+
+| Component             | Props                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `CalendarMonthGrid`   | `month`, `zone`, `today`, `label`, `renderDay(day, {tabIndex, inMonth, today})`, `onMonthChange`, `initialFocus?`, `busy?` |
+| `CalendarSkeleton`    | `label?`. Same table structure and cell height as the grid.                                                                |
+| `DayCell`             | `date`, `name`, `selected?`, `today?`, `muted?`, `disabled?`, `surface?`, `bar?`, `tabIndex`, `onSelect`, children         |
+| `MonthNavigator`      | `month`, `onChange`, `min`, `max`. Previous/next, month and year selects, polite live region.                              |
+| `Timeline`            | `window`, `entries: {key,start,end,label,pattern,icon?,detail?,action?}[]`, `label`                                        |
+| `TimeRangeSelect`     | `window`, `unavailable: {start,end,reason}[]`, `earliest?`, `minDurationMinutes`, `stepMinutes?`, `value`, `onChange`      |
+| `Legend`              | `title?`, `items: {key,label,description?,swatch}[]`                                                                       |
+| `SidePanel`           | `open`, `onClose`, `title`, `returnFocus?`, children. Panel from `lg`, bottom sheet below.                                 |
+| `SelectionSummaryBar` | `summary`, `onChange?`, `onClear`, children (the action)                                                                   |
+| `Swatch` / patterns   | `pattern`: `solid striped dotted crosshatch outline dashed faded`, drawn in the text colour                                |
+
+Statuses are told apart by **pattern, icon and words**, never colour alone. The patterns are plain
+CSS classes in `theme.css`. `CalendarMonthGrid` knows nothing about availability: the caller says
+what a day is and what to draw. The grid is always six weeks, so its height never changes, and
+`Timeline` and `TimeRangeSelect` take plain intervals and reasons.
+
+## Where slice 3 and 4 primitives had to change, or did not fit
+
+- **Two sheet primitives now.** `FilterPanel` (full screen drawer, `returnFocusRef`) and
+  `SidePanel` (panel or bottom sheet, `returnFocus()` function) are both a modal Radix dialog with
+  explicit focus return. Same job, two different APIs. _Recommendation:_ one `Sheet` primitive with
+  a placement prop and one focus return convention. This is the clearest sign the abstraction is
+  not settled.
+- **A status vocabulary exists in three places.** `Badge` tones, `Alert` severities and the
+  calendar's `Swatch` patterns each express "state" differently, and only the calendar meets the
+  "never colour alone" bar by itself. _Recommendation:_ one status primitive carrying icon, pattern
+  and text, used by badges, alerts and the legend.
+- **`useUrlState` had to change.** It dropped router state on every update, which lost the "where
+  did I come from" state the detail page relies on once the calendar began writing to the query
+  string. It now carries the current state through. `params-codec` gained `param.matching(regex)`.
+- **`StickyActionBar` clearance grew** (`pb-56`) because the bar now also holds a selection summary
+  on small screens. A bar of variable height wants measuring, not a constant.
+- **Three skeletons.** `CardSkeleton`, `DetailSkeleton` and `CalendarSkeleton` each mirror one
+  layout. They are consistent in approach (reuse the layout's own structure) but share no code.
+- **No change was needed** to `Section`, `Alert`, `ErrorState`, `ErrorBoundary` or `Skeleton`. The
+  error boundary and `ErrorState` contained a calendar failure with no work, which is a good sign.
+  `Disclosure` and `Breadcrumbs` were not used by this screen.
+
 ## Where slice 2 primitives had to change, or did not fit
 
 This is the second use of these patterns, so the strain points are the useful signal.
