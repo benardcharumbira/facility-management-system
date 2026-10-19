@@ -1,7 +1,5 @@
-import Slider from '@mui/material/Slider';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import { useState } from 'react';
+import { Slider } from 'radix-ui';
+import { useId, useState } from 'react';
 
 export interface Range {
   min: number | undefined;
@@ -21,8 +19,9 @@ export interface RangeFilterProps {
 
 /** A slider paired with numeric inputs, since a slider alone is hard to set precisely. */
 export function RangeFilter({ label, bounds, value, onChange }: RangeFilterProps) {
+  const id = useId();
   const applied: [number, number] = [value.min ?? bounds.min, value.max ?? bounds.max];
-  const [dragging, setDragging] = useState<[number, number] | null>(null);
+  const [dragging, setDragging] = useState<number[] | null>(null);
   const [drafts, setDrafts] = useState<{ min?: string; max?: string }>({});
 
   const clamp = (n: number) => Math.min(bounds.max, Math.max(bounds.min, n));
@@ -50,40 +49,55 @@ export function RangeFilter({ label, bounds, value, onChange }: RangeFilterProps
 
   const shown = dragging ?? applied;
   const input = (end: 'min' | 'max', text: string) => (
-    <TextField
-      size="small"
-      label={text}
-      value={drafts[end] ?? String(end === 'min' ? shown[0] : shown[1])}
-      onChange={(event) => setDrafts((previous) => ({ ...previous, [end]: event.target.value }))}
-      onBlur={() => commitInput(end)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') commitInput(end);
-      }}
-      slotProps={{
-        htmlInput: { inputMode: 'numeric', 'aria-label': `${text} ${label.toLowerCase()}` },
-      }}
-    />
+    <div className="flex-1">
+      <label htmlFor={`${id}-${end}`} className="mb-1 block text-xs text-muted">
+        {text}
+      </label>
+      <input
+        id={`${id}-${end}`}
+        inputMode="numeric"
+        aria-label={`${text} ${label.toLowerCase()}`}
+        value={drafts[end] ?? String(end === 'min' ? shown[0] : shown[1])}
+        onChange={(event) => setDrafts((previous) => ({ ...previous, [end]: event.target.value }))}
+        onBlur={() => commitInput(end)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commitInput(end);
+        }}
+        className="h-9 w-full rounded-md border border-line-strong bg-surface px-2 tabular-nums"
+      />
+    </div>
   );
 
   return (
-    <Stack spacing={1} role="group" aria-label={label} sx={{ px: 1 }}>
-      <Slider
+    <div role="group" aria-label={label} className="flex flex-col gap-3">
+      <Slider.Root
         value={shown}
         min={bounds.min}
         max={bounds.max}
-        onChange={(_, next) => setDragging(next as [number, number])}
-        onChangeCommitted={(_, next) => {
+        minStepsBetweenThumbs={0}
+        onValueChange={setDragging}
+        onValueCommit={(next) => {
           setDragging(null);
-          commit(next as [number, number]);
+          const [low = bounds.min, high = bounds.max] = next;
+          commit([low, high]);
         }}
-        getAriaLabel={(index) => `${index === 0 ? 'Minimum' : 'Maximum'} ${label.toLowerCase()}`}
-        valueLabelDisplay="auto"
-        disableSwap
-      />
-      <Stack direction="row" spacing={1}>
+        className="relative flex h-5 w-full touch-none items-center select-none"
+      >
+        <Slider.Track className="relative h-1.5 grow rounded-full bg-line-strong">
+          <Slider.Range className="absolute h-full rounded-full bg-primary" />
+        </Slider.Track>
+        {['Minimum', 'Maximum'].map((which) => (
+          <Slider.Thumb
+            key={which}
+            aria-label={`${which} ${label.toLowerCase()}`}
+            className="block size-5 rounded-full border-2 border-primary bg-surface shadow-sm"
+          />
+        ))}
+      </Slider.Root>
+      <div className="flex gap-2">
         {input('min', 'Min')}
         {input('max', 'Max')}
-      </Stack>
-    </Stack>
+      </div>
+    </div>
   );
 }

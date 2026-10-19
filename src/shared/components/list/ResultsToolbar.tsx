@@ -1,5 +1,3 @@
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 export interface ResultsToolbarProps {
@@ -13,21 +11,18 @@ export interface ResultsToolbarProps {
 
 export function ResultsToolbar({ countLabel, leading, sort, viewToggle }: ResultsToolbarProps) {
   return (
-    <Stack
-      direction="row"
-      sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between' }}
-    >
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', minWidth: 0 }}>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="flex min-w-0 items-center gap-3">
         {leading}
         {/* The live region stays mounted so changes to its text are announced. */}
-        <Typography role="status" aria-live="polite" color="text.secondary">
+        <p role="status" aria-live="polite" className="font-medium">
           {countLabel}
-        </Typography>
-      </Stack>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
         {sort}
         {viewToggle}
-      </Stack>
-    </Stack>
+      </div>
+    </div>
   );
 }

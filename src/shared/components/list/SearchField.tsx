@@ -1,10 +1,5 @@
-import ClearIcon from '@mui/icons-material/Clear';
-import SearchIcon from '@mui/icons-material/Search';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Search, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 
 export interface SearchFieldProps {
   /** The committed value, typically from the URL. */
@@ -29,6 +24,7 @@ export function SearchField({
   placeholder,
   debounceMs = DEFAULT_DEBOUNCE_MS,
 }: SearchFieldProps) {
+  const id = useId();
   const [draft, setDraft] = useState(value);
   const [seenValue, setSeenValue] = useState(value);
   if (value !== seenValue) {
@@ -40,7 +36,6 @@ export function SearchField({
   useEffect(() => {
     onChangeRef.current = onChange;
   });
-  const commit = (next: string) => onChangeRef.current(next);
 
   useEffect(() => {
     if (draft === value) return;
@@ -50,43 +45,41 @@ export function SearchField({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (draft !== value) commit(draft);
+    if (draft !== value) onChange(draft);
   };
 
   return (
-    <Box component="form" role="search" onSubmit={handleSubmit}>
-      <TextField
-        fullWidth
-        type="search"
-        label={label}
-        placeholder={placeholder}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        sx={{ '& input::-webkit-search-cancel-button': { display: 'none' } }}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon aria-hidden />
-              </InputAdornment>
-            ),
-            endAdornment: draft ? (
-              <InputAdornment position="end">
-                <IconButton
-                  edge="end"
-                  aria-label="Clear search text"
-                  onClick={() => {
-                    setDraft('');
-                    commit('');
-                  }}
-                >
-                  <ClearIcon />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          },
-        }}
-      />
-    </Box>
+    <form role="search" onSubmit={handleSubmit}>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium">
+        {label}
+      </label>
+      <div className="relative">
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-subtle"
+        />
+        <input
+          id={id}
+          type="search"
+          value={draft}
+          placeholder={placeholder}
+          onChange={(event) => setDraft(event.target.value)}
+          className="h-11 w-full rounded-md border border-line-strong bg-surface pr-10 pl-10 text-base placeholder:text-subtle [&::-webkit-search-cancel-button]:appearance-none"
+        />
+        {draft && (
+          <button
+            type="button"
+            aria-label="Clear search text"
+            onClick={() => {
+              setDraft('');
+              onChange('');
+            }}
+            className="absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-sunken hover:text-ink"
+          >
+            <X aria-hidden className="size-5" />
+          </button>
+        )}
+      </div>
+    </form>
   );
 }

@@ -1,47 +1,79 @@
-import Alert, { type AlertColor } from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
-import { createContext, use, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { X } from 'lucide-react';
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { cn } from '@/shared/utils/cn';
+import { IconButton } from '../ui/IconButton';
+
+type Severity = 'info' | 'success' | 'error';
 
 interface Notification {
   key: number;
   message: string;
-  severity: AlertColor;
+  severity: Severity;
 }
 
 interface SnackbarApi {
-  notify: (message: string, severity?: AlertColor) => void;
+  notify: (message: string, severity?: Severity) => void;
 }
 
 const SnackbarContext = createContext<SnackbarApi | null>(null);
 
 const AUTO_HIDE_MS = 6000;
 
+const tones: Record<Severity, string> = {
+  info: 'bg-ink text-surface',
+  success: 'bg-ink text-surface',
+  error: 'bg-danger text-on-primary',
+};
+
 export function SnackbarProvider({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState<Notification | null>(null);
-  const [open, setOpen] = useState(false);
 
-  const notify = useCallback((message: string, severity: AlertColor = 'info') => {
+  const notify = useCallback((message: string, severity: Severity = 'info') => {
     setCurrent({ key: Date.now(), message, severity });
-    setOpen(true);
   }, []);
   const api = useMemo(() => ({ notify }), [notify]);
+
+  useEffect(() => {
+    if (!current) return;
+    const timer = setTimeout(() => setCurrent(null), AUTO_HIDE_MS);
+    return () => clearTimeout(timer);
+  }, [current]);
 
   return (
     <SnackbarContext value={api}>
       {children}
-      <Snackbar
-        key={current?.key}
-        open={open}
-        autoHideDuration={AUTO_HIDE_MS}
-        onClose={(_, reason) => {
-          if (reason !== 'clickaway') setOpen(false);
-        }}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      {/* Always mounted so a newly inserted message is announced. */}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
       >
-        <Alert severity={current?.severity} variant="filled" onClose={() => setOpen(false)}>
-          {current?.message}
-        </Alert>
-      </Snackbar>
+        {current && (
+          <div
+            role={current.severity === 'error' ? 'alert' : undefined}
+            className={cn(
+              'pointer-events-auto flex max-w-md items-center gap-2 rounded-md py-2 pr-2 pl-4 shadow-overlay',
+              tones[current.severity],
+            )}
+          >
+            <p className="text-sm">{current.message}</p>
+            <IconButton
+              aria-label="Dismiss notification"
+              onClick={() => setCurrent(null)}
+              className="size-8 text-inherit hover:bg-white/15 hover:text-inherit"
+            >
+              <X aria-hidden className="size-4" />
+            </IconButton>
+          </div>
+        )}
+      </div>
     </SnackbarContext>
   );
 }

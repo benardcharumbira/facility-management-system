@@ -1,9 +1,5 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import Typography from '@mui/material/Typography';
-import { useId, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 export interface FilterSectionProps {
   title: string;
@@ -13,27 +9,28 @@ export interface FilterSectionProps {
   activeCount?: number;
 }
 
-/** A collapsible group of related filter controls. */
+/** A collapsible group of related filter controls, built on the native disclosure element. */
 export function FilterSection({
   title,
   children,
   defaultExpanded = true,
   activeCount = 0,
 }: FilterSectionProps) {
-  const id = useId();
   return (
-    <Accordion defaultExpanded={defaultExpanded} disableGutters elevation={0} square>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        id={`${id}-header`}
-        aria-controls={`${id}-content`}
-      >
-        <Typography component="h3" variant="subtitle2">
+    <details open={defaultExpanded} className="group border-b border-line py-1 last:border-b-0">
+      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md px-1 py-3 marker:hidden [&::-webkit-details-marker]:hidden">
+        <h3 className="text-sm font-semibold">
           {title}
-          {activeCount > 0 && ` (${activeCount})`}
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails id={`${id}-content`}>{children}</AccordionDetails>
-    </Accordion>
+          {activeCount > 0 && (
+            <span className="ml-1 font-normal text-primary">({activeCount})</span>
+          )}
+        </h3>
+        <ChevronDown
+          aria-hidden
+          className="size-4 text-muted transition-transform group-open:rotate-180"
+        />
+      </summary>
+      <div className="px-1 pb-3">{children}</div>
+    </details>
   );
 }

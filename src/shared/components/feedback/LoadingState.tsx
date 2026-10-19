@@ -1,5 +1,5 @@
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
+import { cn } from '@/shared/utils/cn';
+import { Spinner } from '../ui/Spinner';
 
 interface LoadingStateProps {
   label?: string;
@@ -9,17 +9,11 @@ interface LoadingStateProps {
 
 export function LoadingState({ label = 'Loading', fullPage = false }: LoadingStateProps) {
   return (
-    <Box
+    <div
       role="status"
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 4,
-        minHeight: fullPage ? '100vh' : undefined,
-      }}
+      className={cn('flex items-center justify-center p-8', fullPage && 'min-h-screen')}
     >
-      <CircularProgress aria-label={label} />
-    </Box>
+      <Spinner label={label} />
+    </div>
   );
 }

@@ -1,8 +1,3 @@
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormGroup from '@mui/material/FormGroup';
-import Typography from '@mui/material/Typography';
-
 export interface CheckboxOption {
   value: string;
   label: string;
@@ -29,29 +24,24 @@ export function CheckboxGroupFilter({
     onChange(checked ? [...selected, value] : selected.filter((item) => item !== value));
 
   return (
-    <FormGroup role="group" aria-label={label}>
+    <div role="group" aria-label={label} className="flex flex-col">
       {options.map((option) => (
-        <FormControlLabel
+        <label
           key={option.value}
-          control={
-            <Checkbox
-              size="small"
-              checked={selected.includes(option.value)}
-              onChange={(event) => toggle(option.value, event.target.checked)}
-            />
-          }
-          label={
-            <>
-              {option.label}
-              {option.count !== undefined && (
-                <Typography component="span" variant="body2" color="text.secondary">
-                  {` (${option.count})`}
-                </Typography>
-              )}
-            </>
-          }
-        />
+          className="flex cursor-pointer items-center gap-3 rounded-md px-1 py-1.5 hover:bg-sunken"
+        >
+          <input
+            type="checkbox"
+            checked={selected.includes(option.value)}
+            onChange={(event) => toggle(option.value, event.target.checked)}
+            className="size-4 shrink-0 accent-primary"
+          />
+          <span className="min-w-0 flex-1">{option.label}</span>
+          {option.count !== undefined && (
+            <span className="text-subtle tabular-nums">{option.count}</span>
+          )}
+        </label>
       ))}
-    </FormGroup>
+    </div>
   );
 }

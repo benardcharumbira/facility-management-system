@@ -1,6 +1,5 @@
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import type { ReactNode } from 'react';
+import { cn } from '@/shared/utils/cn';
 
 export interface ViewOption<V extends string> {
   value: V;
@@ -23,20 +22,29 @@ export function ViewToggle<V extends string>({
   label = 'View',
 }: ViewToggleProps<V>) {
   return (
-    <ToggleButtonGroup
-      exclusive
-      size="small"
-      value={value}
+    <div
+      role="group"
       aria-label={label}
-      onChange={(_, next: V | null) => {
-        if (next !== null) onChange(next);
-      }}
+      className="inline-flex overflow-hidden rounded-md border border-line-strong"
     >
-      {options.map((option) => (
-        <ToggleButton key={option.value} value={option.value} aria-label={option.label}>
-          {option.icon}
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
+      {options.map((option) => {
+        const pressed = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-label={option.label}
+            aria-pressed={pressed}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              'flex size-10 items-center justify-center',
+              pressed ? 'bg-primary-soft text-primary' : 'bg-surface text-muted hover:bg-sunken',
+            )}
+          >
+            {option.icon}
+          </button>
+        );
+      })}
+    </div>
   );
 }

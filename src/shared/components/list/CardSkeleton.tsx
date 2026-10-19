@@ -1,88 +1,61 @@
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Skeleton from '@mui/material/Skeleton';
-import Stack from '@mui/material/Stack';
-import type { TypographyVariant } from '@mui/material/styles';
-import { ResultsGrid, type GridColumns } from './ResultsGrid';
+import { cn } from '@/shared/utils/cn';
+import { Skeleton } from '../ui/Skeleton';
+import { ResultsGrid } from './ResultsGrid';
+
+/** A line of text, a two line title, or a row of chips; each matches the real element's height. */
+export type SkeletonRow = 'title' | 'text' | 'chips';
+
+const ROW_CLASSES: Record<SkeletonRow, string> = {
+  title: 'h-12 w-4/5',
+  text: 'h-5 w-3/5',
+  chips: 'h-6 w-2/5',
+};
 
 export interface CardSkeletonProps {
   /** `row` is the compact list presentation. */
   layout?: 'card' | 'row';
   hasMedia?: boolean;
-  /**
-   * One line per entry. A typography variant gives a text line of the same height as the real
-   * text; a number gives a block of that many theme spacing units (e.g. a chip row).
-   */
-  rows?: Array<TypographyVariant | number>;
+  rows?: SkeletonRow[];
 }
 
-const DEFAULT_ROWS: Array<TypographyVariant | number> = [
-  'h6',
-  'h6',
-  'body2',
-  'body2',
-  'body2',
-  'body2',
-];
+const DEFAULT_ROWS: SkeletonRow[] = ['text', 'title', 'text', 'text', 'chips'];
 
 export function CardSkeleton({
   layout = 'card',
   hasMedia = true,
   rows = DEFAULT_ROWS,
 }: CardSkeletonProps) {
-  const lines = rows.map((row, index) =>
-    typeof row === 'number' ? (
-      <Skeleton key={index} variant="rounded" sx={{ height: (theme) => theme.spacing(row) }} />
-    ) : (
-      <Skeleton key={index} variant="text" sx={{ typography: row }} />
-    ),
-  );
+  const lines = rows.map((row, index) => (
+    <Skeleton key={index} className={cn(ROW_CLASSES[row], row === 'chips' && 'mt-2')} />
+  ));
 
   if (layout === 'row') {
     return (
-      <Card variant="outlined" sx={{ width: '100%' }} aria-hidden>
-        <Stack direction="row" spacing={2} sx={{ p: 2 }}>
-          {hasMedia && (
-            <Skeleton
-              variant="rectangular"
-              sx={{
-                width: (theme) => theme.spacing(14),
-                flexShrink: 0,
-                aspectRatio: '4 / 3',
-                height: 'auto',
-              }}
-            />
-          )}
-          <Stack sx={{ flexGrow: 1 }}>{lines}</Stack>
-        </Stack>
-      </Card>
+      <div aria-hidden className="flex w-full gap-4 rounded-lg border border-line bg-surface p-4">
+        {hasMedia && <Skeleton className="aspect-4/3 w-28 shrink-0" />}
+        <div className="flex flex-1 flex-col gap-1">{lines}</div>
+      </div>
     );
   }
 
   return (
-    <Card variant="outlined" sx={{ width: '100%' }} aria-hidden>
-      {hasMedia && (
-        <Skeleton
-          variant="rectangular"
-          sx={{ width: '100%', aspectRatio: '16 / 9', height: 'auto' }}
-        />
-      )}
-      <CardContent>{lines}</CardContent>
-    </Card>
+    <div aria-hidden className="w-full overflow-hidden rounded-lg border border-line bg-surface">
+      {hasMedia && <Skeleton className="aspect-video w-full rounded-none" />}
+      <div className="flex flex-col gap-1 p-4">{lines}</div>
+    </div>
   );
 }
 
 export interface SkeletonGridProps extends CardSkeletonProps {
   count?: number;
-  columns?: GridColumns;
 }
 
 /** Placeholder cards laid out in the same grid as the real results. */
-export function SkeletonGrid({ count = 8, columns, ...card }: SkeletonGridProps) {
+export function SkeletonGrid({ count = 8, layout = 'card', ...card }: SkeletonGridProps) {
   return (
-    <ResultsGrid columns={columns} label="Loading results">
+    <ResultsGrid layout={layout === 'row' ? 'rows' : 'cards'} label="Loading results">
       {Array.from({ length: count }, (_, index) => (
-        <CardSkeleton key={index} {...card} />
+        <CardSkeleton key={index} layout={layout} {...card} />
       ))}
     </ResultsGrid>
   );

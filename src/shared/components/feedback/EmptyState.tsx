@@ -1,5 +1,3 @@
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
@@ -12,17 +10,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, icon, action }: EmptyStateProps) {
   return (
-    <Stack spacing={1} sx={{ alignItems: 'center', textAlign: 'center', p: 4 }}>
-      {icon}
-      <Typography variant="h6" component="p">
-        {title}
-      </Typography>
-      {description && (
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      )}
-      {action}
-    </Stack>
+    <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+      {icon && <div className="text-subtle">{icon}</div>}
+      <p className="text-lg font-semibold">{title}</p>
+      {description && <p className="max-w-md text-muted">{description}</p>}
+      {action && <div className="mt-2">{action}</div>}
+    </div>
   );
 }

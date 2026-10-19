@@ -1,6 +1,3 @@
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 export interface PageHeaderProps {
@@ -14,28 +11,13 @@ export interface PageHeaderProps {
 
 export function PageHeader({ title, description, meta, actions }: PageHeaderProps) {
   return (
-    <Stack
-      component="header"
-      direction={{ xs: 'column', sm: 'row' }}
-      spacing={2}
-      sx={{ mb: 3, justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}
-    >
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="h4" component="h1" sx={{ overflowWrap: 'anywhere' }}>
-          {title}
-        </Typography>
-        {description && (
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            {description}
-          </Typography>
-        )}
-        {meta && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {meta}
-          </Typography>
-        )}
-      </Box>
-      {actions && <Box sx={{ flexShrink: 0 }}>{actions}</Box>}
-    </Stack>
+    <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere]">{title}</h1>
+        {description && <p className="mt-1 text-base text-muted">{description}</p>}
+        {meta && <p className="mt-1 text-sm text-subtle">{meta}</p>}
+      </div>
+      {actions && <div className="shrink-0">{actions}</div>}
+    </header>
   );
 }

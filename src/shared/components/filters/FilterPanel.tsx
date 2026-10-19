@@ -1,19 +1,12 @@
-import CloseIcon from '@mui/icons-material/Close';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useId, type ReactNode, type RefObject } from 'react';
+import { X } from 'lucide-react';
+import { Dialog } from 'radix-ui';
+import type { ReactNode, RefObject } from 'react';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 
-/** At and above this breakpoint filters are a sidebar; below it they are a full screen drawer. */
-export const FILTER_PANEL_BREAKPOINT = 'lg';
-
-/** Width of the sidebar in theme spacing units. */
-const SIDEBAR_WIDTH = 35;
+/** At and above this width filters are a sidebar; below it they are a full screen drawer. */
+export const FILTER_PANEL_QUERY = '(min-width: 80rem)';
 
 export interface FilterPanelProps {
   title?: string;
@@ -38,70 +31,52 @@ export function FilterPanel({
   onClearAll,
   returnFocusRef,
 }: FilterPanelProps) {
-  const theme = useTheme();
-  const isSidebar = useMediaQuery(theme.breakpoints.up(FILTER_PANEL_BREAKPOINT));
-  const titleId = useId();
+  const isSidebar = useMediaQuery(FILTER_PANEL_QUERY);
 
   if (isSidebar) {
     return (
-      <Box
-        component="aside"
+      <aside
         aria-label={title}
-        sx={{
-          width: (t) => t.spacing(SIDEBAR_WIDTH),
-          flexShrink: 0,
-          position: 'sticky',
-          top: (t) => t.spacing(10),
-          alignSelf: 'flex-start',
-          maxHeight: (t) => `calc(100vh - ${t.spacing(12)})`,
-          overflowY: 'auto',
-        }}
+        className="sticky top-20 max-h-[calc(100vh-6rem)] w-70 shrink-0 self-start overflow-y-auto rounded-lg border border-line bg-surface px-4 py-3"
       >
-        <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
-          {title}
-        </Typography>
+        <h2 className="mb-1 text-base font-semibold">{title}</h2>
         {children}
-      </Box>
+      </aside>
     );
   }
 
   return (
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      slotProps={{
-        paper: {
-          role: 'dialog',
-          'aria-modal': true,
-          'aria-labelledby': titleId,
-          sx: { width: '100%', maxWidth: '100%' },
-        },
-        transition: { onExited: () => returnFocusRef?.current?.focus() },
-      }}
-    >
-      <Stack
-        direction="row"
-        sx={{ alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}
-      >
-        <Typography variant="h6" component="h2" id={titleId}>
-          {title}
-        </Typography>
-        <IconButton edge="end" aria-label="Close filters" onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </Stack>
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 1 }}>{children}</Box>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ p: 2, borderTop: 1, borderColor: 'divider', justifyContent: 'flex-end' }}
-      >
-        {onClearAll && <Button onClick={onClearAll}>Clear all</Button>}
-        <Button variant="contained" onClick={onClose}>
-          {closeLabel}
-        </Button>
-      </Stack>
-    </Drawer>
+    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Content
+          aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            if (returnFocusRef?.current) {
+              event.preventDefault();
+              returnFocusRef.current.focus();
+            }
+          }}
+          className="fixed inset-0 z-50 flex flex-col bg-surface"
+        >
+          <div className="flex items-center justify-between border-b border-line px-4 py-2">
+            <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
+            <Dialog.Close asChild>
+              <IconButton aria-label="Close filters" className="-mr-2">
+                <X aria-hidden className="size-5" />
+              </IconButton>
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4">{children}</div>
+          <div className="flex justify-end gap-2 border-t border-line p-4">
+            {onClearAll && (
+              <Button variant="secondary" onClick={onClearAll}>
+                Clear all
+              </Button>
+            )}
+            <Button onClick={onClose}>{closeLabel}</Button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

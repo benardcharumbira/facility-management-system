@@ -1,6 +1,5 @@
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
+import { X } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export interface ActiveFilter {
   /** Unique across all filters. */
@@ -19,27 +18,25 @@ export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProp
   if (filters.length === 0) return null;
 
   return (
-    <Stack
-      component="ul"
-      direction="row"
-      aria-label="Active filters"
-      sx={{ flexWrap: 'wrap', gap: 1, alignItems: 'center', listStyle: 'none', m: 0, p: 0 }}
-    >
+    <ul aria-label="Active filters" className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
       {filters.map((filter) => (
         <li key={filter.key}>
-          <Chip
-            label={filter.label}
+          <button
+            type="button"
             onClick={filter.onRemove}
-            onDelete={filter.onRemove}
             aria-label={`Remove filter: ${filter.label}`}
-          />
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary-line bg-primary-soft pr-2 pl-3 text-sm font-medium text-primary hover:bg-primary-line/60"
+          >
+            {filter.label}
+            <X aria-hidden className="size-4" />
+          </button>
         </li>
       ))}
       <li>
-        <Button size="small" onClick={onClearAll}>
+        <Button variant="ghost" size="sm" onClick={onClearAll}>
           Clear all
         </Button>
       </li>
-    </Stack>
+    </ul>
   );
 }
