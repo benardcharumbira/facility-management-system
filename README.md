@@ -137,14 +137,19 @@ later slices, and the page has no slot for them yet.
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).
 - Tests are co-located as `*.test.ts(x)`.
 - Server state lives in TanStack Query; no global state library.
-- Components never hardcode colours, spacing or font sizes. Use `sx`, `styled` or theme
-  callbacks. Layout sizes use `theme.spacing(...)`.
+- Styling is Tailwind CSS v4. Components use only the semantic tokens from the theme
+  (`bg-surface`, `text-muted`, `border-line`, `bg-primary` ...) and the Tailwind spacing and type
+  scale. No palette colours, hex values, pixel values or arbitrary `[...]` sizes in components.
 
 ## Key design notes
 
-**Theme.** `src/app/theme/theme.ts` is one `createTheme` call close to the Material UI defaults
-(font family, type scale, spacing unit). `ThemeProvider` and `CssBaseline` sit once in
-`AppProviders`. Replacing the design language means editing that module only.
+**Theme.** `src/app/theme/theme.css` is the single light theme: a Tailwind `@theme` block mapping
+semantic tokens (primary blue, ink, muted, line, canvas, surface, danger, warning) onto Tailwind's
+default palette, plus the Public Sans font and the global focus style. `src/app/theme/index.ts` is
+the one entry point and is imported once in `main.tsx`; `clerkAppearance.ts` points Clerk's cards
+at the same tokens. Replacing the design language means replacing those files. Interactive
+primitives without a native equivalent (dialogs and drawers, the user menu, the range slider) use
+unstyled Radix UI; icons are Lucide. Slice 1 and 2 used Material UI; it was removed in slice 3.
 
 **Auth and roles.** Clerk owns identity; the backend owns roles. `useCurrentUser()` combines
 Clerk's user with the role from `GET /me` into one shape (`status`: `loading`, `signed-out`,
@@ -162,8 +167,8 @@ query keys with `createQueryKeys('scope')`.
 
 **Dates.** The backend stores booked windows as timezone aware ranges. The convention is ISO 8601
 instants over the wire, Luxon `DateTime` with an explicit facility zone in the UI, never `Date`
-(`src/shared/utils/datetime.ts`). `LocalizationProvider` with the Luxon adapter is mounted at the
-root for the MUI X pickers.
+(`src/shared/utils/datetime.ts`). The MUI X Luxon adapter went with Material UI; when date and
+time pickers are needed, pick a Luxon compatible one then (nothing uses one yet).
 
 ## Decisions that may constrain later slices
 
@@ -176,8 +181,8 @@ root for the MUI X pickers.
   URL only carries a view if its sender picked one.
 - Adding the availability filter means adding fields to `facilityListCodec` and a section to
   `FacilityFilters`; no other URL handling changes.
-- The `/facilities` sidebar and the shell navigation together limit card columns to three at
-  `lg`; see the shared components README.
+- Card columns follow the width available to the results (container queries), not the viewport:
+  one, two, three or four columns. The shell navigation shows from `lg`, the filter sidebar from `xl`.
 - The "My bookings" nav item is highlighted only on `/bookings`, not on child routes.
 - `/bookings/:id` is open to every authenticated role; per-booking authorisation must come from
   the API.

@@ -1,15 +1,16 @@
 import { afterEach, vi } from 'vitest';
 
 /**
- * jsdom has no layout, so MUI's useMediaQuery never matches. This evaluates simple
+ * jsdom has no layout, so matchMedia-based hooks never match. This evaluates simple
  * min-width / max-width queries against a width chosen by the test.
  */
 export function setViewportWidth(width: number) {
   vi.stubGlobal('matchMedia', (query: string) => {
-    const min = /min-width:\s*([\d.]+)px/.exec(query)?.[1];
-    const max = /max-width:\s*([\d.]+)px/.exec(query)?.[1];
-    const matches =
-      (min === undefined || width >= Number(min)) && (max === undefined || width <= Number(max));
+    const toPx = (match: RegExpExecArray | null) =>
+      match ? Number(match[1]) * (match[2] === 'rem' ? 16 : 1) : undefined;
+    const min = toPx(/min-width:\s*([\d.]+)(px|rem)/.exec(query));
+    const max = toPx(/max-width:\s*([\d.]+)(px|rem)/.exec(query));
+    const matches = (min === undefined || width >= min) && (max === undefined || width <= max);
     return {
       matches,
       media: query,
