@@ -1,6 +1,5 @@
-import Button from '@mui/material/Button';
-import { Link as RouterLink } from 'react-router';
-import { EmptyState, PageLayout } from '@/shared/components';
+import { Link } from 'react-router';
+import { buttonStyles, EmptyState, PageLayout } from '@/shared/components';
 import { PATHS } from '../access';
 
 export default function NotFoundPage() {
@@ -10,9 +9,9 @@ export default function NotFoundPage() {
         title="Page not found"
         description="The page you are looking for does not exist."
         action={
-          <Button component={RouterLink} to={PATHS.home}>
+          <Link to={PATHS.home} className={buttonStyles({ variant: 'secondary' })}>
             Go home
-          </Button>
+          </Link>
         }
       />
     </PageLayout>

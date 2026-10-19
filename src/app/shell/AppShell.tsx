@@ -1,93 +1,77 @@
-import MenuIcon from '@mui/icons-material/Menu';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import { type Theme } from '@mui/material/styles';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+import { Menu, X } from 'lucide-react';
+import { Dialog } from 'radix-ui';
 import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router';
 import { useCurrentUser } from '@/shared/auth';
 import {
   ErrorBoundary,
+  IconButton,
   LoadingState,
-  ShellBreadcrumbs,
   PageHeaderProvider,
+  ShellBreadcrumbs,
 } from '@/shared/components';
+import { AppBar } from './AppBar';
 import { NavList } from './NavList';
 import { UserMenu } from './UserMenu';
 
-/** Drawer width in theme spacing units (see theme.spacing). */
-const DRAWER_WIDTH = 30;
-
-const drawerPaperSx = {
-  width: (theme: Theme) => theme.spacing(DRAWER_WIDTH),
-  maxWidth: '80vw',
-} as const;
-
 export function AppShell() {
   const { user, signOut } = useCurrentUser();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   // ProtectedRoute guarantees a user; this keeps the types honest.
   if (!user) return null;
 
-  const nav = <NavList role={user.role} onNavigate={() => setMobileOpen(false)} />;
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
+    <div className="min-h-screen">
+      <AppBar
+        leading={
           <IconButton
-            color="inherit"
-            edge="start"
             aria-label="Open navigation"
-            onClick={() => setMobileOpen(true)}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            onClick={() => setNavOpen(true)}
+            className="-ml-2 text-on-primary hover:bg-white/10 hover:text-on-primary focus-visible:outline-on-primary lg:hidden"
           >
-            <MenuIcon />
+            <Menu aria-hidden className="size-6" />
           </IconButton>
-          <Typography variant="h6" component="p" noWrap sx={{ flexGrow: 1 }}>
-            Facilities Booking
-          </Typography>
-          <UserMenu user={user} onSignOut={() => void signOut()} />
-        </Toolbar>
-      </AppBar>
+        }
+        trailing={<UserMenu user={user} onSignOut={() => void signOut()} />}
+      />
 
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': drawerPaperSx }}
-      >
-        <Toolbar />
-        {nav}
-      </Drawer>
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          flexShrink: 0,
-          width: (theme) => theme.spacing(DRAWER_WIDTH),
-          '& .MuiDrawer-paper': drawerPaperSx,
-        }}
-      >
-        <Toolbar />
-        {nav}
-      </Drawer>
+      <aside className="fixed top-16 bottom-0 left-0 hidden w-60 overflow-y-auto border-r border-line bg-surface lg:block">
+        <NavList role={user.role} />
+      </aside>
 
-      <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: { xs: 2, md: 3 } }}>
-        <Toolbar />
-        <PageHeaderProvider>
-          <ShellBreadcrumbs />
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingState />}>
-              <Outlet />
-            </Suspense>
-          </ErrorBoundary>
-        </PageHeaderProvider>
-      </Box>
-    </Box>
+      <Dialog.Root open={navOpen} onOpenChange={setNavOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/40 lg:hidden" />
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-surface shadow-overlay lg:hidden"
+          >
+            <div className="flex h-16 items-center justify-between border-b border-line px-4">
+              <Dialog.Title className="font-semibold">Navigation</Dialog.Title>
+              <Dialog.Close asChild>
+                <IconButton aria-label="Close navigation" className="-mr-2">
+                  <X aria-hidden className="size-5" />
+                </IconButton>
+              </Dialog.Close>
+            </div>
+            <NavList role={user.role} onNavigate={() => setNavOpen(false)} />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      <main className="min-w-0 pt-16 lg:pl-60">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <PageHeaderProvider>
+            <ShellBreadcrumbs />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingState />}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
+          </PageHeaderProvider>
+        </div>
+      </main>
+    </div>
   );
 }

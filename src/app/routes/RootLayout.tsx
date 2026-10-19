@@ -4,6 +4,7 @@ import { ApiClientProvider } from '@/shared/api';
 import { useSessionTokenGetter } from '@/shared/auth';
 import { ErrorBoundary } from '@/shared/components';
 import { getEnv } from '../env';
+import { clerkAppearance } from '../theme/clerkAppearance';
 import { PATHS } from '../access';
 
 /**
@@ -17,6 +18,7 @@ export function RootLayout() {
   return (
     <ClerkProvider
       publishableKey={env.clerkPublishableKey}
+      appearance={clerkAppearance}
       signInUrl={PATHS.signIn}
       signUpUrl={PATHS.signUp}
       signInFallbackRedirectUrl={PATHS.home}
