@@ -44,6 +44,7 @@ export default tseslint.config(
           paths: [
             {
               name: '@clerk/react',
+              allowTypeImports: true,
               message: 'Use useCurrentUser from @/shared/auth. Only the auth layer touches Clerk.',
             },
           ],
