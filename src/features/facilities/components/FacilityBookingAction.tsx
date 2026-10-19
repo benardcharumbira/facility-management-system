@@ -31,7 +31,10 @@ export function FacilityBookingAction({ facility }: { facility: FacilityDetail }
   return (
     <StickyActionBar>
       <SelectionSummary facilityId={facility.id} facilityName={facility.name} />
-      <Link to={bookingHref(facility.id, selectionOf(url))} className={buttonStyles({ className })}>
+      <Link
+        to={bookingHref(facility.id, selectionOf(url), url.draft)}
+        className={buttonStyles({ className })}
+      >
         Request booking
       </Link>
       <p className="text-xs text-muted">

@@ -16,6 +16,8 @@ export interface AvailabilityUrlState {
   date: string | undefined;
   startsAt: string | undefined;
   endsAt: string | undefined;
+  /** A booking draft being continued, carried through so "Request booking" resumes it. */
+  draft: string | undefined;
 }
 
 export const availabilityCodec = createParamsCodec<AvailabilityUrlState>({
@@ -23,6 +25,7 @@ export const availabilityCodec = createParamsCodec<AvailabilityUrlState>({
   date: param.matching(ISO_DATE),
   startsAt: param.matching(ISO_INSTANT),
   endsAt: param.matching(ISO_INSTANT),
+  draft: param.matching(/^[\w-]+$/),
 });
 
 export interface Selection {
@@ -57,11 +60,16 @@ export { addMonths };
 const BOOKING_PATH = '/bookings/new';
 
 /** The hand off to the booking request: facility and, when chosen, the window as UTC instants. */
-export function bookingHref(facilityId: string, selection: Selection | null): string {
+export function bookingHref(
+  facilityId: string,
+  selection: Selection | null,
+  draft?: string,
+): string {
   const params = new URLSearchParams({ facilityId });
   if (selection) {
     params.set('startsAt', toInstant(selection.start));
     params.set('endsAt', toInstant(selection.end));
   }
+  if (draft) params.set('draft', draft);
   return `${BOOKING_PATH}?${params.toString()}`;
 }

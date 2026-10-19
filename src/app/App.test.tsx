@@ -73,7 +73,7 @@ describe('routing', () => {
 
   it.each([
     [ROLES.applicant, '/bookings', 'My bookings'],
-    [ROLES.applicant, '/bookings/new', 'New booking'],
+    [ROLES.applicant, '/bookings/new', 'Request a booking'],
     [ROLES.internal, '/bookings/abc', 'Booking detail'],
     [ROLES.facilityAdmin, '/approvals', 'Approvals'],
     [ROLES.facilityAdmin, '/admin/facilities', 'Manage facilities'],

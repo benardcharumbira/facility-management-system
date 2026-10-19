@@ -15,6 +15,9 @@ const FacilitiesPage = lazy(() => import('@/features/facilities/pages/Facilities
 const FacilityDetailPage = lazy(() => import('@/features/facilities/pages/FacilityDetailPage'));
 const BookingsPage = lazy(() => import('@/features/bookings/pages/BookingsPage'));
 const NewBookingPage = lazy(() => import('@/features/bookings/pages/NewBookingPage'));
+const BookingConfirmationPage = lazy(
+  () => import('@/features/bookings/pages/BookingConfirmationPage'),
+);
 const BookingDetailPage = lazy(() => import('@/features/bookings/pages/BookingDetailPage'));
 const ApprovalsPage = lazy(() => import('@/features/approvals/pages/ApprovalsPage'));
 const AdminFacilitiesPage = lazy(() => import('@/features/admin/pages/AdminFacilitiesPage'));
@@ -47,6 +50,7 @@ export const routes: RouteObject[] = [
                 children: [
                   { path: 'bookings', element: <BookingsPage /> },
                   { path: 'bookings/new', element: <NewBookingPage /> },
+                  { path: 'bookings/:id/confirmation', element: <BookingConfirmationPage /> },
                 ],
               },
               {
