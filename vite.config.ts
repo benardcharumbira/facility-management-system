@@ -8,8 +8,17 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   build: {
-    // Clerk and Material UI make the entry chunk large; routes are already lazy loaded.
-    chunkSizeWarningLimit: 600,
+    // Routes are lazy loaded; vendor code is split so the entry chunk stays small and cacheable.
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'vendor-clerk', test: /node_modules[\\/]@clerk/ },
+            { name: 'vendor-mui', test: /node_modules[\\/](@mui|@emotion)/ },
+          ],
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',

@@ -2,9 +2,8 @@
 
 Frontend for the municipal Facilities Booking Management System. Members of the public and
 staff request bookings for public facilities; a booking is routed to a designated approver and
-approved or rejected. This repository currently contains the **application shell only** (slice 1):
-authentication, routing, theme, API layer, mocking and shared primitives. There are no business
-features yet.
+approved or rejected. This repository currently contains the application shell (slice 1) and the facilities browse
+screen (slice 2). Everything else is still a placeholder.
 
 ## Prerequisites
 
@@ -46,12 +45,18 @@ Restart `npm run dev` after changing `.env`.
 Switching is one variable:
 
 - **Mocked:** `VITE_ENABLE_API_MOCKING=true`. A service worker (`public/mockServiceWorker.js`)
-  intercepts requests to `VITE_API_BASE_URL`. Handlers live in `src/mocks/handlers.ts`
-  (`GET /me`, and `GET /facilities` as a sample of the pagination envelope). Change
+  intercepts requests to `VITE_API_BASE_URL`. Handlers live in `src/mocks` (`GET /me` and the
+  facilities endpoints, backed by a ~30 facility fixture in `src/mocks/data`). Filtering, search,
+  sorting and pagination run in the handler, not the client. Responses are delayed 600ms in
+  development so loading states are visible. Change
   `VITE_MOCK_ROLE` to see the navigation for each role. Requests with no handler (such as Clerk's)
   pass through untouched.
 - **Real:** `VITE_ENABLE_API_MOCKING=false` and point `VITE_API_BASE_URL` at the backend. The mock
   code is loaded with a dynamic import and is not executed.
+
+To trigger states during review, add `?mock=error` or `?mock=empty` to any page URL
+(e.g. `/facilities?mock=error`). `empty` serves an empty catalogue, which shows the "no facilities
+yet" state; a search such as `?q=zzzz` shows the "no matches" state.
 
 Tests always use MSW's Node server (`src/mocks/server.ts`), independent of this flag.
 
@@ -96,6 +101,28 @@ Rules enforced by ESLint: features never import from other features (move shared
 `shared/`); only the auth layer, root layout and Clerk sign-in pages import `@clerk/react`; no
 hex colours or pixel values in component code (the theme module is exempt).
 
+## Facilities browse screen
+
+`/facilities` (`src/features/facilities`). All search, filter, sort, view and page state lives in
+the URL, through `useUrlState` and a schema built with `params-codec` (both knowledge-free of
+facilities, for reuse by later list screens). Defaults are omitted from the URL; parameters the
+schema does not own (such as `mock`) are preserved. `src/shared/components/README.md` lists the
+extracted primitives and the decisions behind them.
+
+The API contract lives in `src/shared/api/contracts/facilities.ts` and is the specification for the
+backend: parameters, combination rules, the standard `{ items, page, pageSize, totalItems,
+totalPages }` envelope, and the reserved `availableFrom` / `availableTo` parameters. Contract
+choices the brief left open:
+
+- `status` accepts `active` (default), `unavailable` or `all`; the "include unavailable" toggle sends `all`.
+- Locality is filtered by id from `filter-options`; the summary carries only the display name.
+- Filter option counts are over active facilities in the whole catalogue, ignoring applied
+  filters (not facet aware).
+- A capacity filter excludes facilities with null capacity.
+- Facilities with null capacity sort last in both directions.
+- `GET /facilities/:id` returns a `FacilitySummary`. It exists only so the detail placeholder can
+  show a name; the detail slice will extend it.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).
@@ -136,6 +163,12 @@ root for the MUI X pickers.
   the route table specifies. Whether they should also reach facility administration is a product
   decision, changed in `ACCESS` in `src/app/access.ts`.
 - Roles are a closed set (`src/shared/auth/roles.ts`); a user has exactly one role.
+- View mode is in the URL once chosen; until then the session preference applies, so a shared
+  URL only carries a view if its sender picked one.
+- Adding the availability filter means adding fields to `facilityListCodec` and a section to
+  `FacilityFilters`; no other URL handling changes.
+- The `/facilities` sidebar and the shell navigation together limit card columns to three at
+  `lg`; see the shared components README.
 - The "My bookings" nav item is highlighted only on `/bookings`, not on child routes.
 - `/bookings/:id` is open to every authenticated role; per-booking authorisation must come from
   the API.
