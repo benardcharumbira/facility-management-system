@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createApiClient,
+  type FacilityDetail,
   type FacilityFilterOptions,
   type FacilityListResponse,
 } from '@/shared/api';
@@ -134,6 +135,19 @@ describe('GET /facilities (mock server side behaviour)', () => {
       title: 'Invalid query',
     });
     await expect(list({ page: 'x' })).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe('GET /facilities/:id', () => {
+  it('returns the detail with children for a parent and 404 for an unknown id', async () => {
+    const detail = await client.get<FacilityDetail>('/facilities/fac-cc-main');
+    expect(detail.childFacilities.map((c) => c.id).sort()).toEqual([
+      'fac-cc-cr1',
+      'fac-cc-east',
+      'fac-cc-west',
+    ]);
+    expect(detail.images.length).toBeGreaterThan(0);
+    await expect(client.get('/facilities/nope')).rejects.toMatchObject({ status: 404 });
   });
 });
 

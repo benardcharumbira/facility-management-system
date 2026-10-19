@@ -5,6 +5,7 @@ import {
   FACILITY_STATUS_FILTERS,
   type FacilityFilterOptions,
   type FacilityListParams,
+  type FacilityDetail,
   type FacilityListResponse,
   type FacilitySort,
   type FacilityStatusFilter,
@@ -194,12 +195,38 @@ export function createFacilityHandlers(
       }
     }),
 
-    // Minimal lookup so the detail placeholder can show a name. Extended by the detail slice.
     http.get(`${root}/facilities/:id`, async ({ params }) => {
       await wait();
       if (getScenario?.() === 'error') return problem(500, 'Mock failure');
       const facility = catalogue().find((f) => f.id === params.id);
-      return facility ? HttpResponse.json(facility) : problem(404, 'Facility not found');
+      return facility
+        ? HttpResponse.json(buildFacilityDetail(facility, catalogue()))
+        : problem(404, 'Facility not found', 'No facility exists with that id.');
     }),
   ];
+}
+
+export function buildFacilityDetail(
+  facility: FacilitySummary,
+  catalogue: readonly FacilitySummary[],
+): FacilityDetail {
+  const slug = facility.primaryImageUrl?.split('/seed/')[1]?.split('/')[0];
+  return {
+    ...facility,
+    description: [
+      facility.shortDescription,
+      'Bookings are subject to approval by the facility administrator. Please arrange access, set up and clean up when you book, and leave the space as you found it.',
+    ].join('\n\n'),
+    images:
+      facility.primaryImageUrl === null || slug === undefined
+        ? []
+        : [1, 2, 3].map((n) => ({
+            url: `https://picsum.photos/seed/${slug}-${n}/960/540`,
+            alt: `${facility.name}, photo ${n}`,
+          })),
+    address: `${(facility.name.length % 40) + 1} ${facility.locality} Road, ${facility.locality}`,
+    childFacilities: catalogue
+      .filter((f) => f.parentFacility?.id === facility.id)
+      .map(({ id, name, type, capacity, status }) => ({ id, name, type, capacity, status })),
+  };
 }

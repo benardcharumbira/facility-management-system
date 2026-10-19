@@ -100,3 +100,23 @@ export interface FacilityFilterOptions {
   amenities: Array<{ id: string; name: string }>;
   capacity: { min: number; max: number };
 }
+
+export interface FacilityImage {
+  url: string;
+  /** Meaningful alternative text, written by the facility administrator. */
+  alt: string;
+}
+
+/**
+ * `GET /api/facilities/{id}`. The summary plus everything needed to decide whether to book.
+ * Responds 404 with problem details when the id is unknown.
+ */
+export interface FacilityDetail extends FacilitySummary {
+  /** Full description, paragraphs separated by a blank line. */
+  description: string;
+  /** Ordered gallery. The first entry matches `primaryImageUrl`. May be empty. */
+  images: FacilityImage[];
+  address: string | null;
+  /** Facilities whose `parentFacility` is this one. Empty for most facilities. */
+  childFacilities: Array<Pick<FacilitySummary, 'id' | 'name' | 'type' | 'capacity' | 'status'>>;
+}
