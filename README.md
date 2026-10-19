@@ -120,8 +120,17 @@ choices the brief left open:
   filters (not facet aware).
 - A capacity filter excludes facilities with null capacity.
 - Facilities with null capacity sort last in both directions.
-- `GET /facilities/:id` returns a `FacilitySummary`. It exists only so the detail placeholder can
-  show a name; the detail slice will extend it.
+- `GET /facilities/:id` returns a `FacilityDetail`: the summary plus full `description`, an ordered
+  `images` gallery with alt text, `address` and `childFacilities`. 404 uses problem details.
+
+## Facility detail screen
+
+`/facilities/:id`. Gallery with selectable photos, about text, amenities, a key facts panel (type,
+locality, address, capacity, status, parent link) and, for a parent, links to its child spaces.
+Loading, not found and error are distinct states. Cards pass the list's query string in router
+state, so the "Facilities" breadcrumb returns to the same results; opened directly, it goes to the
+unfiltered list. There is deliberately no "Book" action: booking creation and availability are
+later slices, and the page has no slot for them yet.
 
 ## Conventions
 
