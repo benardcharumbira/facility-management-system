@@ -38,6 +38,50 @@ Styling uses only the semantic tokens in `src/app/theme/theme.css`. Radix UI sup
 
 `ShellBreadcrumbs` is the shell's breadcrumb region.
 
+## Detail screen primitives (`detail/`)
+
+| Component         | Props                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `Breadcrumbs`     | `items: Crumb[]` (`label`, `to?`, `state?`); the last item has no `to`                                |
+| `DetailHeader`    | `breadcrumbs`, `back?`, `title`, `subtitle?`, `status?`, children (free content below)                |
+| `KeyFacts`        | `title?`, `items: {label, value: ReactNode}[]`. A definition list in a card.                          |
+| `Section`         | `title`, `description?`, children. Labelled by its `h2`.                                              |
+| `Disclosure`      | `summary`, `defaultOpen?`, children. Radix collapsible; trigger exposes `aria-expanded`.              |
+| `Gallery`         | `images: {url, alt, caption?}[]`, `placeholder`, `label`. Expanded view opens from the primary image. |
+| `StickyActionBar` | children. Fixed to the bottom below `lg`, in flow from `lg`. `STICKY_ACTION_CLEARANCE` pads the page. |
+| `RelatedItems`    | `label`, `items: {id, label, description?, to, state?}[]`                                             |
+| `DetailLayout`    | `aside`, children. Two columns from `lg`, aside sticky; aside first in source order.                  |
+| `DetailSkeleton`  | `sections?`. Built on `DetailLayout`, so it matches the loaded page.                                  |
+| `NotFoundState`   | `title`, `description?`, `action: {label, to, state?}`                                                |
+
+## Where slice 2 primitives had to change, or did not fit
+
+This is the second use of these patterns, so the strain points are the useful signal.
+
+- **`PageLayout` and the shell breadcrumb region do not fit a detail page.** `PageLayout` couples a
+  plain header to breadcrumbs published to the shell. A detail header needs its own breadcrumbs,
+  a back action, a status and a free slot, so the detail screen bypasses `PageLayout` (it only
+  calls `usePageHeader` for the document title) and `DetailHeader` renders `Breadcrumbs` itself.
+  The shell region and `PageLayout`'s `breadcrumbs` prop are now redundant with `DetailHeader`.
+  _Recommendation:_ drop the shell breadcrumb region and let every header own its crumbs.
+  Changed: `Crumb` gained `state`; `ShellBreadcrumbs` now wraps `Breadcrumbs`.
+- **Two collapsible primitives.** `FilterSection` (native `<details>`) and `Disclosure` (Radix
+  collapsible) do the same job. The disclosure needed an explicit `aria-expanded` and an unmounted
+  closed body, which `<details>` does not give; the filter section needs neither. _Recommendation:_
+  pick one in the design language pass (Radix everywhere is the safer default).
+- **The resource list is generic but lives in the feature.** `FacilityResources` renders a
+  "label and quantity" list that every detail screen will want. Left in `features/facilities`
+  until a second use proves its shape.
+- **`EmptyState` served as the not found state** with an `icon`, via `NotFoundState`, with no
+  change. `Alert` was used for notices as is. `Badge` needed no change.
+- **`Gallery` focus return.** The brief says focus returns to "the thumbnail that opened" the
+  expanded view. Thumbnails here choose the primary image and the expanded view opens from the
+  primary image, so focus returns to that control. If thumbnails should open it directly, the
+  gallery needs a different interaction model.
+- **`StickyActionBar` is one element, not two.** It is fixed on small screens and in flow from `lg`,
+  so the action is never duplicated in the DOM. This puts the action inside the sidebar's sticky
+  container on desktop, which is why it needs the container to be a normal flow parent.
+
 ## Decisions (and the alternative)
 
 - **Page header lives in the page.** `PageLayout` renders `PageHeader` itself; the shell shows only

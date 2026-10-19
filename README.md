@@ -147,12 +147,28 @@ choices the brief left open:
 
 ## Facility detail screen
 
-`/facilities/:id`. Gallery with selectable photos, about text, amenities, a key facts panel (type,
-locality, address, capacity, status, parent link) and, for a parent, links to its child spaces.
-Loading, not found and error are distinct states. Cards pass the list's query string in router
-state, so the "Facilities" breadcrumb returns to the same results; opened directly, it goes to the
-unfiltered list. There is deliberately no "Book" action: booking creation and availability are
-later slices, and the page has no slot for them yet.
+`/facilities/:id`. The contract is `FacilityDetail` in `src/shared/api/contracts/facilities.ts`;
+the mock derives complete detail for every venue in `src/mocks/data/facilityDetail.ts`
+(description, capacity by seating arrangement, venue and kitchen resources, opening hours,
+managing department, booking notes, children and siblings). All of it beyond the summary is
+provisional and listed in `provisionalFields`; there are still no photographs.
+
+- **Hierarchy is the centre of the page.** A parent says "Comprises N separately bookable spaces"
+  under its title, in key facts, and in a "Spaces within X" section explaining that booking the
+  whole venue includes all of them. A child says "Part of X" under its title (linked), in the
+  breadcrumb and key facts, and in a "Part of X" section listing the whole venue and the other
+  spaces and stating that a whole venue booking would make it unavailable.
+- **Back returns to the exact result set.** Cards and every related venue link carry the browse
+  screen's query string in router state (`fromList`); "Back to results" and the "Facilities"
+  breadcrumb use it, so nothing is reconstructed. Opened directly, there is no origin and they go
+  to the unfiltered list ("All facilities").
+- **Primary action.** "Request booking" goes to `/bookings/new?facilityId=:id` (still a
+  placeholder). It is fixed to the bottom of the screen on mobile and in the sticky sidebar on
+  desktop, and disabled with an explanation when the facility is unavailable. It is shown only to
+  roles that can make bookings (`BOOKING_ROLES`), since other roles would land on a forbidden page.
+- **Availability** is a labelled placeholder: no calendar and no dates.
+- **Review states:** `/facilities/nope` (not found), `?mock=error` (error, retry), and the 600ms
+  development latency shows the skeleton.
 
 ## Conventions
 

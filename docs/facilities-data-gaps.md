@@ -30,8 +30,9 @@ Sicelo Hall, Lakeside Hall.
    Marina Hall and Board Room in Vaal Marina; Sicelo Hall in Sicelo; Lakeside Hall in Lakeside.
 
 5. **Resources at each venue.** Which of these are actually available at each venue: tables,
-   chairs, stage, podium, sound system and a kitchen? (The itemised kitchen equipment is handled
-   on the booking form, so we only need to know whether a venue has a kitchen.)
+   chairs, stage, podium, sound system and a kitchen, and in what quantities? For venues with a
+   kitchen, please send the itemised equipment list (urns, crockery, cutlery and so on) with
+   quantities; the venue page shows it as a collapsible list.
 
 6. **Council Chambers.** Can the public book it, or is it for internal use only?
 
@@ -42,6 +43,15 @@ Sicelo Hall, Lakeside Hall.
 8. **Recreational facilities.** Which sports fields, courts, pools or open spaces, if any, should
    be bookable through this system? None are described in the requirements document, so none are
    shown yet.
+
+9. **Opening hours.** On which days and between which times can each venue be booked?
+
+10. **Responsible department.** Which municipal department manages each venue? The page shows a
+    "Managed by" line.
+
+11. **Booking conditions.** Is there anything an applicant should know before requesting a
+    booking (deposits, minimum notice, set-up and clean-up time, alcohol or noise rules)? We show
+    these as a short notice on the venue page.
 
 ## What we assumed, for reference
 
