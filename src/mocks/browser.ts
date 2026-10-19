@@ -18,5 +18,6 @@ export const worker = setupWorker(
     delayMs: DEV_LATENCY_MS,
     getScenario: scenarioFromUrl,
     dataset: env.mockDataset,
+    seedBookings: true,
   }),
 );

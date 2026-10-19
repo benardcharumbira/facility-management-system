@@ -214,6 +214,7 @@ export function createFacilityHandlers(
       catalogue,
       now,
       forceConflict: () => getScenario?.() === 'conflict',
+      empty: () => getScenario?.() === 'empty',
       fail: () => getScenario?.() === 'error',
     }),
 

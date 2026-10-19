@@ -37,6 +37,8 @@ export interface ApiClient {
    * progress, but still goes through this client: same base URL, token and problem handling.
    */
   upload<T>(path: string, body: FormData, options?: UploadOptions): Promise<T>;
+  /** A binary response, such as a document. Authenticated like every other call. */
+  download(path: string, options?: { signal?: AbortSignal }): Promise<Blob>;
 }
 
 export interface UploadOptions {
@@ -136,8 +138,23 @@ export function createApiClient({
     }
   }
 
+  async function download(path: string, options: { signal?: AbortSignal } = {}): Promise<Blob> {
+    const doFetch = fetchImpl ?? fetch;
+    try {
+      const token = await getToken();
+      const headers = new Headers();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+      const response = await doFetch(buildUrl(root, path), { headers, signal: options.signal });
+      if (!response.ok) throw await ApiProblem.fromResponse(response);
+      return await response.blob();
+    } catch (error) {
+      throw ApiProblem.from(error);
+    }
+  }
+
   return {
     upload,
+    download,
     get: (path, options) => request('GET', path, options),
     delete: (path, options) => request('DELETE', path, options),
     post: (path, options) => request('POST', path, options),
