@@ -53,6 +53,11 @@ export interface FacilitySummary {
   primaryImageUrl: string | null;
   amenities: Array<{ id: string; name: string }>;
   status: FacilityStatus;
+  /**
+   * MOCK DATA ONLY. Names the fields on this record that were invented or inferred rather than
+   * supplied by the client. The real API never sends it; the development banner keys off it.
+   */
+  provisionalFields?: string[];
 }
 
 /**

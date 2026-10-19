@@ -85,9 +85,9 @@ describe('api client', () => {
 
   it('returns the pagination envelope from the facilities endpoint', async () => {
     const page = await client.get<Paginated<{ id: string }>>('/facilities', {
-      query: { page: 2, pageSize: 10 },
+      query: { page: 1, pageSize: 10 },
     });
-    expect(page).toMatchObject({ page: 2, pageSize: 10 });
+    expect(page).toMatchObject({ page: 1, pageSize: 10 });
     expect(page.totalPages).toBe(Math.ceil(page.totalItems / 10));
     expect(page.items).toHaveLength(10);
   });

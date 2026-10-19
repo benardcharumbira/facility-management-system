@@ -8,7 +8,19 @@ const valid = {
 
 describe('parseEnv', () => {
   it('applies defaults', () => {
-    expect(parseEnv(valid)).toMatchObject({ enableApiMocking: false, mockRole: 'applicant' });
+    expect(parseEnv(valid)).toMatchObject({
+      enableApiMocking: false,
+      mockRole: 'applicant',
+      mockDataset: 'real',
+      showSampleDataBanner: true,
+    });
+  });
+
+  it('selects the volume dataset and hides the banner only when asked', () => {
+    expect(
+      parseEnv({ ...valid, VITE_MOCK_DATASET: 'volume', VITE_SHOW_SAMPLE_DATA_BANNER: 'false' }),
+    ).toMatchObject({ mockDataset: 'volume', showSampleDataBanner: false });
+    expect(() => parseEnv({ ...valid, VITE_MOCK_DATASET: 'huge' })).toThrow();
   });
 
   it('fails fast naming every bad variable', () => {

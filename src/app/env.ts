@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { ROLES, type Role } from '@/shared/auth/roles';
 
+export const MOCK_DATASETS = ['real', 'volume'] as const;
+export type MockDataset = (typeof MOCK_DATASETS)[number];
+
 const roleValues = Object.values(ROLES) as [Role, ...Role[]];
 
 const envSchema = z.object({
@@ -12,6 +15,10 @@ const envSchema = z.object({
     .enum(['true', 'false'], { error: 'must be "true" or "false"' })
     .default('false'),
   VITE_MOCK_ROLE: z.enum(roleValues).default(ROLES.applicant),
+  VITE_MOCK_DATASET: z.enum(MOCK_DATASETS, { error: 'must be "real" or "volume"' }).default('real'),
+  VITE_SHOW_SAMPLE_DATA_BANNER: z
+    .enum(['true', 'false'], { error: 'must be "true" or "false"' })
+    .default('true'),
 });
 
 export interface Env {
@@ -20,6 +27,13 @@ export interface Env {
   enableApiMocking: boolean;
   /** Role returned by the mocked GET /me. Ignored when mocking is off. */
   mockRole: Role;
+  /** Which fixture the mocked facilities endpoints serve. Ignored when mocking is off. */
+  mockDataset: MockDataset;
+  /**
+   * Whether to show the sample data banner. Development builds only: production builds never
+   * show it, whatever this says.
+   */
+  showSampleDataBanner: boolean;
 }
 
 export class EnvError extends Error {
@@ -43,10 +57,17 @@ export function parseEnv(raw: Record<string, unknown>): Env {
     clerkPublishableKey: data.VITE_CLERK_PUBLISHABLE_KEY,
     enableApiMocking: data.VITE_ENABLE_API_MOCKING === 'true',
     mockRole: data.VITE_MOCK_ROLE,
+    mockDataset: data.VITE_MOCK_DATASET,
+    showSampleDataBanner: data.VITE_SHOW_SAMPLE_DATA_BANNER === 'true',
   };
 }
 
 let cached: Env | undefined;
+
+/** Tests only: forget the parsed environment so changed variables are re-read. */
+export function resetEnvCache() {
+  cached = undefined;
+}
 
 /** Parsed once on first use. main.tsx calls it before rendering so a bad config fails fast. */
 export function getEnv(): Env {
