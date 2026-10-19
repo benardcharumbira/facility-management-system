@@ -1,38 +1,20 @@
-import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
-import type { Theme } from '@mui/material/styles';
-import Typography from '@mui/material/Typography';
+import { CornerDownRight, Users } from 'lucide-react';
 import { useId } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import type { FacilitySummary } from '@/shared/api';
-import { VisuallyHidden } from '@/shared/components';
+import { Badge, VisuallyHidden } from '@/shared/components';
 import { facilityPath } from '../paths';
 import { FacilityMedia } from './FacilityMedia';
 
 const MAX_AMENITY_CHIPS = 3;
 
 /** Rows reserved in the card, in the order they appear; the skeleton mirrors these. */
-export const FACILITY_CARD_ROWS = ['h6', 'h6', 'body2', 'body2', 'body2', 3] as const;
+export const FACILITY_CARD_ROWS = ['text', 'title', 'text', 'text', 'chips'] as const;
 
-const lines =
-  (variant: 'h6' | 'body2', count = 1) =>
-  (theme: Theme) => ({
-    minHeight: `${count * Number(theme.typography[variant].lineHeight)}em`,
-  });
-
-const clamp = (count: number) => ({
-  display: '-webkit-box',
-  WebkitLineClamp: count,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-  overflowWrap: 'anywhere',
-});
-
+/**
+ * The whole card is one link: the title's anchor stretches over the card, so no interactive
+ * control is nested inside another. The card shows the focus ring when that anchor has it.
+ */
 export function FacilityCard({ facility }: { facility: FacilitySummary }) {
   const location = useLocation();
   const titleId = useId();
@@ -42,85 +24,60 @@ export function FacilityCard({ facility }: { facility: FacilitySummary }) {
   const overflow = facility.amenities.length - shown.length;
 
   return (
-    <Card variant="outlined" sx={{ width: '100%', display: 'flex' }}>
-      <CardActionArea
-        component={RouterLink}
-        to={facilityPath(facility.id)}
-        state={{ fromList: location.search }}
-        aria-labelledby={titleId}
-        aria-describedby={detailsId}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
-          '&.Mui-focusVisible': {
-            outline: (theme) => `${theme.spacing(0.5)} solid ${theme.palette.primary.main}`,
-            outlineOffset: (theme) => `-${theme.spacing(0.5)}`,
-          },
-        }}
-      >
-        <Box sx={{ position: 'relative' }}>
-          <FacilityMedia facility={facility} aspectRatio="16 / 9" />
-          {unavailable && (
-            <Chip
-              label="Unavailable"
-              size="small"
-              color="error"
-              sx={{
-                position: 'absolute',
-                top: (theme) => theme.spacing(1),
-                left: (theme) => theme.spacing(1),
-              }}
-            />
-          )}
-        </Box>
-        <CardContent sx={{ flexGrow: 1, width: '100%' }}>
-          <Typography id={titleId} variant="h6" component="h2" sx={[lines('h6', 2), clamp(2)]}>
+    <article className="relative flex w-full flex-col overflow-hidden rounded-lg border border-line bg-surface transition-shadow hover:shadow-md has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-primary">
+      <div className="relative">
+        <FacilityMedia facility={facility} className="aspect-video" />
+        {unavailable && (
+          <Badge tone="danger" className="absolute top-2 left-2 bg-surface">
+            Unavailable
+          </Badge>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-4">
+        <p className="h-5 truncate text-xs leading-5 font-semibold tracking-wide text-primary uppercase">
+          {facility.type.name} · {facility.locality}
+        </p>
+        <h2 id={titleId} className="line-clamp-2 min-h-12 text-base leading-6 font-semibold">
+          <Link
+            to={facilityPath(facility.id)}
+            state={{ fromList: location.search }}
+            aria-describedby={detailsId}
+            className="outline-none after:absolute after:inset-0 after:content-['']"
+          >
             {facility.name}
-          </Typography>
-          <Box id={detailsId}>
-            <Typography variant="body2" color="text.secondary" noWrap sx={lines('body2')}>
-              {facility.type.name} · {facility.locality}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap sx={lines('body2')}>
-              {facility.capacity === null ? '' : `Capacity ${facility.capacity}`}
-            </Typography>
-            <Stack
-              direction="row"
-              spacing={0.5}
-              sx={[{ alignItems: 'center', minWidth: 0 }, lines('body2')]}
-            >
-              {facility.parentFacility && (
-                <>
-                  <SubdirectoryArrowRightIcon fontSize="small" aria-hidden color="action" />
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    Part of {facility.parentFacility.name}
-                  </Typography>
-                </>
-              )}
-            </Stack>
-            <Stack
-              direction="row"
-              spacing={0.5}
-              sx={{ mt: 1, minHeight: (theme) => theme.spacing(3), overflow: 'hidden' }}
-            >
-              {shown.map((amenity) => (
-                <Chip key={amenity.id} label={amenity.name} size="small" variant="outlined" />
-              ))}
-              {overflow > 0 && <Chip label={`+${overflow}`} size="small" variant="outlined" />}
-            </Stack>
-            {unavailable && (
-              <VisuallyHidden>This facility is currently unavailable.</VisuallyHidden>
+          </Link>
+        </h2>
+        <div id={detailsId} className="contents">
+          <p className="flex h-5 items-center gap-1.5 text-muted">
+            {facility.capacity !== null && (
+              <>
+                <Users aria-hidden className="size-4 shrink-0" />
+                Capacity {facility.capacity}
+              </>
             )}
-            {overflow > 0 && (
-              <VisuallyHidden>
-                {`Also has ${overflow} more ${overflow === 1 ? 'amenity' : 'amenities'}.`}
-              </VisuallyHidden>
+          </p>
+          <p className="flex h-5 items-center gap-1.5 text-muted">
+            {facility.parentFacility && (
+              <>
+                <CornerDownRight aria-hidden className="size-4 shrink-0" />
+                <span className="truncate">Part of {facility.parentFacility.name}</span>
+              </>
             )}
-          </Box>
-        </CardContent>
-      </CardActionArea>
-    </Card>
+          </p>
+          <div className="mt-2 flex h-6 gap-1.5 overflow-hidden">
+            {shown.map((amenity) => (
+              <Badge key={amenity.id}>{amenity.name}</Badge>
+            ))}
+            {overflow > 0 && <Badge>+{overflow}</Badge>}
+          </div>
+          {unavailable && <VisuallyHidden>This facility is currently unavailable.</VisuallyHidden>}
+          {overflow > 0 && (
+            <VisuallyHidden>
+              {`Also has ${overflow} more ${overflow === 1 ? 'amenity' : 'amenities'}.`}
+            </VisuallyHidden>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }

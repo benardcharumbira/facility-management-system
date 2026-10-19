@@ -1,34 +1,36 @@
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import ApartmentIcon from '@mui/icons-material/Apartment';
-import ForumIcon from '@mui/icons-material/Forum';
-import GroupsIcon from '@mui/icons-material/Groups';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
-import ParkIcon from '@mui/icons-material/Park';
-import PoolIcon from '@mui/icons-material/Pool';
-import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
-import SportsTennisIcon from '@mui/icons-material/SportsTennis';
-import type { SvgIconProps } from '@mui/material/SvgIcon';
+import {
+  Building2,
+  Goal,
+  Landmark,
+  MessagesSquare,
+  Presentation,
+  Trees,
+  Users,
+  Volleyball,
+  Waves,
+  type LucideProps,
+} from 'lucide-react';
 
 /** Fallback artwork for facilities without a photo, chosen by type. Decorative. */
-export function FacilityTypeIcon({ typeId, ...props }: SvgIconProps & { typeId: string }) {
+export function FacilityTypeIcon({ typeId, ...props }: LucideProps & { typeId: string }) {
   switch (typeId) {
     case 'community-hall':
-      return <GroupsIcon aria-hidden {...props} />;
+      return <Users aria-hidden {...props} />;
     case 'civic-hall':
-      return <AccountBalanceIcon aria-hidden {...props} />;
+      return <Landmark aria-hidden {...props} />;
     case 'board-room':
-      return <MeetingRoomIcon aria-hidden {...props} />;
+      return <Presentation aria-hidden {...props} />;
     case 'committee-room':
-      return <ForumIcon aria-hidden {...props} />;
+      return <MessagesSquare aria-hidden {...props} />;
     case 'sports-field':
-      return <SportsSoccerIcon aria-hidden {...props} />;
+      return <Goal aria-hidden {...props} />;
     case 'court':
-      return <SportsTennisIcon aria-hidden {...props} />;
+      return <Volleyball aria-hidden {...props} />;
     case 'swimming-pool':
-      return <PoolIcon aria-hidden {...props} />;
+      return <Waves aria-hidden {...props} />;
     case 'open-space':
-      return <ParkIcon aria-hidden {...props} />;
+      return <Trees aria-hidden {...props} />;
     default:
-      return <ApartmentIcon aria-hidden {...props} />;
+      return <Building2 aria-hidden {...props} />;
   }
 }

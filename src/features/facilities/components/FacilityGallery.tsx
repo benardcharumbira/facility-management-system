@@ -1,7 +1,6 @@
-import ButtonBase from '@mui/material/ButtonBase';
-import Stack from '@mui/material/Stack';
 import { useState } from 'react';
 import type { FacilityDetail } from '@/shared/api';
+import { cn } from '@/shared/utils/cn';
 import { FacilityMedia } from './FacilityMedia';
 
 /** Main photo with selectable thumbnails. Falls back to the type artwork with no photos. */
@@ -11,41 +10,38 @@ export function FacilityGallery({ facility }: { facility: FacilityDetail }) {
   const current = images[selected];
 
   return (
-    <Stack spacing={1}>
-      <FacilityMedia facility={facility} image={current} aspectRatio="16 / 9" eager />
+    <div className="flex flex-col gap-2">
+      <FacilityMedia
+        facility={facility}
+        image={current}
+        className="aspect-video rounded-lg"
+        eager
+      />
       {images.length > 1 && (
-        <Stack
-          component="ul"
-          direction="row"
-          aria-label="Photos"
-          spacing={1}
-          sx={{ listStyle: 'none', m: 0, p: 0, overflowX: 'auto' }}
-        >
+        <ul aria-label="Photos" className="m-0 flex list-none gap-2 overflow-x-auto p-1">
           {images.map((image, index) => (
-            <li key={image.url}>
-              <ButtonBase
+            <li key={image.url} className="shrink-0">
+              <button
+                type="button"
                 onClick={() => setSelected(index)}
                 aria-label={`Show photo ${index + 1} of ${images.length}`}
                 aria-pressed={index === selected}
-                sx={{
-                  display: 'block',
-                  width: (theme) => theme.spacing(12),
-                  opacity: index === selected ? 1 : 0.6,
-                  outline: (theme) =>
-                    index === selected
-                      ? `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`
-                      : 'none',
-                  '&.Mui-focusVisible': {
-                    outline: (theme) => `${theme.spacing(0.5)} solid ${theme.palette.primary.main}`,
-                  },
-                }}
+                className={cn(
+                  'block w-24 rounded outline-offset-2',
+                  index === selected ? 'outline-2 outline-primary' : 'opacity-70 hover:opacity-100',
+                )}
               >
-                <FacilityMedia facility={facility} image={image} aspectRatio="16 / 9" decorative />
-              </ButtonBase>
+                <FacilityMedia
+                  facility={facility}
+                  image={image}
+                  className="aspect-video rounded"
+                  decorative
+                />
+              </button>
             </li>
           ))}
-        </Stack>
+        </ul>
       )}
-    </Stack>
+    </div>
   );
 }

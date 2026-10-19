@@ -1,24 +1,20 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Link from '@mui/material/Link';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
-import Skeleton from '@mui/material/Skeleton';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+import { Link, useLocation, useParams } from 'react-router';
 import type { ReactNode } from 'react';
-import { Link as RouterLink, useLocation, useParams } from 'react-router';
 import { isApiProblem, type FacilityDetail } from '@/shared/api';
-import { EmptyState, ErrorState, PageLayout } from '@/shared/components';
+import {
+  Alert,
+  buttonStyles,
+  EmptyState,
+  ErrorState,
+  PageLayout,
+  Skeleton,
+} from '@/shared/components';
 import { FacilityGallery } from '../components/FacilityGallery';
 import { useFacility } from '../hooks';
 import { facilityPath } from '../paths';
 
 const LIST_PATH = '/facilities';
+const LAYOUT = 'grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]';
 
 export default function FacilityDetailPage() {
   const { id = '' } = useParams();
@@ -43,9 +39,9 @@ export default function FacilityDetailPage() {
             title="We could not find that facility"
             description="It may have been removed, or the link may be wrong."
             action={
-              <Button component={RouterLink} to={listLink.to}>
+              <Link to={listLink.to} className={buttonStyles({ variant: 'secondary' })}>
                 Back to facilities
-              </Button>
+              </Link>
             }
           />
         ) : (
@@ -84,75 +80,72 @@ function FacilityDetailContent({ facility }: { facility: FacilityDetail }) {
   const paragraphs = facility.description.split(/\n{2,}/).filter(Boolean);
 
   return (
-    <Stack spacing={3}>
+    <div className="flex flex-col gap-6">
       {facility.status === 'unavailable' && (
         <Alert severity="warning">This facility is currently unavailable for booking.</Alert>
       )}
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 3,
-          gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 2fr) minmax(0, 1fr)' },
-        }}
-      >
-        <Stack spacing={3} sx={{ minWidth: 0 }}>
+      <div className={LAYOUT}>
+        <div className="flex min-w-0 flex-col gap-8">
           <FacilityGallery facility={facility} />
           <Section title="About this facility">
-            {paragraphs.map((text) => (
-              <Typography key={text} sx={{ mb: 1 }}>
-                {text}
-              </Typography>
-            ))}
+            <div className="flex max-w-prose flex-col gap-3 text-base leading-7">
+              {paragraphs.map((text) => (
+                <p key={text}>{text}</p>
+              ))}
+            </div>
           </Section>
           <Section title="Amenities">
             {facility.amenities.length === 0 ? (
-              <Typography color="text.secondary">No amenities listed.</Typography>
+              <p className="text-muted">No amenities listed.</p>
             ) : (
-              <Stack
-                component="ul"
-                direction="row"
-                sx={{ flexWrap: 'wrap', gap: 1, listStyle: 'none', m: 0, p: 0 }}
-              >
+              <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
                 {facility.amenities.map((amenity) => (
-                  <li key={amenity.id}>
-                    <Chip label={amenity.name} variant="outlined" />
+                  <li
+                    key={amenity.id}
+                    className="rounded-md border border-line bg-surface px-3 py-1.5"
+                  >
+                    {amenity.name}
                   </li>
                 ))}
-              </Stack>
+              </ul>
             )}
           </Section>
           {facility.childFacilities.length > 0 && (
             <Section title="Spaces within this facility">
-              <List disablePadding aria-label="Spaces within this facility">
+              <ul
+                aria-label="Spaces within this facility"
+                className="m-0 list-none divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface p-0"
+              >
                 {facility.childFacilities.map((child) => (
-                  <ListItemButton key={child.id} component={RouterLink} to={facilityPath(child.id)}>
-                    <ListItemText
-                      primary={child.name}
-                      secondary={[
-                        child.type.name,
-                        child.capacity === null ? null : `Capacity ${child.capacity}`,
-                        child.status === 'unavailable' ? 'Unavailable' : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    />
-                  </ListItemButton>
+                  <li key={child.id}>
+                    <Link
+                      to={facilityPath(child.id)}
+                      className="block px-4 py-3 hover:bg-primary-soft"
+                    >
+                      <span className="block font-medium text-primary">{child.name}</span>
+                      <span className="block text-muted">
+                        {[
+                          child.type.name,
+                          child.capacity === null ? null : `Capacity ${child.capacity}`,
+                          child.status === 'unavailable' ? 'Unavailable' : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </Link>
+                  </li>
                 ))}
-              </List>
+              </ul>
             </Section>
           )}
-        </Stack>
+        </div>
 
-        <Paper
-          variant="outlined"
-          component="aside"
+        <aside
           aria-label="Key facts"
-          sx={{ p: 2, alignSelf: 'flex-start' }}
+          className="self-start rounded-lg border border-line bg-surface p-5"
         >
-          <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
-            Key facts
-          </Typography>
-          <Box component="dl" sx={{ m: 0 }}>
+          <h2 className="mb-4 text-base font-semibold">Key facts</h2>
+          <dl className="m-0 flex flex-col gap-4">
             <Fact label="Type">{facility.type.name}</Fact>
             <Fact label="Locality">{facility.locality}</Fact>
             {facility.address && <Fact label="Address">{facility.address}</Fact>}
@@ -164,70 +157,56 @@ function FacilityDetailContent({ facility }: { facility: FacilityDetail }) {
             </Fact>
             {facility.parentFacility && (
               <Fact label="Part of">
-                <Link component={RouterLink} to={facilityPath(facility.parentFacility.id)}>
+                <Link
+                  to={facilityPath(facility.parentFacility.id)}
+                  className="text-primary underline-offset-2 hover:underline"
+                >
                   {facility.parentFacility.name}
                 </Link>
               </Fact>
             )}
-          </Box>
-        </Paper>
-      </Box>
-    </Stack>
+          </dl>
+        </aside>
+      </div>
+    </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Box component="section">
-      <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
-        {title}
-      </Typography>
+    <section>
+      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
       {children}
-    </Box>
+    </section>
   );
 }
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <>
-      <Typography component="dt" variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography component="dd" sx={{ m: 0, mb: 1.5, overflowWrap: 'anywhere' }}>
-        {children}
-      </Typography>
-    </>
+    <div>
+      <dt className="text-xs font-medium tracking-wide text-subtle uppercase">{label}</dt>
+      <dd className="m-0 mt-0.5 [overflow-wrap:anywhere]">{children}</dd>
+    </div>
   );
 }
 
 /** Mirrors the loaded layout (gallery, sections, key facts) so nothing shifts on arrival. */
 function DetailSkeleton() {
   return (
-    <Box
-      aria-busy
-      aria-label="Loading facility"
-      sx={{
-        display: 'grid',
-        gap: 3,
-        gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 2fr) minmax(0, 1fr)' },
-      }}
-    >
-      <Stack spacing={2}>
-        <Skeleton
-          variant="rectangular"
-          sx={{ width: '100%', aspectRatio: '16 / 9', height: 'auto' }}
-        />
-        <Skeleton variant="text" sx={{ typography: 'h6', width: '40%' }} />
-        <Skeleton variant="text" />
-        <Skeleton variant="text" />
-        <Skeleton variant="text" sx={{ width: '70%' }} />
-      </Stack>
-      <Paper variant="outlined" sx={{ p: 2, alignSelf: 'flex-start' }}>
-        <Skeleton variant="text" sx={{ typography: 'h6', width: '50%' }} />
-        {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton key={index} variant="text" />
+    <div aria-busy aria-label="Loading facility" className={LAYOUT}>
+      <div className="flex flex-col gap-3">
+        <Skeleton className="aspect-video w-full rounded-lg" />
+        <Skeleton className="mt-4 h-7 w-2/5" />
+        <Skeleton className="h-5" />
+        <Skeleton className="h-5" />
+        <Skeleton className="h-5 w-3/4" />
+      </div>
+      <div className="flex flex-col gap-4 self-start rounded-lg border border-line bg-surface p-5">
+        <Skeleton className="h-6 w-1/2" />
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="h-10" />
         ))}
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 }

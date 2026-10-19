@@ -91,7 +91,7 @@ describe('FacilitiesPage', () => {
     await userEvent.click(screen.getByRole('switch', { name: 'Include unavailable facilities' }));
     await waitFor(() => expect(router.state.location.search).toBe('?q=old+town&status=all'));
     const link = await within(results()).findByRole('link', { name: 'Old Town Hall' });
-    expect(within(link).getByText('Unavailable')).toBeVisible();
+    expect(within(link.closest('article') as HTMLElement).getByText('Unavailable')).toBeVisible();
   });
 
   it('restores everything from the URL, including view and sort', async () => {

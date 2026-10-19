@@ -1,9 +1,11 @@
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Skeleton from '@mui/material/Skeleton';
-import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import type { FacilityFilterOptions } from '@/shared/api';
-import { CheckboxGroupFilter, FilterSection, RangeFilter } from '@/shared/components';
+import {
+  CheckboxGroupFilter,
+  FilterSection,
+  RangeFilter,
+  Skeleton,
+  SwitchField,
+} from '@/shared/components';
 import type { FacilityListState } from '../listState';
 
 interface FacilityFiltersProps {
@@ -17,11 +19,11 @@ interface FacilityFiltersProps {
 export function FacilityFilters({ options, state, onChange }: FacilityFiltersProps) {
   if (!options) {
     return (
-      <Stack spacing={1} sx={{ p: 2 }} aria-hidden>
+      <div className="flex flex-col gap-3 py-3" aria-hidden>
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} variant="text" />
+          <Skeleton key={index} className="h-5" />
         ))}
-      </Stack>
+      </div>
     );
   }
 
@@ -67,14 +69,10 @@ export function FacilityFilters({ options, state, onChange }: FacilityFiltersPro
         />
       </FilterSection>
       <FilterSection title="Status">
-        <FormControlLabel
-          control={
-            <Switch
-              checked={state.status === 'all'}
-              onChange={(event) => onChange({ status: event.target.checked ? 'all' : 'active' })}
-            />
-          }
+        <SwitchField
           label="Include unavailable facilities"
+          checked={state.status === 'all'}
+          onChange={(checked) => onChange({ status: checked ? 'all' : 'active' })}
         />
       </FilterSection>
     </div>

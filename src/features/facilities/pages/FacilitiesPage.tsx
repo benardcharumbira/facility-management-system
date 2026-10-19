@@ -1,12 +1,9 @@
-import ViewListIcon from '@mui/icons-material/ViewList';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
+import { LayoutGrid, List } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { FACILITY_SORTS, type FacilitySort } from '@/shared/api';
 import {
   ActiveFilterChips,
+  Button,
   EmptyState,
   ErrorState,
   FilterButton,
@@ -19,7 +16,6 @@ import {
   SkeletonGrid,
   SortSelect,
   ViewToggle,
-  type GridColumns,
   type SortOption,
   type ViewOption,
 } from '@/shared/components';
@@ -51,16 +47,10 @@ const SORT_OPTIONS: SortOption<FacilitySort>[] = FACILITY_SORTS.map((value) => (
 }));
 
 const VIEW_OPTIONS: ViewOption<ViewMode>[] = [
-  { value: 'grid', label: 'Card view', icon: <ViewModuleIcon /> },
-  { value: 'list', label: 'List view', icon: <ViewListIcon /> },
+  { value: 'grid', label: 'Card view', icon: <LayoutGrid aria-hidden className="size-5" /> },
+  { value: 'list', label: 'List view', icon: <List aria-hidden className="size-5" /> },
 ];
 
-/**
- * The shell's navigation and the filter sidebar both take width at `lg`, so four card
- * columns only fit from `xl`. See shared/components/README.md.
- */
-const CARD_COLUMNS: GridColumns = { xs: 1, sm: 2, md: 3, lg: 3, xl: 4 };
-const ROW_COLUMNS: GridColumns = { xs: 1 };
 const SKELETON_COUNT = 8;
 
 const isViewMode = (value: string): value is ViewMode => VIEW_MODES.some((mode) => mode === value);
@@ -83,8 +73,6 @@ export default function FacilitiesPage() {
     ? `${data.totalItems} ${data.totalItems === 1 ? 'facility' : 'facilities'}`
     : undefined;
 
-  const columns = view === 'list' ? ROW_COLUMNS : CARD_COLUMNS;
-
   const goToPage = (page: number) => {
     update({ page });
     document.getElementById('facility-results')?.scrollIntoView?.({ block: 'start' });
@@ -102,18 +90,9 @@ export default function FacilitiesPage() {
     }
     if (!data) {
       return view === 'list' ? (
-        <SkeletonGrid
-          count={SKELETON_COUNT}
-          columns={ROW_COLUMNS}
-          layout="row"
-          rows={[...FACILITY_ROW_ROWS]}
-        />
+        <SkeletonGrid count={SKELETON_COUNT} layout="row" rows={[...FACILITY_ROW_ROWS]} />
       ) : (
-        <SkeletonGrid
-          count={SKELETON_COUNT}
-          columns={CARD_COLUMNS}
-          rows={[...FACILITY_CARD_ROWS]}
-        />
+        <SkeletonGrid count={SKELETON_COUNT} rows={[...FACILITY_CARD_ROWS]} />
       );
     }
     if (data.items.length === 0) {
@@ -131,16 +110,24 @@ export default function FacilitiesPage() {
           title="No facilities match your search"
           description="Try removing a filter or searching for something different."
           action={
-            <Stack direction="row" spacing={1}>
-              {activeFilters.length > 0 && <Button onClick={clearFilters}>Clear filters</Button>}
-              {searching && <Button onClick={() => update({ q: '' })}>Clear search</Button>}
-            </Stack>
+            <div className="flex gap-2">
+              {activeFilters.length > 0 && (
+                <Button variant="secondary" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
+              {searching && (
+                <Button variant="secondary" onClick={() => update({ q: '' })}>
+                  Clear search
+                </Button>
+              )}
+            </div>
           }
         />
       );
     }
     return (
-      <ResultsGrid columns={columns} label="Facilities">
+      <ResultsGrid layout={view === 'list' ? 'rows' : 'cards'} label="Facilities">
         {data.items.map((facility) =>
           view === 'list' ? (
             <FacilityListItem key={facility.id} facility={facility} />
@@ -158,7 +145,7 @@ export default function FacilitiesPage() {
       description="Find a venue, field, court or meeting room for your booking."
       meta={countLabel}
     >
-      <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+      <div className="flex items-start gap-8">
         <FilterPanel
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
@@ -169,7 +156,7 @@ export default function FacilitiesPage() {
           <FacilityFilters options={options.data} state={state} onChange={update} />
         </FilterPanel>
 
-        <Stack spacing={2} sx={{ flexGrow: 1, minWidth: 0 }}>
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
           <SearchField
             label="Search facilities"
             placeholder="Name, code, description or locality"
@@ -204,21 +191,19 @@ export default function FacilitiesPage() {
             }
           />
           <ActiveFilterChips filters={activeFilters} onClearAll={clearFilters} />
-          <Box
-            component="section"
+          <section
             id="facility-results"
             aria-label="Facility results"
             aria-busy={facilities.isFetching}
-            sx={{
-              opacity: facilities.isPlaceholderData ? 0.6 : 1,
-              transition: (theme) => theme.transitions.create('opacity'),
-            }}
+            className={
+              facilities.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'
+            }
           >
             {renderResults()}
-          </Box>
+          </section>
           {data && <Pagination envelope={data} onChange={goToPage} />}
-        </Stack>
-      </Box>
+        </div>
+      </div>
     </PageLayout>
   );
 }

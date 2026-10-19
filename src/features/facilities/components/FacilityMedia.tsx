@@ -1,12 +1,12 @@
-import Box from '@mui/material/Box';
 import { useState } from 'react';
 import type { FacilityImage, FacilitySummary } from '@/shared/api';
+import { cn } from '@/shared/utils/cn';
 import { FacilityTypeIcon } from './facilityTypeIcon';
 
 interface FacilityMediaProps {
   facility: FacilitySummary;
-  /** Fixed ratio so images loading in does not move the layout. */
-  aspectRatio: string;
+  /** Sets the aspect ratio (e.g. `aspect-video`) so images loading in do not move the layout. */
+  className: string;
   /** Show this image instead of the facility's primary one. */
   image?: FacilityImage;
   eager?: boolean;
@@ -17,7 +17,7 @@ interface FacilityMediaProps {
 /** The facility photo, or a type based fallback when there is none or it fails to load. */
 export function FacilityMedia({
   facility,
-  aspectRatio,
+  className,
   image,
   eager = false,
   decorative = false,
@@ -27,32 +27,25 @@ export function FacilityMedia({
   const showImage = url !== null && url !== failedUrl;
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        aspectRatio,
-        bgcolor: 'action.hover',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        color: 'text.secondary',
-        filter: facility.status === 'unavailable' ? 'grayscale(1)' : undefined,
-      }}
+    <div
+      className={cn(
+        'flex w-full items-center justify-center overflow-hidden bg-sunken text-subtle',
+        facility.status === 'unavailable' && 'grayscale',
+        className,
+      )}
     >
       {showImage ? (
-        <Box
-          component="img"
+        <img
           src={url}
           alt={decorative ? '' : (image?.alt ?? `Photo of ${facility.name}`)}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
           onError={() => setFailedUrl(url)}
-          sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          className="block size-full object-cover"
         />
       ) : (
-        <FacilityTypeIcon typeId={facility.type.id} fontSize="large" />
+        <FacilityTypeIcon typeId={facility.type.id} className="size-10" strokeWidth={1.5} />
       )}
-    </Box>
+    </div>
   );
 }
