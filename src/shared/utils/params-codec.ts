@@ -81,9 +81,9 @@ export const param = {
   }),
 
   /** Repeated parameter (`a=1&a=2`). Order is preserved; duplicates are dropped. */
-  stringList: (): ParamField<string[]> => ({
+  stringList: <T extends string = string>(): ParamField<T[]> => ({
     default: [],
-    parse: (values) => [...new Set(values.filter((value) => value !== ''))],
+    parse: (values) => [...new Set(values.filter((value) => value !== ''))] as T[],
     serialise: (value) => value,
   }),
 

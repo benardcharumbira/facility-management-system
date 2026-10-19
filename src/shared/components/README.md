@@ -54,6 +54,39 @@ Styling uses only the semantic tokens in `src/app/theme/theme.css`. Radix UI sup
 | `DetailSkeleton`  | `sections?`. Built on `DetailLayout`, so it matches the loaded page.                                  |
 | `NotFoundState`   | `title`, `description?`, `action: {label, to, state?}`                                                |
 
+## Added for My bookings and booking detail
+
+| Component                  | Props                                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `StatusBadge`              | `label`, `icon`, `pattern`, `className`, `size?`. Pattern, icon and words together.                                                                         |
+| `ActivityLog`              | `entries: {key,title,when,dateTime?,actor?,detail?,icon?}[]`, `label`. A history.                                                                           |
+| `ConfirmDialog`            | `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `cancelLabel?`, `destructive?`, children, `onConfirm` (async; failure stays in the dialog). |
+| `DateRangeFilter`          | `label`, `value: {from,to}`, `onChange`. Two native date inputs.                                                                                            |
+| `ResultsSection`           | `title`, `count?`, children. A titled group within one list.                                                                                                |
+| `ScreenOnly` / `PrintOnly` | children. `print:hidden` and `hidden print:block` wrappers.                                                                                                 |
+
+**How well did the slice 2 list primitives generalise?** Well. My bookings reuses, unchanged,
+`PageLayout`/`PageHeader`, `SearchField`, `FilterPanel`, `FilterButton`, `FilterSection`,
+`CheckboxGroupFilter`, `ActiveFilterChips`, `ResultsToolbar`, `SortSelect`, `ResultsGrid`
+(`rows`), `Pagination`, `EmptyState`, `SkeletonGrid`, `ErrorState` and `useUrlState` with its
+codec. Nothing was forked into `features/bookings`. What did not fit, and was added to
+`shared/components` rather than worked around: a titled group inside one list
+(`ResultsSection`), and a date range filter (`DateRangeFilter`).
+
+**Count for this slice: 6 primitives added** (`StatusBadge`, `ActivityLog`, `ConfirmDialog`,
+`DateRangeFilter`, `ResultsSection`, and the `ScreenOnly`/`PrintOnly` pair) and **4 existing pieces
+changed**: `params-codec`'s `stringList` became generic over its element type; `useOriginList`
+moved from the facilities feature to `shared/hooks` because bookings needed it too; the API client
+gained `download`; and the shell, snackbar and breadcrumbs gained `print:hidden`. Of the six, only
+`DateRangeFilter` and `ResultsSection` are list primitives; the others serve the record screen.
+That is a small number, but not a trivial one: a record screen with history, a status and print
+still wanted a status mark, a log and a dialog with fields that the earlier slices lacked.
+
+**Still open, unchanged from earlier slices:** two disclosure primitives, two sheet primitives,
+three skeleton patterns, and field errors styled apart from `Alert`. `ConfirmDialog` now sits
+beside the older `useConfirm` hook; the hook is simpler (no fields, no failure state) and
+nothing in the app uses it yet, so consider retiring it.
+
 ## Form primitives (`form/`)
 
 | Component           | Props                                                                                                                                              |

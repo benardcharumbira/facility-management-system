@@ -36,7 +36,7 @@ export function AppShell() {
         trailing={<UserMenu user={user} onSignOut={() => void signOut()} />}
       />
 
-      <aside className="fixed top-16 bottom-0 left-0 hidden w-60 overflow-y-auto border-r border-line bg-surface lg:block">
+      <aside className="fixed top-16 bottom-0 left-0 hidden w-60 overflow-y-auto border-r border-line bg-surface lg:block print:hidden">
         <NavList role={user.role} />
       </aside>
 
@@ -60,10 +60,12 @@ export function AppShell() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <main className="min-w-0 pt-16 lg:pl-60">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-w-0 pt-16 lg:pl-60 print:pt-0 print:pl-0">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
           <PageHeaderProvider>
-            <ShellBreadcrumbs />
+            <div className="print:hidden">
+              <ShellBreadcrumbs />
+            </div>
             <ErrorBoundary>
               <Suspense fallback={<LoadingState />}>
                 <Outlet />

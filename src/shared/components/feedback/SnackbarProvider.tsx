@@ -53,7 +53,7 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
       {/* Always mounted so a newly inserted message is announced. */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 print:hidden"
       >
         {current && (
           <div
