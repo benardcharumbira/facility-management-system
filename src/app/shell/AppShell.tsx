@@ -9,7 +9,12 @@ import Typography from '@mui/material/Typography';
 import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router';
 import { useCurrentUser } from '@/shared/auth';
-import { ErrorBoundary, LoadingState, PageHeader, PageHeaderProvider } from '@/shared/components';
+import {
+  ErrorBoundary,
+  LoadingState,
+  ShellBreadcrumbs,
+  PageHeaderProvider,
+} from '@/shared/components';
 import { NavList } from './NavList';
 import { UserMenu } from './UserMenu';
 
@@ -75,7 +80,7 @@ export function AppShell() {
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: { xs: 2, md: 3 } }}>
         <Toolbar />
         <PageHeaderProvider>
-          <PageHeader />
+          <ShellBreadcrumbs />
           <ErrorBoundary>
             <Suspense fallback={<LoadingState />}>
               <Outlet />

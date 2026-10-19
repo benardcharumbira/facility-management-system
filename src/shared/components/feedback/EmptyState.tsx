@@ -5,12 +5,15 @@ import type { ReactNode } from 'react';
 interface EmptyStateProps {
   title: string;
   description?: string;
+  /** Illustrative icon, decorative only. */
+  icon?: ReactNode;
   action?: ReactNode;
 }
 
-export function EmptyState({ title, description, action }: EmptyStateProps) {
+export function EmptyState({ title, description, icon, action }: EmptyStateProps) {
   return (
     <Stack spacing={1} sx={{ alignItems: 'center', textAlign: 'center', p: 4 }}>
+      {icon}
       <Typography variant="h6" component="p">
         {title}
       </Typography>
