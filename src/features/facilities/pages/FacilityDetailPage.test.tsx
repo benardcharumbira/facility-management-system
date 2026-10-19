@@ -74,10 +74,9 @@ describe('a standalone venue', () => {
     expect(screen.queryByText(/Part of/)).not.toBeInTheDocument();
     expect(screen.queryByText(/separately bookable/)).not.toBeInTheDocument();
 
-    // Availability is reserved and honest: no calendar, nothing implying free time.
+    // The availability calendar fills the section reserved for it.
     const availability = section('Availability');
-    expect(within(availability).getByText('Availability is coming soon')).toBeVisible();
-    expect(within(availability).queryByRole('grid')).not.toBeInTheDocument();
+    expect(await within(availability).findByRole('grid', { name: 'November 2026' })).toBeVisible();
     expect(within(section('Opening hours')).getByText('Monday to Sunday')).toBeVisible();
 
     // No photographs for these buildings: the placeholder stands in.

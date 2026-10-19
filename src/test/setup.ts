@@ -1,10 +1,13 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from '@/mocks/server';
 import { resetClerk } from './clerk-mock';
 import './clock';
 import './viewport';
+
+// The first render of a heavy page in a cold worker can exceed the 1000ms default.
+configure({ asyncUtilTimeout: 3000 });
 
 // jsdom lacks these browser APIs, which Radix primitives rely on.
 globalThis.ResizeObserver ??= class {

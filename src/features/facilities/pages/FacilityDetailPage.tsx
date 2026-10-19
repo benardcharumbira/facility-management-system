@@ -13,7 +13,7 @@ import {
   STICKY_ACTION_CLEARANCE,
   usePageHeader,
 } from '@/shared/components';
-import { AvailabilityPlaceholder } from '../components/AvailabilityPlaceholder';
+import { FacilityAvailability } from '../availability/FacilityAvailability';
 import { FacilityBookingAction } from '../components/FacilityBookingAction';
 import { FacilityKeyFacts } from '../components/FacilityKeyFacts';
 import {
@@ -172,7 +172,7 @@ function Loaded({ facility, fromList }: { facility: FacilityDetail; fromList: st
         <FacilityResources resources={facility.resources} />
         <FacilityChildSpaces facility={facility} fromList={fromList} />
         <FacilityParentContext facility={facility} fromList={fromList} />
-        <AvailabilityPlaceholder />
+        <FacilityAvailability facility={facility} fromList={fromList} />
         <OpeningHours schedule={facility.operatingSchedule} />
       </DetailLayout>
     </div>
