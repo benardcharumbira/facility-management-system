@@ -9,8 +9,14 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
-import type { AvailabilityDay, AvailabilitySegment, FacilityAvailability } from '@/shared/api';
+import type { AvailabilityDay } from '@/shared/api';
 import type { Pattern } from '@/shared/components';
+import {
+  earliestStart,
+  operatingWindow,
+  segmentPhrase,
+  type Rules,
+} from '@/shared/utils/availability';
 import { formatLongDate } from '@/shared/utils/calendar';
 
 /**
@@ -81,38 +87,6 @@ export const REASONS: Record<Reason, ReasonInfo> = {
   },
 };
 
-export type Rules = Pick<
-  FacilityAvailability,
-  'timeZone' | 'minimumNoticeHours' | 'maximumHorizonDays' | 'minimumDurationMinutes'
->;
-
-export function rulesOf(availability: FacilityAvailability): Rules {
-  return {
-    timeZone: availability.timeZone,
-    minimumNoticeHours: availability.minimumNoticeHours,
-    maximumHorizonDays: availability.maximumHorizonDays,
-    minimumDurationMinutes: availability.minimumDurationMinutes,
-  };
-}
-
-/** The earliest instant a booking may start. */
-export function earliestStart(rules: Rules, now: DateTime): DateTime {
-  return now.setZone(rules.timeZone).plus({ hours: rules.minimumNoticeHours });
-}
-
-export function clockOn(date: string, time: string, zone: string): DateTime {
-  const [hours = 0, minutes = 0] = time.split(':').map(Number);
-  return DateTime.fromISO(date, { zone }).set({ hour: hours, minute: minutes });
-}
-
-export function operatingWindow(day: AvailabilityDay, zone: string) {
-  if (day.opensAt === null || day.closesAt === null) return null;
-  return {
-    start: clockOn(day.date, day.opensAt, zone),
-    end: clockOn(day.date, day.closesAt, zone),
-  };
-}
-
 /**
  * Whether a day can be chosen at all. `past` and `beyond_horizon` days are not selectable.
  * Everything else can be opened, even when nothing on it is free, so its reasons can be read.
@@ -132,20 +106,6 @@ export function dayAccess(
     .plus({ days: rules.maximumHorizonDays });
   if (start > horizonEnd) return { selectable: false, reason: 'beyond_horizon' };
   return { selectable: true, reason: null };
-}
-
-/** Why a segment is unavailable, in a short phrase. */
-export function segmentPhrase(segment: AvailabilitySegment): string {
-  switch (segment.status) {
-    case 'booked':
-      return 'booked';
-    case 'held':
-      return 'held pending a request';
-    case 'buffer':
-      return 'set-up or clear-down time';
-    case 'blocked_by_related':
-      return `${segment.relatedFacility?.name ?? 'A related space'} is booked`;
-  }
 }
 
 /** The reasons present on a day, once each, in a stable order. */
@@ -204,3 +164,12 @@ export function dayName({
     .filter(Boolean)
     .join(', ');
 }
+
+export {
+  clockOn,
+  earliestStart,
+  operatingWindow,
+  rulesOf,
+  segmentPhrase,
+} from '@/shared/utils/availability';
+export type { Rules } from '@/shared/utils/availability';

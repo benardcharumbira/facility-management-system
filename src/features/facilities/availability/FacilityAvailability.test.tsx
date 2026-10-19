@@ -341,7 +341,7 @@ describe('selection', () => {
     );
     const panel = await dialog();
     expect(within(panel).getByText('This selection cannot be used')).toBeVisible();
-    expect(within(panel).getByText(/overlap time that is unavailable/)).toBeVisible();
+    expect(within(panel).getByText(/overlaps time that is unavailable/)).toBeVisible();
   });
 });
 

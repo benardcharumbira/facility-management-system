@@ -9,6 +9,7 @@ import {
   type TimelineEntry,
   type UnavailableRange,
 } from '@/shared/components';
+import { windowProblem } from '@/shared/utils/availability';
 import { formatClock, formatLongDate } from '@/shared/utils/calendar';
 import { facilityPath } from '../paths';
 import {
@@ -62,25 +63,7 @@ export function selectionProblem(
   availability: FacilityAvailability,
   now: DateTime,
 ): string | null {
-  const rules = rulesOf(availability);
-  const window = operatingWindow(day, rules.timeZone);
-  if (!window)
-    return `${formatLongDate(DateTime.fromISO(day.date, { zone: rules.timeZone }))} is closed.`;
-  const start = selection.start.setZone(rules.timeZone);
-  const end = selection.end.setZone(rules.timeZone);
-  if (start < window.start || end > window.end) {
-    return `The venue is open ${formatClock(window.start)} to ${formatClock(window.end)}, and your times fall outside that.`;
-  }
-  if (end.diff(start, 'minutes').minutes < rules.minimumDurationMinutes) {
-    return `Bookings must be at least ${rules.minimumDurationMinutes} minutes.`;
-  }
-  if (start < earliestStart(rules, now)) {
-    return `Bookings need ${rules.minimumNoticeHours} hours notice, and your start is sooner than that.`;
-  }
-  const clash = day.segments.find(
-    (s) => start.toMillis() < Date.parse(s.endsAt) && end.toMillis() > Date.parse(s.startsAt),
-  );
-  return clash ? `Your times overlap time that is unavailable: ${segmentPhrase(clash)}.` : null;
+  return windowProblem(selection, day, rulesOf(availability), now)?.message ?? null;
 }
 
 interface DayPanelProps {

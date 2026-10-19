@@ -32,6 +32,17 @@ export interface ApiClient {
   post<T>(path: string, options?: RequestOptions): Promise<T>;
   put<T>(path: string, options?: RequestOptions): Promise<T>;
   patch<T>(path: string, options?: RequestOptions): Promise<T>;
+  /**
+   * Multipart upload with progress. Uses XMLHttpRequest, because fetch cannot report upload
+   * progress, but still goes through this client: same base URL, token and problem handling.
+   */
+  upload<T>(path: string, body: FormData, options?: UploadOptions): Promise<T>;
+}
+
+export interface UploadOptions {
+  /** Called with a fraction from 0 to 1 as the body is sent. */
+  onProgress?: (fraction: number) => void;
+  signal?: AbortSignal;
 }
 
 export function createApiClient({
@@ -78,7 +89,55 @@ export function createApiClient({
     }
   }
 
+  async function upload<T>(path: string, body: FormData, options: UploadOptions = {}): Promise<T> {
+    try {
+      const token = await getToken();
+      return await new Promise<T>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', buildUrl(root, path));
+        xhr.setRequestHeader('Accept', 'application/json');
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) options.onProgress?.(event.loaded / event.total);
+        };
+        xhr.onerror = () => reject(new TypeError('Network request failed'));
+        xhr.onabort = () => reject(new DOMException('Aborted', 'AbortError'));
+        xhr.onload = () => {
+          const response = new Response(xhr.status === 204 ? null : xhr.responseText, {
+            status: xhr.status,
+            headers: {
+              'Content-Type': xhr.getResponseHeader('Content-Type') ?? 'application/json',
+            },
+          });
+          if (xhr.status >= 200 && xhr.status < 300) {
+            options.onProgress?.(1);
+            response.json().then(
+              (value) => resolve(value as T),
+              (cause) =>
+                reject(
+                  new ApiProblem({
+                    kind: 'unexpected',
+                    status: xhr.status,
+                    title: 'The server returned an invalid response',
+                    cause,
+                  }),
+                ),
+            );
+          } else {
+            ApiProblem.fromResponse(response).then(reject, reject);
+          }
+        };
+        options.signal?.addEventListener('abort', () => xhr.abort());
+        xhr.send(body);
+      });
+    } catch (error) {
+      throw ApiProblem.from(error);
+    }
+  }
+
   return {
+    upload,
     get: (path, options) => request('GET', path, options),
     delete: (path, options) => request('DELETE', path, options),
     post: (path, options) => request('POST', path, options),

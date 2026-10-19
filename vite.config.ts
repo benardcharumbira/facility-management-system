@@ -23,6 +23,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Same origin as the mocked API, so jsdom's XMLHttpRequest (used for uploads, which need
+    // progress events) does not trigger CORS preflights that no handler answers.
+    environmentOptions: { jsdom: { url: 'http://localhost:5000/' } },
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     env: {
