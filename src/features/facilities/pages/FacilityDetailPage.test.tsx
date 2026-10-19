@@ -301,12 +301,12 @@ describe('resources', () => {
 
     const toggle = within(resources).getByRole('button', { name: 'Kitchen equipment, 14 items' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('Hot water urns')).not.toBeInTheDocument();
+    expect(screen.queryByText('Urn')).not.toBeInTheDocument();
 
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(within(resources).getByRole('list', { name: 'Kitchen equipment' })).toBeVisible();
-    expect(within(resources).getByText('Hot water urns')).toBeVisible();
+    expect(within(resources).getByText('Urn')).toBeVisible();
   });
 
   it('omits the kitchen disclosure when a venue has no kitchen', async () => {

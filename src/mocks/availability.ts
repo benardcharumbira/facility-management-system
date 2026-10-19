@@ -19,6 +19,7 @@ import {
   buildLedger,
   publicHolidayOn,
   type Ledger,
+  type LedgerBooking,
 } from './data/bookingLedger';
 import { scheduleFor } from './data/facilityDetail';
 
@@ -256,13 +257,21 @@ export interface AvailabilityHandlerOptions {
   delayMs: number;
   catalogue: () => readonly FacilitySummary[];
   fail?: () => boolean;
+  /** Requests that already hold time, from the booking store. */
+  extraBookings?: () => LedgerBooking[];
   /** The current instant. Injectable so tests can pin the calendar. */
   now?: () => DateTime;
 }
 
 export function createAvailabilityHandlers(
   root: string,
-  { delayMs, catalogue, fail, now = () => DateTime.now() }: AvailabilityHandlerOptions,
+  {
+    delayMs,
+    catalogue,
+    fail,
+    extraBookings,
+    now = () => DateTime.now(),
+  }: AvailabilityHandlerOptions,
 ) {
   let startedAt: DateTime | undefined;
 
@@ -301,6 +310,7 @@ export function createAvailabilityHandlers(
       }
 
       const ledger = buildLedger({ now: current, startedAt, catalogue: catalogue() });
+      ledger.bookings.push(...(extraBookings?.() ?? []));
       return HttpResponse.json(
         computeAvailability({ facility, catalogue: catalogue(), ledger, from, to, now: current }),
       );

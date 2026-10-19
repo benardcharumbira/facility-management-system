@@ -30,21 +30,25 @@ export const DETAIL_PROVISIONAL_FIELDS = [
 const ROOM_TYPES = new Set(['committee-room', 'board-room', 'council-chamber']);
 const HALL_TYPES = new Set(['hall', 'civic-hall', 'hall-wing']);
 
-const KITCHEN_ITEMS: Array<{ id: string; name: string; perSeat: boolean; fixed: number }> = [
-  { id: 'urns', name: 'Hot water urns', perSeat: false, fixed: 2 },
+/**
+ * The fourteen kitchen resources named in BRD section 8.4. The names are confirmed; the quantities
+ * are provisional.
+ */
+export const KITCHEN_ITEMS: Array<{ id: string; name: string; perSeat: boolean; fixed: number }> = [
   { id: 'cups', name: 'Cups', perSeat: true, fixed: 0 },
-  { id: 'saucers', name: 'Saucers', perSeat: true, fixed: 0 },
+  { id: 'teaspoons', name: 'Teaspoons', perSeat: true, fixed: 0 },
+  { id: 'sugar-bowls', name: 'Sugar bowls', perSeat: false, fixed: 12 },
+  { id: 'glasses', name: 'Glasses', perSeat: true, fixed: 0 },
+  { id: 'jugs', name: 'Jugs', perSeat: false, fixed: 12 },
+  { id: 'milk-jugs', name: 'Milk jugs', perSeat: false, fixed: 12 },
+  { id: 'water-jars', name: 'Water jars', perSeat: false, fixed: 8 },
+  { id: 'dining-forks', name: 'Dining forks', perSeat: true, fixed: 0 },
+  { id: 'urn', name: 'Urn', perSeat: false, fixed: 2 },
   { id: 'side-plates', name: 'Side plates', perSeat: true, fixed: 0 },
   { id: 'dinner-plates', name: 'Dinner plates', perSeat: true, fixed: 0 },
-  { id: 'teaspoons', name: 'Teaspoons', perSeat: true, fixed: 0 },
-  { id: 'dessert-spoons', name: 'Dessert spoons', perSeat: true, fixed: 0 },
-  { id: 'forks', name: 'Forks', perSeat: true, fixed: 0 },
   { id: 'knives', name: 'Knives', perSeat: true, fixed: 0 },
-  { id: 'serving-spoons', name: 'Serving spoons', perSeat: false, fixed: 12 },
-  { id: 'serving-dishes', name: 'Serving dishes', perSeat: false, fixed: 12 },
-  { id: 'pots', name: 'Cooking pots', perSeat: false, fixed: 6 },
-  { id: 'trays', name: 'Serving trays', perSeat: false, fixed: 6 },
-  { id: 'tea-towels', name: 'Tea towels', perSeat: false, fixed: 10 },
+  { id: 'forks', name: 'Forks', perSeat: true, fixed: 0 },
+  { id: 'bowls', name: 'Bowls', perSeat: false, fixed: 20 },
 ];
 
 function arrangements(facility: FacilitySummary): CapacityByArrangement[] | null {

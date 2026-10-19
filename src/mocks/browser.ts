@@ -9,7 +9,7 @@ const DEV_LATENCY_MS = 600;
 /** `?mock=empty` or `?mock=error` on any page URL forces that API behaviour during review. */
 function scenarioFromUrl(): MockScenario {
   const value = new URLSearchParams(window.location.search).get('mock');
-  return value === 'empty' || value === 'error' ? value : undefined;
+  return value === 'empty' || value === 'error' || value === 'conflict' ? value : undefined;
 }
 
 export const worker = setupWorker(

@@ -14,6 +14,8 @@ import {
 import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
 import { createAvailabilityHandlers } from './availability';
+import { createBookingHandlers } from './bookings';
+import { bookingStore } from './data/bookingStore';
 import { deriveDetail } from './data/facilityDetail';
 import { slugify } from './data/slug';
 
@@ -171,7 +173,7 @@ function problem(status: number, title: string, detail?: string) {
   );
 }
 
-export type MockScenario = 'empty' | 'error' | undefined;
+export type MockScenario = 'empty' | 'error' | 'conflict' | undefined;
 export type MockDatasetName = 'real' | 'volume';
 
 export const DATASETS: Record<MockDatasetName, readonly FacilitySummary[]> = {
@@ -205,6 +207,14 @@ export function createFacilityHandlers(
       catalogue,
       fail: () => getScenario?.() === 'error',
       now,
+      extraBookings: () => bookingStore.holds(),
+    }),
+    ...createBookingHandlers(root, {
+      delayMs,
+      catalogue,
+      now,
+      forceConflict: () => getScenario?.() === 'conflict',
+      fail: () => getScenario?.() === 'error',
     }),
 
     http.get(`${root}/facilities/filter-options`, async () => {

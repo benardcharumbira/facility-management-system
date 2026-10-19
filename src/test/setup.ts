@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { resetBookingStore } from '@/mocks/data/bookingStore';
 import { server } from '@/mocks/server';
 import { resetClerk } from './clerk-mock';
 import './clock';
@@ -27,5 +28,6 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   resetClerk();
+  resetBookingStore();
 });
 afterAll(() => server.close());
