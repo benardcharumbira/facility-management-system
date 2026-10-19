@@ -32,7 +32,13 @@ export function createQueryClient({ onError }: QueryClientOptions = {}): QueryCl
         if (query.state.data !== undefined) onError?.(error);
       },
     }),
-    mutationCache: new MutationCache({ onError: (error) => onError?.(error) }),
+    mutationCache: new MutationCache({
+      onError: (error, _variables, _context, mutation) => {
+        // A mutation whose caller presents its own failure (e.g. a form) sets `meta: { silent: true }`.
+        if (mutation.meta?.silent) return;
+        onError?.(error);
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: STALE_TIME_MS,
