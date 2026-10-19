@@ -4,6 +4,8 @@ export interface Crumb {
   label: string;
   /** Omit for the current page. */
   to?: string;
+  /** Router state to carry along the link. */
+  state?: unknown;
 }
 
 export interface PageHeaderValue {
