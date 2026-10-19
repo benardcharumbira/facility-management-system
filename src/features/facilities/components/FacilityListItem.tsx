@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack';
 import type { Theme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { useId } from 'react';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useLocation } from 'react-router';
 import type { FacilitySummary } from '@/shared/api';
 import { VisuallyHidden } from '@/shared/components';
 import { facilityPath } from '../paths';
@@ -23,6 +23,7 @@ const MAX_AMENITIES_SHOWN = 3;
 
 /** Compact, single link row for scanning many facilities. */
 export function FacilityListItem({ facility }: { facility: FacilitySummary }) {
+  const location = useLocation();
   const titleId = useId();
   const detailsId = useId();
   const unavailable = facility.status === 'unavailable';
@@ -36,6 +37,7 @@ export function FacilityListItem({ facility }: { facility: FacilitySummary }) {
       <CardActionArea
         component={RouterLink}
         to={facilityPath(facility.id)}
+        state={{ fromList: location.search }}
         aria-labelledby={titleId}
         aria-describedby={detailsId}
         sx={{

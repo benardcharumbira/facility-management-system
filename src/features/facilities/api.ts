@@ -1,9 +1,9 @@
 import type {
   ApiClient,
+  FacilityDetail,
   FacilityFilterOptions,
   FacilityListParams,
   FacilityListResponse,
-  FacilitySummary,
 } from '@/shared/api';
 import { createQueryKeys } from '@/shared/api';
 
@@ -32,6 +32,6 @@ export function fetchFacility(
   api: ApiClient,
   id: string,
   signal?: AbortSignal,
-): Promise<FacilitySummary> {
-  return api.get<FacilitySummary>(`/facilities/${encodeURIComponent(id)}`, { signal });
+): Promise<FacilityDetail> {
+  return api.get<FacilityDetail>(`/facilities/${encodeURIComponent(id)}`, { signal });
 }

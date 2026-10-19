@@ -1,18 +1,29 @@
 import Box from '@mui/material/Box';
 import { useState } from 'react';
-import type { FacilitySummary } from '@/shared/api';
+import type { FacilityImage, FacilitySummary } from '@/shared/api';
 import { FacilityTypeIcon } from './facilityTypeIcon';
 
 interface FacilityMediaProps {
   facility: FacilitySummary;
   /** Fixed ratio so images loading in does not move the layout. */
   aspectRatio: string;
+  /** Show this image instead of the facility's primary one. */
+  image?: FacilityImage;
+  eager?: boolean;
+  /** For images inside a control that already has a label. */
+  decorative?: boolean;
 }
 
 /** The facility photo, or a type based fallback when there is none or it fails to load. */
-export function FacilityMedia({ facility, aspectRatio }: FacilityMediaProps) {
+export function FacilityMedia({
+  facility,
+  aspectRatio,
+  image,
+  eager = false,
+  decorative = false,
+}: FacilityMediaProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = facility.primaryImageUrl;
+  const url = image?.url ?? facility.primaryImageUrl;
   const showImage = url !== null && url !== failedUrl;
 
   return (
@@ -33,8 +44,8 @@ export function FacilityMedia({ facility, aspectRatio }: FacilityMediaProps) {
         <Box
           component="img"
           src={url}
-          alt={`Photo of ${facility.name}`}
-          loading="lazy"
+          alt={decorative ? '' : (image?.alt ?? `Photo of ${facility.name}`)}
+          loading={eager ? 'eager' : 'lazy'}
           decoding="async"
           onError={() => setFailedUrl(url)}
           sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
