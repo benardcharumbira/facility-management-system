@@ -1,4 +1,4 @@
-import { ROLES, type Role } from '@/shared/auth';
+import { BOOKING_ROLES, ROLES, type Role } from '@/shared/auth';
 
 export const PATHS = {
   signIn: '/sign-in',
@@ -16,7 +16,7 @@ export const PATHS = {
 
 /** Who may use each segment of the route tree. Used by both the router and the navigation. */
 export const ACCESS = {
-  bookers: [ROLES.applicant, ROLES.internal],
+  bookers: BOOKING_ROLES,
   facilityAdmins: [ROLES.facilityAdmin],
   systemAdmins: [ROLES.systemAdmin],
 } as const satisfies Record<string, readonly Role[]>;

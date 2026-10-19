@@ -108,20 +108,57 @@ export interface FacilityFilterOptions {
 
 export interface FacilityImage {
   url: string;
-  /** Meaningful alternative text, written by the facility administrator. */
-  alt: string;
+  caption: string | null;
+}
+
+export interface CapacityByArrangement {
+  /** For example cinema, school room, banquet, u-shape. Matches the booking form's choices. */
+  arrangement: string;
+  capacity: number;
+}
+
+export interface FacilityResource {
+  id: string;
+  name: string;
+  /** `kitchen` items are itemised and long; the UI collapses them. */
+  category: 'venue' | 'kitchen';
+  /** Null where the quantity is not known or not meaningful. */
+  quantity: number | null;
+}
+
+/** One entry per day. `opensAt` and `closesAt` are null when closed. */
+export interface OperatingDay {
+  /** 1 Monday through 7 Sunday. */
+  dayOfWeek: number;
+  /** HH:mm, 24 hour, in the facility's local time (Africa/Johannesburg). */
+  opensAt: string | null;
+  closesAt: string | null;
 }
 
 /**
- * `GET /api/facilities/{id}`. The summary plus everything needed to decide whether to book.
- * Responds 404 with problem details when the id is unknown.
+ * `GET /api/facilities/{id}`. The summary plus everything needed to decide whether this venue
+ * suits an event. Responds 404 with an RFC 7807 problem document for an unknown id.
+ *
+ * Hierarchy: `parentFacility` (from the summary) is set on a space inside a larger venue.
+ * `childFacilities` lists the separately bookable spaces inside this venue. `siblingFacilities`
+ * lists the other children of the same parent, excluding this facility, and is empty for a
+ * standalone venue. Booking a parent venue takes all of its children.
  */
 export interface FacilityDetail extends FacilitySummary {
-  /** Full description, paragraphs separated by a blank line. */
+  /** Full text, not the short form. Paragraphs are separated by a blank line. */
   description: string;
-  /** Ordered gallery. The first entry matches `primaryImageUrl`. May be empty. */
+  /** Ordered gallery. May be empty, in which case the UI shows a type based placeholder. */
   images: FacilityImage[];
-  address: string | null;
-  /** Facilities whose `parentFacility` is this one. Empty for most facilities. */
-  childFacilities: Array<Pick<FacilitySummary, 'id' | 'name' | 'type' | 'capacity' | 'status'>>;
+  /** Null when seating arrangements do not apply (fixed seating, open space). */
+  capacityByArrangement: CapacityByArrangement[] | null;
+  resources: FacilityResource[];
+  operatingSchedule: OperatingDay[];
+  childFacilities: Array<{ id: string; name: string; type: string; capacity: number | null }>;
+  siblingFacilities: Array<{ id: string; name: string; type: string }>;
+  /** The responsible municipal department. */
+  managedBy: string;
+  /** Conditions the applicant should know up front. */
+  bookingNotes: string | null;
+  /** Always present on the detail shape; empty when nothing is provisional. */
+  provisionalFields: string[];
 }
