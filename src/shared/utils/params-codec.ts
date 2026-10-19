@@ -87,6 +87,16 @@ export const param = {
     serialise: (value) => value,
   }),
 
+  /** Optional string that must match `pattern`; anything else is treated as absent. */
+  matching: (pattern: RegExp): ParamField<string | undefined> => ({
+    default: undefined,
+    parse: (values) => {
+      const raw = values[0];
+      return raw !== undefined && pattern.test(raw) ? raw : undefined;
+    },
+    serialise: (value) => (value === undefined ? [] : [value]),
+  }),
+
   /** Optional non-negative integer. */
   int: (): ParamField<number | undefined> => ({
     default: undefined,

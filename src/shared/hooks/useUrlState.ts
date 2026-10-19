@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useSearchParams } from 'react-router';
 import type { ParamsCodec } from '@/shared/utils/params-codec';
 
 export interface UrlStateOptions<T> {
@@ -28,6 +28,8 @@ export function useUrlState<T extends object>(
   { resetOnChange }: UrlStateOptions<T> = {},
 ): readonly [T, UrlStateUpdater<T>] {
   const [searchParams, setSearchParams] = useSearchParams();
+  // Router state (such as where the user came from) must survive a change to the query string.
+  const locationState: unknown = useLocation().state;
   const search = searchParams.toString();
   const state = useMemo(() => codec.parse(new URLSearchParams(search)), [codec, search]);
 
@@ -45,10 +47,10 @@ export function useUrlState<T extends object>(
           }
           return codec.apply(previous, next);
         },
-        { replace },
+        { replace, state: locationState },
       );
     },
-    [codec, resetOnChange, setSearchParams],
+    [codec, locationState, resetOnChange, setSearchParams],
   );
 
   return [state, update];

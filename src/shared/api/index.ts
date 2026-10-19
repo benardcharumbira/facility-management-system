@@ -5,3 +5,4 @@ export { ApiProblem, isApiProblem } from './problem';
 export { createQueryClient } from './query-client';
 export { createQueryKeys } from './query-keys';
 export * from './contracts/facilities';
+export * from './contracts/availability';
