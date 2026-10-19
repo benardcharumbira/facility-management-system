@@ -22,6 +22,7 @@ import {
 import { useSessionStorageState, useUrlState } from '@/shared/hooks';
 import { buildActiveFilters } from '../activeFilters';
 import { FACILITY_CARD_ROWS, FacilityCard } from '../components/FacilityCard';
+import { SampleDataBanner } from '../components/SampleDataBanner';
 import { FacilityFilters } from '../components/FacilityFilters';
 import { FACILITY_ROW_ROWS, FacilityListItem } from '../components/FacilityListItem';
 import { useFacilities, useFacilityFilterOptions } from '../hooks';
@@ -145,6 +146,7 @@ export default function FacilitiesPage() {
       description="Find a venue, field, court or meeting room for your booking."
       meta={countLabel}
     >
+      <SampleDataBanner facilities={data?.items ?? []} />
       <div className="flex items-start gap-8">
         <FilterPanel
           open={filtersOpen}

@@ -23,7 +23,7 @@ export function Alert({ severity, title, children, action, className }: AlertPro
   const Icon = icons[severity];
   return (
     <div
-      role={severity === 'error' ? 'alert' : 'status'}
+      role={severity === 'error' ? 'alert' : undefined}
       className={cn('flex items-start gap-3 rounded-lg border p-4', styles[severity], className)}
     >
       <Icon aria-hidden className="mt-0.5 size-5 shrink-0" />

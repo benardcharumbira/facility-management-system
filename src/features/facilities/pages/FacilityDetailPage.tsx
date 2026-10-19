@@ -9,6 +9,7 @@ import {
   PageLayout,
   Skeleton,
 } from '@/shared/components';
+import { SampleDataBanner } from '../components/SampleDataBanner';
 import { FacilityGallery } from '../components/FacilityGallery';
 import { useFacility } from '../hooks';
 import { facilityPath } from '../paths';
@@ -81,6 +82,7 @@ function FacilityDetailContent({ facility }: { facility: FacilityDetail }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <SampleDataBanner facilities={[facility]} />
       {facility.status === 'unavailable' && (
         <Alert severity="warning">This facility is currently unavailable for booking.</Alert>
       )}
