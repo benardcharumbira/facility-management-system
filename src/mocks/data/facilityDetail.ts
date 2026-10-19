@@ -96,10 +96,18 @@ function resources(facility: FacilitySummary): FacilityResource[] {
   return [...venue, ...kitchen];
 }
 
-function schedule(facility: FacilitySummary): OperatingDay[] {
+/** Provisional: a venue that only opens at weekends, so that case is exercised. */
+const WEEKEND_ONLY = new Set(['sicelo-hall']);
+
+/** The single source of operating hours, shared by the detail record and the availability engine. */
+export function scheduleFor(facility: FacilitySummary): OperatingDay[] {
   const office = ROOM_TYPES.has(facility.type.id);
   return Array.from({ length: 7 }, (_, index) => {
     const dayOfWeek = index + 1;
+    if (WEEKEND_ONLY.has(facility.id)) {
+      const weekend = dayOfWeek >= 6;
+      return { dayOfWeek, opensAt: weekend ? '08:00' : null, closesAt: weekend ? '22:00' : null };
+    }
     if (office) {
       const weekday = dayOfWeek <= 5;
       return {
@@ -139,7 +147,7 @@ export function deriveDetail(
     images: [],
     capacityByArrangement: arrangements(facility),
     resources: resources(facility),
-    operatingSchedule: schedule(facility),
+    operatingSchedule: scheduleFor(facility),
     childFacilities: catalogue
       .filter((f) => f.parentFacility?.id === facility.id)
       .map((f) => ({ id: f.id, name: f.name, type: f.type.name, capacity: f.capacity })),

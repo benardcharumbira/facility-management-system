@@ -1,3 +1,4 @@
+import type { DateTime } from 'luxon';
 import { HttpResponse, http, delay } from 'msw';
 import {
   FACILITY_LIST_DEFAULTS,
@@ -12,6 +13,7 @@ import {
 } from '@/shared/api';
 import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
+import { createAvailabilityHandlers } from './availability';
 import { deriveDetail } from './data/facilityDetail';
 import { slugify } from './data/slug';
 
@@ -181,6 +183,8 @@ export interface FacilityHandlerOptions {
   delayMs: number;
   /** Which fixture to serve. Defaults to the confirmed Midvaal venues. */
   dataset?: MockDatasetName;
+  /** The current instant for the availability calendar. Defaults to real time. */
+  now?: () => DateTime;
   /**
    * Lets a reviewer force a state, e.g. from the page URL in development. `empty` serves an
    * empty catalogue, `error` fails every facilities request.
@@ -190,12 +194,19 @@ export interface FacilityHandlerOptions {
 
 export function createFacilityHandlers(
   root: string,
-  { delayMs, getScenario, dataset = 'real' }: FacilityHandlerOptions,
+  { delayMs, getScenario, dataset = 'real', now }: FacilityHandlerOptions,
 ) {
   const catalogue = () => (getScenario?.() === 'empty' ? [] : DATASETS[dataset]);
   const wait = () => (delayMs > 0 ? delay(delayMs) : Promise.resolve());
 
   return [
+    ...createAvailabilityHandlers(root, {
+      delayMs,
+      catalogue,
+      fail: () => getScenario?.() === 'error',
+      now,
+    }),
+
     http.get(`${root}/facilities/filter-options`, async () => {
       await wait();
       if (getScenario?.() === 'error') return problem(500, 'Mock failure');

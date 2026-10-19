@@ -1,3 +1,4 @@
+import type { DateTime } from 'luxon';
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@/shared/auth/roles';
 import { createFacilityHandlers, type MockDatasetName, type MockScenario } from './facilities';
@@ -10,11 +11,12 @@ export interface HandlerOptions {
   getScenario?: () => MockScenario;
   /** Which facilities fixture to serve (default: the confirmed Midvaal venues). */
   dataset?: MockDatasetName;
+  now?: () => DateTime;
 }
 
 export function createHandlers(
   baseUrl: string,
-  { role = ROLES.applicant, delayMs = 0, getScenario, dataset }: HandlerOptions = {},
+  { role = ROLES.applicant, delayMs = 0, getScenario, dataset, now }: HandlerOptions = {},
 ) {
   const root = baseUrl.replace(/\/+$/, '');
 
@@ -28,6 +30,6 @@ export function createHandlers(
       }),
     ),
 
-    ...createFacilityHandlers(root, { delayMs, getScenario, dataset }),
+    ...createFacilityHandlers(root, { delayMs, getScenario, dataset, now }),
   ];
 }
