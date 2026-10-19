@@ -1,0 +1,158 @@
+/**
+ * Derives the detail record for a venue from its summary. Used for both fixtures, so every venue
+ * has complete, internally consistent detail (a kitchen amenity means kitchen resources, and so
+ * on). Everything produced here beyond what the summary already carries is PROVISIONAL:
+ * invented to demonstrate the screen, and named in `provisionalFields`. Questions for the client
+ * are in docs/facilities-data-gaps.md.
+ *
+ * There are no photographs, so `images` is always empty and the type placeholder is shown.
+ */
+import type {
+  CapacityByArrangement,
+  FacilityDetail,
+  FacilityResource,
+  FacilitySummary,
+  OperatingDay,
+} from '@/shared/api';
+
+/** The fields this module adds. `images` is excluded: empty means absent, not invented. */
+export const DETAIL_PROVISIONAL_FIELDS = [
+  'description',
+  'capacityByArrangement',
+  'resources',
+  'operatingSchedule',
+  'managedBy',
+  'bookingNotes',
+  'childFacilities',
+  'siblingFacilities',
+] as const;
+
+const ROOM_TYPES = new Set(['committee-room', 'board-room', 'council-chamber']);
+const HALL_TYPES = new Set(['hall', 'civic-hall', 'hall-wing']);
+
+const KITCHEN_ITEMS: Array<{ id: string; name: string; perSeat: boolean; fixed: number }> = [
+  { id: 'urns', name: 'Hot water urns', perSeat: false, fixed: 2 },
+  { id: 'cups', name: 'Cups', perSeat: true, fixed: 0 },
+  { id: 'saucers', name: 'Saucers', perSeat: true, fixed: 0 },
+  { id: 'side-plates', name: 'Side plates', perSeat: true, fixed: 0 },
+  { id: 'dinner-plates', name: 'Dinner plates', perSeat: true, fixed: 0 },
+  { id: 'teaspoons', name: 'Teaspoons', perSeat: true, fixed: 0 },
+  { id: 'dessert-spoons', name: 'Dessert spoons', perSeat: true, fixed: 0 },
+  { id: 'forks', name: 'Forks', perSeat: true, fixed: 0 },
+  { id: 'knives', name: 'Knives', perSeat: true, fixed: 0 },
+  { id: 'serving-spoons', name: 'Serving spoons', perSeat: false, fixed: 12 },
+  { id: 'serving-dishes', name: 'Serving dishes', perSeat: false, fixed: 12 },
+  { id: 'pots', name: 'Cooking pots', perSeat: false, fixed: 6 },
+  { id: 'trays', name: 'Serving trays', perSeat: false, fixed: 6 },
+  { id: 'tea-towels', name: 'Tea towels', perSeat: false, fixed: 10 },
+];
+
+function arrangements(facility: FacilitySummary): CapacityByArrangement[] | null {
+  const { capacity } = facility;
+  if (capacity === null) return null;
+  if (HALL_TYPES.has(facility.type.id)) {
+    return [
+      { arrangement: 'Cinema', capacity },
+      { arrangement: 'Banquet', capacity: Math.round(capacity * 0.6) },
+      { arrangement: 'School room', capacity: Math.round(capacity * 0.5) },
+      { arrangement: 'U-shape', capacity: Math.round(capacity * 0.3) },
+    ];
+  }
+  if (facility.type.id === 'committee-room' || facility.type.id === 'board-room') {
+    return [
+      { arrangement: 'Boardroom', capacity },
+      { arrangement: 'U-shape', capacity: Math.round(capacity * 0.8) },
+    ];
+  }
+  // Fixed seating or free space: arrangements do not apply.
+  return null;
+}
+
+function resources(facility: FacilitySummary): FacilityResource[] {
+  const seats = facility.capacity;
+  const venue: FacilityResource[] = facility.amenities
+    .filter((a) => a.id !== 'kitchen')
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      category: 'venue' as const,
+      quantity:
+        a.id === 'chairs'
+          ? seats
+          : a.id === 'tables'
+            ? seats === null
+              ? null
+              : Math.ceil(seats / 8)
+            : 1,
+    }));
+  const kitchen: FacilityResource[] = facility.amenities.some((a) => a.id === 'kitchen')
+    ? KITCHEN_ITEMS.map((item) => ({
+        id: `kitchen-${item.id}`,
+        name: item.name,
+        category: 'kitchen' as const,
+        quantity: item.perSeat ? seats : item.fixed,
+      }))
+    : [];
+  return [...venue, ...kitchen];
+}
+
+function schedule(facility: FacilitySummary): OperatingDay[] {
+  const office = ROOM_TYPES.has(facility.type.id);
+  return Array.from({ length: 7 }, (_, index) => {
+    const dayOfWeek = index + 1;
+    if (office) {
+      const weekday = dayOfWeek <= 5;
+      return {
+        dayOfWeek,
+        opensAt: weekday ? '08:00' : null,
+        closesAt: weekday ? '16:30' : null,
+      };
+    }
+    return { dayOfWeek, opensAt: '07:00', closesAt: '23:00' };
+  });
+}
+
+function description(facility: FacilitySummary): string {
+  const place = facility.locality === 'To be confirmed' ? '' : ` in ${facility.locality}`;
+  return [
+    `${facility.name} is a ${facility.type.name.toLowerCase()}${place} that can be booked for events and meetings.`,
+    'This is sample text. A full description of the venue will be supplied with the facilities register.',
+  ].join('\n\n');
+}
+
+function bookingNotes(facility: FacilitySummary): string | null {
+  if (facility.type.id === 'activity-room') return null;
+  if (ROOM_TYPES.has(facility.type.id)) {
+    return 'Bookings are subject to approval by the responsible department.';
+  }
+  return 'Include set-up and clean-up time in your requested booking window. Bookings are subject to approval by the responsible department.';
+}
+
+export function deriveDetail(
+  facility: FacilitySummary,
+  catalogue: readonly FacilitySummary[],
+): FacilityDetail {
+  const parentId = facility.parentFacility?.id;
+  return {
+    ...facility,
+    description: description(facility),
+    images: [],
+    capacityByArrangement: arrangements(facility),
+    resources: resources(facility),
+    operatingSchedule: schedule(facility),
+    childFacilities: catalogue
+      .filter((f) => f.parentFacility?.id === facility.id)
+      .map((f) => ({ id: f.id, name: f.name, type: f.type.name, capacity: f.capacity })),
+    siblingFacilities:
+      parentId === undefined
+        ? []
+        : catalogue
+            .filter((f) => f.parentFacility?.id === parentId && f.id !== facility.id)
+            .map((f) => ({ id: f.id, name: f.name, type: f.type.name })),
+    managedBy: ROOM_TYPES.has(facility.type.id) ? 'Corporate Services' : 'Community Services',
+    bookingNotes: bookingNotes(facility),
+    provisionalFields: [
+      ...new Set([...(facility.provisionalFields ?? []), ...DETAIL_PROVISIONAL_FIELDS]),
+    ],
+  };
+}

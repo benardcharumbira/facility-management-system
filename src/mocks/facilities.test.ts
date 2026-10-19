@@ -186,19 +186,94 @@ describe('GET /facilities/filter-options', () => {
 });
 
 describe('GET /facilities/:id', () => {
-  it('resolves every Midvaal venue, with children for a parent and no invented address', async () => {
+  it('resolves every Midvaal venue with complete, coherent detail', async () => {
     for (const venue of REAL_FACILITIES) {
       const detail = await client.get<FacilityDetail>(`/facilities/${venue.id}`);
       expect(detail.name).toBe(venue.name);
-      expect(detail.address).toBeNull();
+      expect(detail.description.length).toBeGreaterThan(20);
+      expect(detail.managedBy).not.toBe('');
+      expect(detail.operatingSchedule.map((d) => d.dayOfWeek)).toEqual([1, 2, 3, 4, 5, 6, 7]);
       expect(detail.images).toEqual([]);
+      expect(detail).not.toHaveProperty('address');
+
+      // Coherence: a kitchen amenity means itemised kitchen resources, and vice versa.
+      const hasKitchen = venue.amenities.some((a) => a.id === 'kitchen');
+      expect(detail.resources.some((r) => r.category === 'kitchen')).toBe(hasKitchen);
+      const venueIds = detail.resources.filter((r) => r.category === 'venue').map((r) => r.id);
+      const amenityIds = venue.amenities.filter((a) => a.id !== 'kitchen').map((a) => a.id);
+      expect(venueIds.sort()).toEqual(amenityIds.sort());
+
+      // Everything invented is declared, including the summary's own list.
+      const declared = [
+        'description',
+        'resources',
+        'operatingSchedule',
+        'managedBy',
+        'bookingNotes',
+        ...(venue.provisionalFields ?? []),
+      ];
+      for (const field of declared) expect(detail.provisionalFields).toContain(field);
     }
+  });
+
+  it('lists children for a parent and siblings, excluding itself, for a child', async () => {
     const cityHall = await client.get<FacilityDetail>('/facilities/city-hall');
     expect(cityHall.childFacilities.map((c) => c.name).sort()).toEqual([
       'City Hall Committee Room',
       'Loch Wing',
       'Mitchell Wing',
     ]);
-    await expect(client.get('/facilities/nope')).rejects.toMatchObject({ status: 404 });
+    expect(cityHall.siblingFacilities).toEqual([]);
+    expect(cityHall.childFacilities.find((c) => c.name === 'Loch Wing')).toEqual({
+      id: 'loch-wing',
+      name: 'Loch Wing',
+      type: 'Hall wing',
+      capacity: 150,
+    });
+
+    const mitchell = await client.get<FacilityDetail>('/facilities/mitchell-wing');
+    expect(mitchell.parentFacility).toEqual({ id: 'city-hall', name: 'City Hall' });
+    expect(mitchell.siblingFacilities.map((s) => s.name).sort()).toEqual([
+      'City Hall Committee Room',
+      'Loch Wing',
+    ]);
+    expect(mitchell.childFacilities).toEqual([]);
+
+    const boardRoom = await client.get<FacilityDetail>('/facilities/vaal-marina-board-room');
+    expect(boardRoom.siblingFacilities).toEqual([]);
+    const standalone = await client.get<FacilityDetail>('/facilities/rothdene-hall');
+    expect(standalone.siblingFacilities).toEqual([]);
+    expect(standalone.childFacilities).toEqual([]);
+  });
+
+  it('gives capacity by arrangement where it applies, and null where it does not', async () => {
+    const hall = await client.get<FacilityDetail>('/facilities/rothdene-hall');
+    expect(hall.capacityByArrangement?.map((a) => a.arrangement)).toEqual([
+      'Cinema',
+      'Banquet',
+      'School room',
+      'U-shape',
+    ]);
+    expect(hall.capacityByArrangement?.[0]?.capacity).toBe(hall.capacity);
+    const chambers = await client.get<FacilityDetail>('/facilities/council-chambers');
+    expect(chambers.capacityByArrangement).toBeNull();
+    const activity = await client.get<FacilityDetail>('/facilities/activity-room');
+    expect(activity.capacityByArrangement).toBeNull();
+  });
+
+  it('itemises a fourteen item kitchen and closes offices at weekends', async () => {
+    const hall = await client.get<FacilityDetail>('/facilities/rothdene-hall');
+    expect(hall.resources.filter((r) => r.category === 'kitchen')).toHaveLength(14);
+    const room = await client.get<FacilityDetail>('/facilities/vaal-marina-board-room');
+    const closed = room.operatingSchedule.filter((d) => d.opensAt === null);
+    expect(closed.map((d) => d.dayOfWeek)).toEqual([6, 7]);
+  });
+
+  it('answers an unknown id with a 404 problem document', async () => {
+    await expect(client.get('/facilities/nope')).rejects.toMatchObject({
+      kind: 'problem',
+      status: 404,
+      title: 'Facility not found',
+    });
   });
 });

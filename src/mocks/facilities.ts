@@ -5,7 +5,6 @@ import {
   FACILITY_STATUS_FILTERS,
   type FacilityFilterOptions,
   type FacilityListParams,
-  type FacilityDetail,
   type FacilityListResponse,
   type FacilitySort,
   type FacilityStatusFilter,
@@ -13,6 +12,7 @@ import {
 } from '@/shared/api';
 import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
+import { deriveDetail } from './data/facilityDetail';
 import { slugify } from './data/slug';
 
 /** The server side behaviour the real backend must reproduce. See the contract in shared/api. */
@@ -221,30 +221,8 @@ export function createFacilityHandlers(
       if (getScenario?.() === 'error') return problem(500, 'Mock failure');
       const facility = catalogue().find((f) => f.id === params.id);
       return facility
-        ? HttpResponse.json(buildFacilityDetail(facility, catalogue()))
+        ? HttpResponse.json(deriveDetail(facility, catalogue()))
         : problem(404, 'Facility not found', 'No facility exists with that id.');
     }),
   ];
-}
-
-export function buildFacilityDetail(
-  facility: FacilitySummary,
-  catalogue: readonly FacilitySummary[],
-): FacilityDetail {
-  return {
-    ...facility,
-    description: [
-      facility.shortDescription,
-      'Full details for this venue will be added once the facilities register has been supplied.',
-    ].join('\n\n'),
-    // No photographs: never present a borrowed picture of a real building as the venue.
-    images:
-      facility.primaryImageUrl === null
-        ? []
-        : [{ url: facility.primaryImageUrl, alt: facility.name }],
-    address: null,
-    childFacilities: catalogue
-      .filter((f) => f.parentFacility?.id === facility.id)
-      .map(({ id, name, type, capacity, status }) => ({ id, name, type, capacity, status })),
-  };
 }
