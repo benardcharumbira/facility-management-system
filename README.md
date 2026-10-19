@@ -204,6 +204,45 @@ The client renders what it is given and never derives blocking from the hierarch
 - Keyboard: arrows move by day and week, Page Up and Page Down by month, Home and End to the ends
   of the week; Enter opens the day panel, Escape closes it and focus returns to the day.
 
+## Booking request form
+
+`/bookings/new`, replacing the paper venue application (BRD sections 8.3 and 8.4). The contract
+is `src/shared/api/contracts/bookings.ts`; `src/mocks/bookings.ts` implements it.
+
+- **Five steps, current step in the URL** (`?step=`), plus the draft (`?draft=`) and the window and
+  facility handed over by the calendar. Visited steps can be revisited. Steps were chosen for the
+  fourteen item kitchen list and phone users; the review step does summarise everything, but it
+  does not do most of the work: each step still validates its own fields before advancing.
+- **Step 1 is a confirmation, not inputs.** It re-checks live availability on entry with the same
+  rules the calendar uses (`shared/utils/availability.ts`) and blocks going on if the slot has
+  gone. With no parameters it offers the browse search as a venue picker, then sends the user to
+  that venue's calendar. "Change" returns to the calendar with the selection intact and the draft
+  id carried, so "Request booking" continues the draft rather than starting another.
+- **Drafts.** Saved on step change, on a pause in typing (1.2s) and on leaving; "Save and finish
+  later" confirms where to find it (a resume link; the My bookings page will list drafts once it
+  exists). A draft is created lazily at the first save, or on the first upload. **Drafts never hold
+  a slot: only `submit` checks availability and creates the hold.** A submitted request then shows
+  as held on the calendar.
+- **Conflict.** A lost race is a 409 problem whose `type` is `SLOT_CONFLICT_PROBLEM_TYPE`, with
+  `conflictingWindow`, `relatedFacility` and `reason`. The form explains it in words (naming the
+  building when the hierarchy caused it), keeps every answer, and links back to the calendar.
+- **Validation.** One Zod schema composed from step schemas; blur validates, a field that has
+  errored revalidates on change. A failed advance shows a summary of links and moves focus to it;
+  server field errors land on their fields and the form jumps to the first affected step.
+- **Reviewers' triggers:** `?mock=conflict` forces a conflict on submit; a description containing
+  `[invalid]` returns a server field error; a file whose name contains `fail` fails to upload.
+- **Additions and assumptions to confirm with the client:** the attendee count (not in the BRD,
+  needed for the capacity warning); the booking options endpoint also returns the resource
+  catalogue; seating arrangements are matched to a venue's capacities by name; the reference is
+  assigned when the draft is created (the contract table) although the BRD says on submission;
+  documents are optional; the event types, terms text, upload limits and turnaround are
+  placeholders; event type and seating lists are not in the BRD. **No fee, deposit or payment
+  appears anywhere.**
+- **Multi day and recurring bookings.** The window is a pair of instants (`startsAt`, `endsAt`)
+  and the facility check treats a booking as one day, so a multi day booking needs the availability
+  check (`windowProblem`) and step 1 to iterate days; nothing else in the form assumes one day.
+  Recurrence would need a new field and a new submit rule; none is built.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).

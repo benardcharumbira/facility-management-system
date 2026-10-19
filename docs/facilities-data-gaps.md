@@ -62,6 +62,11 @@ Sicelo Hall, Lakeside Hall.
 14. **Closures.** Which public holidays close the venues, and how are maintenance closures
     recorded? We have assumed all venues close on South African public holidays.
 
+15. **Booking form lists.** Please confirm the list of meeting or event types and the list of
+    seating arrangements the paper form offers, the wording of the terms and conditions, whether
+    supporting documents are required or optional, and the file types and sizes you will accept.
+    Also, how long a pending request may hold a time, and the expected turnaround for a decision.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

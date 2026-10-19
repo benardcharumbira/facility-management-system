@@ -54,6 +54,34 @@ Styling uses only the semantic tokens in `src/app/theme/theme.css`. Radix UI sup
 | `DetailSkeleton`  | `sections?`. Built on `DetailLayout`, so it matches the loaded page.                                  |
 | `NotFoundState`   | `title`, `description?`, `action: {label, to, state?}`                                                |
 
+## Form primitives (`form/`)
+
+| Component           | Props                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FormField`         | `id`, `label`, `hint?`, `error?`, `required?`, children `(control) => input`. Links hint and error by `aria-describedby`; error is a live `alert`. |
+| `FieldGroup`        | `legend`, `hint?`, children. A `fieldset`.                                                                                                         |
+| `CheckboxField`     | `id`, `label`, `checked`, `onChange`, `hint?`, `error?`, `disabled?`                                                                               |
+| `ErrorSummary`      | `errors: {fieldId,message}[]`, `title?`, `focusSignal`. Links to fields; takes focus on signal.                                                    |
+| `FormStepper`       | `steps: {id,label,status,reachable}[]`, `onSelect`. State of every step in text.                                                                   |
+| `QuantityStepper`   | `name`, `value`, `onChange`, `min?`, `max?`. Buttons plus direct entry; a cap is explained.                                                        |
+| `FileUpload`        | `acceptedTypes`, `maxFileSizeBytes`, `maxFiles`, `items`, `onSelect`, `onRemove`, `onRetry`. Native input first, drag and drop on top.             |
+| `ReviewList`        | `items: {key,label,value,onEdit?}[]`. A definition list with edit actions.                                                                         |
+| `ConfirmationPanel` | `title`, `summary?`, `reference`, `status?`, `details`, children, `actions?`                                                                       |
+| `AutosaveIndicator` | `status`, `savedAtLabel?`, `onRetry?`. A polite status.                                                                                            |
+
+**Is the shared set stabilising?** Mostly, but not yet enough to start the design language.
+The form, calendar and detail families have each settled into a consistent pattern, and this
+screen needed no change to any earlier primitive's API (`Disclosure`, `Alert`, `ErrorState`,
+`NotFoundState`, `KeyFacts`, `Skeleton` were reused as is). Against that, the three open problems
+from the calendar slice are still open and this slice added a fourth: **there are now two
+disclosure primitives, two sheet primitives and three skeleton patterns, and a field error is
+styled by `FormField` and `CheckboxField` separately from `Alert`.** Resolve those four
+(one disclosure, one sheet, one status primitive, one error style) and the set is ready.
+Changes made here: `CheckboxField` keeps the hint outside the label so the control's name is just
+its label; `useUrlState` now applies updates to the URL as it is at call time (a late asynchronous
+update was putting an old URL back); the query client lets a mutation opt out of the global toast
+with `meta: { silent: true }`.
+
 ## Calendar primitives (`calendar/`)
 
 | Component             | Props                                                                                                                      |
