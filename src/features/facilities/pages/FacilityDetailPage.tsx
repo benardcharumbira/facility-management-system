@@ -28,7 +28,7 @@ import { OpeningHours } from '../components/OpeningHours';
 import { SampleDataBanner } from '../components/SampleDataBanner';
 import { useFacility } from '../hooks';
 import { facilityPath } from '../paths';
-import { useOriginList } from '../useOriginList';
+import { useOriginList } from '@/shared/hooks';
 
 const LIST_PATH = '/facilities';
 

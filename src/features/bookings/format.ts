@@ -44,3 +44,27 @@ export function calendarHref(args: {
   const query = params.toString();
   return `/facilities/${encodeURIComponent(args.facilityId)}${query ? `?${query}` : ''}`;
 }
+
+/** How long ago something was, in plain words: "less than an hour", "5 hours", "3 days". */
+export function elapsed(since: string, now: DateTime): string {
+  const hours = now.diff(DateTime.fromISO(since, { zone: 'utc' }), 'hours').hours;
+  if (hours < 1) return 'less than an hour';
+  if (hours < 48) {
+    const whole = Math.floor(hours);
+    return `${whole} ${whole === 1 ? 'hour' : 'hours'}`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days} days`;
+}
+
+/** "26 October" or "26 October 2025", in the given zone. */
+export function shortDate(instant: string, zone: string): string {
+  const date = DateTime.fromISO(instant, { zone: 'utc' }).setZone(zone).setLocale('en');
+  return date.toFormat('d LLLL yyyy');
+}
+
+/** "26 October 2026, 14:05" in the given zone. */
+export function dateAndTime(instant: string, zone: string): string {
+  const date = DateTime.fromISO(instant, { zone: 'utc' }).setZone(zone).setLocale('en');
+  return `${date.toFormat('d LLLL yyyy')}, ${date.toFormat('HH:mm')}`;
+}

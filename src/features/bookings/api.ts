@@ -1,5 +1,10 @@
 import type {
   ApiClient,
+  BookingListItem,
+  BookingListParams,
+  BookingsSummary,
+  CancelBookingRequest,
+  RescheduleBookingRequest,
   Booking,
   BookingDocument,
   BookingOptions,
@@ -10,6 +15,7 @@ import type {
   UpdateBookingRequest,
 } from '@/shared/api';
 import { createQueryKeys } from '@/shared/api';
+import type { Paginated } from '@/shared/types/pagination';
 
 export const bookingKeys = {
   ...createQueryKeys('bookings'),
@@ -17,6 +23,8 @@ export const bookingKeys = {
   facility: (id: string) => ['bookings', 'facility', id] as const,
   slot: (facilityId: string, startsAt: string, endsAt: string) =>
     ['bookings', 'slot-check', facilityId, startsAt, endsAt] as const,
+  list: (params: BookingListParams) => ['bookings', 'list', params] as const,
+  summary: (params: BookingListParams) => ['bookings', 'summary', params] as const,
   picker: (q: string) => ['bookings', 'facility-picker', q] as const,
 };
 
@@ -74,3 +82,24 @@ export const fetchAvailabilityRange = (
     query: { from, to },
     signal,
   });
+
+export const fetchBookings = (api: ApiClient, params: BookingListParams, signal?: AbortSignal) =>
+  api.get<Paginated<BookingListItem>>('/bookings', { query: { ...params }, signal });
+
+export const fetchBookingsSummary = (
+  api: ApiClient,
+  params: BookingListParams,
+  signal?: AbortSignal,
+) => api.get<BookingsSummary>('/bookings/summary', { query: { ...params }, signal });
+
+export const cancelBooking = (api: ApiClient, id: string, body: CancelBookingRequest) =>
+  api.post<Booking>(`/bookings/${encodeURIComponent(id)}/cancel`, { body });
+
+export const requestReschedule = (api: ApiClient, id: string, body: RescheduleBookingRequest) =>
+  api.post<Booking>(`/bookings/${encodeURIComponent(id)}/reschedule`, { body });
+
+export const deleteDraft = (api: ApiClient, id: string) =>
+  api.delete<void>(`/bookings/${encodeURIComponent(id)}`);
+
+export const downloadDocument = (api: ApiClient, id: string, documentId: string) =>
+  api.download(`/bookings/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}`);

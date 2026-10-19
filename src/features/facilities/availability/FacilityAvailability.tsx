@@ -24,6 +24,7 @@ import {
 } from '@/shared/utils/calendar';
 import { cn } from '@/shared/utils/cn';
 import { AvailabilityDayCell } from './AvailabilityDayCell';
+import { RescheduleBanner } from './RescheduleBanner';
 import { DayPanel } from './DayPanel';
 import { REASONS, rulesOf, type Reason } from './model';
 import { useMonthAvailability, usePrefetchAdjacentMonths } from './queries';
@@ -154,6 +155,7 @@ function AvailabilityCalendar({
 
   return (
     <div className="flex flex-col gap-4">
+      {url.reschedule && <RescheduleBanner bookingId={url.reschedule} />}
       <MonthNavigator month={requested} onChange={showMonth} min={range.min} max={range.max} />
 
       {query.isError && !data ? (

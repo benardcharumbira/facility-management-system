@@ -5,7 +5,7 @@ import { ErrorState, LoadingState, NotFoundState, PageLayout } from '@/shared/co
 import { useUrlState } from '@/shared/hooks';
 import { BookingForm } from '../components/BookingForm';
 import { useBooking, useBookingOptions } from '../hooks';
-import { bookingConfirmationLink } from '../links';
+import { bookingLink } from '../links';
 import { bookingCodec } from '../urlState';
 
 const CRUMBS = [{ label: 'My bookings', to: '/bookings' }, { label: 'New booking' }];
@@ -43,7 +43,8 @@ export default function NewBookingPage() {
     );
   }
   if (draft.data && draft.data.status !== 'draft') {
-    return <Navigate to={bookingConfirmationLink(draft.data.id)} replace />;
+    // A request that has been sent is looked at, not edited.
+    return <Navigate to={bookingLink(draft.data.id)} replace />;
   }
   if (!options.data || (initialDraftId && !draft.data)) {
     return (

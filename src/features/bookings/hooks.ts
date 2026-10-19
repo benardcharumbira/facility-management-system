@@ -1,11 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { useApiClient } from '@/shared/api';
+import { useApiClient, type BookingListParams } from '@/shared/api';
 import { rulesOf, windowProblem, type WindowProblem } from '@/shared/utils/availability';
 import {
   bookingKeys,
   fetchAvailabilityRange,
   fetchBooking,
+  fetchBookings,
+  fetchBookingsSummary,
   fetchFacilityDetail,
   fetchOptions,
   searchFacilities,
@@ -87,5 +89,25 @@ export function useSlotCheck(facilityId: string, startsAt: string, endsAt: strin
         problem: windowProblem({ start, end }, day, rules, DateTime.now()),
       };
     },
+  });
+}
+
+/** The caller's bookings. Previous results stay on screen while the next page or filter loads. */
+export function useBookings(params: BookingListParams) {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: bookingKeys.list(params),
+    queryFn: ({ signal }) => fetchBookings(api, params, signal),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Counts that follow the filters (not the page or the sort), to tell the empty states apart. */
+export function useBookingsSummary(filters: BookingListParams) {
+  const api = useApiClient();
+  return useQuery({
+    queryKey: bookingKeys.summary(filters),
+    queryFn: ({ signal }) => fetchBookingsSummary(api, filters, signal),
+    placeholderData: keepPreviousData,
   });
 }

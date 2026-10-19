@@ -27,7 +27,8 @@ export function signOutUser() {
 
 export function resetClerk() {
   signIn();
-  clerkState.getToken.mockClear();
+  clerkState.getToken.mockReset();
+  clerkState.getToken.mockImplementation(async () => 'test-token');
   clerkState.signOut.mockClear();
 }
 

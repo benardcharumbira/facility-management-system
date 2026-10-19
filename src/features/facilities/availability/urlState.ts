@@ -18,6 +18,8 @@ export interface AvailabilityUrlState {
   endsAt: string | undefined;
   /** A booking draft being continued, carried through so "Request booking" resumes it. */
   draft: string | undefined;
+  /** A booking whose date is being changed: the calendar is then choosing its new time. */
+  reschedule: string | undefined;
 }
 
 export const availabilityCodec = createParamsCodec<AvailabilityUrlState>({
@@ -26,6 +28,7 @@ export const availabilityCodec = createParamsCodec<AvailabilityUrlState>({
   startsAt: param.matching(ISO_INSTANT),
   endsAt: param.matching(ISO_INSTANT),
   draft: param.matching(/^[\w-]+$/),
+  reschedule: param.matching(/^[\w-]+$/),
 });
 
 export interface Selection {
@@ -72,4 +75,13 @@ export function bookingHref(
   }
   if (draft) params.set('draft', draft);
   return `${BOOKING_PATH}?${params.toString()}`;
+}
+
+/** Where choosing a new time for an existing booking leads: back to it, with the proposal. */
+export function rescheduleHref(bookingId: string, selection: Selection): string {
+  const params = new URLSearchParams({
+    proposedStartsAt: toInstant(selection.start),
+    proposedEndsAt: toInstant(selection.end),
+  });
+  return `/bookings/${encodeURIComponent(bookingId)}?${params.toString()}`;
 }

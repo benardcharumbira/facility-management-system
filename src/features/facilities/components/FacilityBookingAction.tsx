@@ -3,7 +3,12 @@ import type { FacilityDetail } from '@/shared/api';
 import { Button, buttonStyles, StickyActionBar } from '@/shared/components';
 import { useUrlState } from '@/shared/hooks';
 import { SelectionSummary } from '../availability/SelectionSummary';
-import { availabilityCodec, bookingHref, selectionOf } from '../availability/urlState';
+import {
+  availabilityCodec,
+  bookingHref,
+  rescheduleHref,
+  selectionOf,
+} from '../availability/urlState';
 
 const REASON_ID = 'booking-unavailable-reason';
 
@@ -28,11 +33,35 @@ export function FacilityBookingAction({ facility }: { facility: FacilityDetail }
     );
   }
 
+  const selection = selectionOf(url);
+
+  // Choosing a new time for a booking already held: the choice goes back to that booking.
+  if (url.reschedule) {
+    return (
+      <StickyActionBar>
+        <SelectionSummary facilityId={facility.id} facilityName={facility.name} />
+        {selection ? (
+          <Link
+            to={rescheduleHref(url.reschedule, selection)}
+            className={buttonStyles({ className })}
+          >
+            Review change request
+          </Link>
+        ) : (
+          <p className="text-sm font-medium">Choose a new date and time on the calendar.</p>
+        )}
+        <p className="text-xs text-muted">
+          Choosing a time does not move your booking. You confirm the request on the next screen.
+        </p>
+      </StickyActionBar>
+    );
+  }
+
   return (
     <StickyActionBar>
       <SelectionSummary facilityId={facility.id} facilityName={facility.name} />
       <Link
-        to={bookingHref(facility.id, selectionOf(url), url.draft)}
+        to={bookingHref(facility.id, selection, url.draft)}
         className={buttonStyles({ className })}
       >
         Request booking
