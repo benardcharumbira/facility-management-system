@@ -46,7 +46,7 @@ Switching is one variable:
 
 - **Mocked:** `VITE_ENABLE_API_MOCKING=true`. A service worker (`public/mockServiceWorker.js`)
   intercepts requests to `VITE_API_BASE_URL`. Handlers live in `src/mocks` (`GET /me` and the
-  facilities endpoints, backed by a ~30 facility fixture in `src/mocks/data`). Filtering, search,
+  facilities endpoints, backed by the fixtures described below). Filtering, search,
   sorting and pagination run in the handler, not the client. Responses are delayed 600ms in
   development so loading states are visible. Change
   `VITE_MOCK_ROLE` to see the navigation for each role. Requests with no handler (such as Clerk's)
@@ -100,6 +100,28 @@ src/
 Rules enforced by ESLint: features never import from other features (move shared code to
 `shared/`); only the auth layer, root layout and Clerk sign-in pages import `@clerk/react`; no
 hex colours or pixel values in component code (the theme module is exempt).
+
+## Facilities data
+
+The default fixture (`src/mocks/data/facilities.real.ts`) is the twelve Midvaal venues from the
+client's Business Requirements Document v2.0, section 7. **Only the names are confirmed.** Every
+other field is provisional, listed per record in `provisionalFields`, and the file's opening
+comment records the source, the date, and the basis for each inference (hierarchy, localities,
+types, amenities, capacities). There are no photographs: venues show a type based placeholder.
+`docs/facilities-data-gaps.md` is the question list to send to the client.
+
+- `provisionalFields` exists on the mock contract only; the real API never sends it.
+- While a displayed record has provisional fields, a banner says so. It is development only
+  (`import.meta.env.DEV`), so production builds never contain it; set
+  `VITE_SHOW_SAMPLE_DATA_BANNER=false` to hide it in development.
+- `VITE_MOCK_DATASET=volume` serves `facilities.volume.ts` instead: 72 generated, obviously
+  fictional venues ("Volume Test Venue 001"...) for testing pagination and filters at scale.
+  Off by default; never use it in a client demonstration.
+- Filter options (types, localities, amenities, capacity bounds) are derived from whichever
+  fixture is active. Types and amenities are not hardcoded, so recreational types can be added
+  when the register arrives; unknown types fall back to a generic placeholder icon.
+- A locality that is unknown reads "To be confirmed" and appears as its own filter option until the
+  client answers.
 
 ## Facilities browse screen
 
