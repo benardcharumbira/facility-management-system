@@ -108,7 +108,7 @@ describe('GET /bookings', () => {
     expect(ids(await list({ sort: 'status' })).slice(0, 3)).toEqual([
       'seed-draft',
       'seed-pending',
-      'seed-approved-soon',
+      'seed-past',
     ]);
     // The draft was never submitted, so it sorts last by submission date either way round.
     expect(ids(await list({ sort: 'submitted' })).at(-1)).toBe('seed-draft');
