@@ -51,3 +51,45 @@
     @apply bg-primary-line;
   }
 }
+
+/*
+ * Fill patterns for calendar statuses. Each draws in the element's text colour, so a status is
+ * told apart by pattern (and icon, and words) and never by colour alone: it survives greyscale.
+ */
+@layer components {
+  .pattern-solid {
+    background-color: currentColor;
+  }
+
+  .pattern-striped {
+    background-image: repeating-linear-gradient(
+      135deg,
+      currentColor 0 0.25rem,
+      transparent 0.25rem 0.5rem
+    );
+  }
+
+  .pattern-dotted {
+    background-image: radial-gradient(currentColor 0.1rem, transparent 0.125rem);
+    background-size: 0.375rem 0.375rem;
+  }
+
+  .pattern-crosshatch {
+    background-image:
+      repeating-linear-gradient(45deg, currentColor 0 0.0625rem, transparent 0.0625rem 0.3125rem),
+      repeating-linear-gradient(-45deg, currentColor 0 0.0625rem, transparent 0.0625rem 0.3125rem);
+  }
+
+  .pattern-outline {
+    border: 0.125rem solid currentColor;
+  }
+
+  .pattern-dashed {
+    border: 0.125rem dashed currentColor;
+  }
+
+  .pattern-faded {
+    background-color: currentColor;
+    opacity: 0.35;
+  }
+}

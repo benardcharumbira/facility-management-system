@@ -15,4 +15,4 @@ export function StickyActionBar({ children }: { children: ReactNode }) {
 }
 
 /** Bottom padding that keeps content clear of the bar on small screens. */
-export const STICKY_ACTION_CLEARANCE = 'pb-28 lg:pb-0';
+export const STICKY_ACTION_CLEARANCE = 'pb-56 lg:pb-0';
