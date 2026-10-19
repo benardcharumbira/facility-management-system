@@ -28,6 +28,8 @@ export default defineConfig({
     environmentOptions: { jsdom: { url: 'http://localhost:5000/' } },
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Whole journeys through a five step form take a few seconds in jsdom.
+    testTimeout: 20_000,
     env: {
       VITE_API_BASE_URL: 'http://localhost:5000/api',
       VITE_CLERK_PUBLISHABLE_KEY: 'pk_test_vitest',
