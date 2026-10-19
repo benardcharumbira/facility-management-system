@@ -243,6 +243,51 @@ is `src/shared/api/contracts/bookings.ts`; `src/mocks/bookings.ts` implements it
   check (`windowProblem`) and step 1 to iterate days; nothing else in the form assumes one day.
   Recurrence would need a new field and a new submit rule; none is built.
 
+## My bookings and booking detail
+
+`/bookings` and `/bookings/:id`. The contract is in `src/shared/api/contracts/bookings.ts`.
+
+- **A note on slice 6.** The brief for this slice assumes a slice 6 that delivered a design
+  language with status tokens. No such slice exists in this repository: styling is the Tailwind
+  theme from slice 3 onwards. So `StatusBadge` was built from what does exist, the calendar's fill
+  patterns, icons and the semantic colour tokens, and each status differs by pattern, icon and
+  words (Draft dashed, Pending striped, Approved solid, Rejected crosshatched, Cancelled outlined).
+  When a real design language arrives, `src/features/bookings/status.tsx` is the one file to
+  restyle. The mechanical style rule (no hex or pixel values in components) is the ESLint rule
+  from slice 1 and passes.
+- **List.** The default order is `attention`: drafts, then pending, then upcoming approved, then
+  everything past or closed, in sections. A booking whose event has ended is "past and closed"
+  whatever its status. Other sorts drop the sections. Search, status, event date range, venue,
+  sort and page are all in the URL. Three empty states: no bookings at all, nothing matching the
+  filters, and a quiet note where there are no past bookings. Cancellation and rescheduling are
+  deliberately not on the list; a draft can be resumed from its row.
+- **Detail.** Status, in words, and what happens next sit inside the header, above everything else:
+  pending says it is under review, how long it has waited and the expected turnaround; the hold is
+  a date and a sentence, never a countdown; a rejection reason is given in full. Then details
+  (everything submitted, with document downloads), the hierarchy consequence, and history.
+- **Actions never fail.** The server computes `actions.cancel` and `actions.reschedule` for the
+  caller; the screen offers an action only if it is allowed, and otherwise shows the reason in its
+  place. Cancelling a pending request and cancelling an approved booking are worded differently.
+  A cancellation updates the booking in place with a confirmation and does not navigate.
+- **Reschedule is a request.** From an approved booking, the facility's calendar opens on its day
+  (`?reschedule=<id>`) with a banner saying what is held and that nothing moves until a decision.
+  Choosing a time returns to the booking with the proposal beside the original for confirmation.
+  Sending creates a pending request; the booking stays Approved on its original window, and the
+  request is shown on both the list and the detail.
+- **Print.** An approved booking has a print-only block (reference, venue, window, details,
+  resources); the rest of the page and the shell are `print:hidden`. No PDF is generated.
+- **Access.** Identity is the token, never a parameter. Someone else's booking answers 404, so
+  identifiers cannot be probed; the screen shows the same not found as for an unknown id.
+- **Mock.** `seedBookings` fills the mock applicant's bookings in every state (development only);
+  `?mock=empty` gives an applicant with none. Rules: cancelling or moving an approved booking needs
+  72 hours' notice (assumed), and a pending request holds for 72 hours (assumed).
+- **Assumptions to confirm with the client:** whether a cancellation reason should be required
+  (it is optional here); the notice period; who may cancel; whether names appear in the history;
+  and "start a new request" after a rejection or cancellation prefills the venue and, if still in
+  the future, the window, but not the event details (copying those would need a `copyFrom` option
+  on the draft). Added to the contract beyond the brief: `GET /bookings/summary`, and
+  `actions`, `history`, `holdExpiresAt` and friends on the booking.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).

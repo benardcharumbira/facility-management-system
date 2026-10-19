@@ -67,6 +67,15 @@ Sicelo Hall, Lakeside Hall.
     supporting documents are required or optional, and the file types and sizes you will accept.
     Also, how long a pending request may hold a time, and the expected turnaround for a decision.
 
+16. **Cancelling and changing a booking.** How close to the event can an approved booking still be
+    cancelled, or moved? We assumed 72 hours. Should the reason for a cancellation be required or
+    optional? We made it optional. Who decides a change of date request, and can an applicant
+    withdraw one?
+
+17. **What the applicant can see about a decision.** Should the booking history show the name of
+    the staff member who approved or rejected it, or only that the municipality did? And how long
+    does a pending request hold the time before it is released? We assumed 72 hours.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |
