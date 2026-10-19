@@ -1,6 +1,8 @@
 import { ApiProblem } from './problem';
 
-export type QueryValue = string | number | boolean | null | undefined;
+export type QueryScalar = string | number | boolean | null | undefined;
+/** Arrays are sent as repeated parameters (`a=1&a=2`). */
+export type QueryValue = QueryScalar | readonly QueryScalar[];
 
 export interface RequestOptions {
   query?: Record<string, QueryValue>;
@@ -88,7 +90,10 @@ export function createApiClient({
 function buildUrl(root: string, path: string, query?: Record<string, QueryValue>): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== null) params.set(key, String(value));
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values as QueryScalar[]) {
+      if (item !== undefined && item !== null) params.append(key, String(item));
+    }
   }
   const search = params.toString();
   const normalisedPath = path.startsWith('/') ? path : `/${path}`;

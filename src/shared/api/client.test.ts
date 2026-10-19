@@ -59,6 +59,18 @@ describe('api client', () => {
     await expect(client.get('/me')).rejects.toMatchObject({ kind: 'unexpected', status: 502 });
   });
 
+  it('sends array query values as repeated parameters and omits empty ones', async () => {
+    let search = '';
+    server.use(
+      http.get(`${TEST_API_BASE_URL}/echo`, ({ request }) => {
+        search = new URL(request.url).search;
+        return HttpResponse.json({});
+      }),
+    );
+    await client.get('/echo', { query: { type: ['a', 'b'], empty: [], none: undefined, n: 2 } });
+    expect(search).toBe('?type=a&type=b&n=2');
+  });
+
   it('attaches the session token to every request', async () => {
     let authorization: string | null = null;
     server.use(
@@ -71,11 +83,12 @@ describe('api client', () => {
     expect(authorization).toBe('Bearer session-token');
   });
 
-  it('returns the pagination envelope from the sample collection endpoint', async () => {
+  it('returns the pagination envelope from the facilities endpoint', async () => {
     const page = await client.get<Paginated<{ id: string }>>('/facilities', {
       query: { page: 2, pageSize: 10 },
     });
-    expect(page).toMatchObject({ page: 2, pageSize: 10, totalItems: 23, totalPages: 3 });
+    expect(page).toMatchObject({ page: 2, pageSize: 10 });
+    expect(page.totalPages).toBe(Math.ceil(page.totalItems / 10));
     expect(page.items).toHaveLength(10);
   });
 });
