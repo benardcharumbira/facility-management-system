@@ -11,7 +11,9 @@ import {
   type FacilityStatusFilter,
   type FacilitySummary,
 } from '@/shared/api';
-import { AMENITIES, FACILITY_FIXTURES, FACILITY_TYPES, slugify } from './data/facilities';
+import { REAL_FACILITIES } from './data/facilities.real';
+import { VOLUME_FACILITIES } from './data/facilities.volume';
+import { slugify } from './data/slug';
 
 /** The server side behaviour the real backend must reproduce. See the contract in shared/api. */
 export function queryFacilities(
@@ -90,23 +92,34 @@ function comparatorFor(sort: FacilitySort) {
   }
 }
 
+/** The vocabulary and counts come from the catalogue itself, so they always match the data. */
 export function buildFilterOptions(catalogue: readonly FacilitySummary[]): FacilityFilterOptions {
   const active = catalogue.filter((facility) => facility.status === 'active');
-  const localities = [...new Set(catalogue.map((f) => f.locality))].sort();
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+
+  const types = new Map(catalogue.map((f) => [f.type.id, f.type.name]));
+  const localities = new Map(catalogue.map((f) => [slugify(f.locality), f.locality]));
+  const amenities = new Map(
+    catalogue.flatMap((f) => f.amenities.map((a) => [a.id, a.name] as const)),
+  );
   const capacities = catalogue.flatMap((f) => (f.capacity === null ? [] : [f.capacity]));
 
   return {
-    types: FACILITY_TYPES.map((t) => ({
-      id: t.id,
-      name: t.name,
-      count: active.filter((f) => f.type.id === t.id).length,
-    })).filter((t) => catalogue.some((f) => f.type.id === t.id)),
-    localities: localities.map((name) => ({
-      id: slugify(name),
-      name,
-      count: active.filter((f) => f.locality === name).length,
-    })),
-    amenities: AMENITIES.map((a) => ({ id: a.id, name: a.name })),
+    types: [...types]
+      .map(([id, name]) => ({
+        id,
+        name,
+        count: active.filter((f) => f.type.id === id).length,
+      }))
+      .sort(byName),
+    localities: [...localities]
+      .map(([id, name]) => ({
+        id,
+        name,
+        count: active.filter((f) => slugify(f.locality) === id).length,
+      }))
+      .sort(byName),
+    amenities: [...amenities].map(([id, name]) => ({ id, name })).sort(byName),
     capacity: capacities.length
       ? { min: Math.min(...capacities), max: Math.max(...capacities) }
       : { min: 0, max: 0 },
@@ -157,9 +170,17 @@ function problem(status: number, title: string, detail?: string) {
 }
 
 export type MockScenario = 'empty' | 'error' | undefined;
+export type MockDatasetName = 'real' | 'volume';
+
+export const DATASETS: Record<MockDatasetName, readonly FacilitySummary[]> = {
+  real: REAL_FACILITIES,
+  volume: VOLUME_FACILITIES,
+};
 
 export interface FacilityHandlerOptions {
   delayMs: number;
+  /** Which fixture to serve. Defaults to the confirmed Midvaal venues. */
+  dataset?: MockDatasetName;
   /**
    * Lets a reviewer force a state, e.g. from the page URL in development. `empty` serves an
    * empty catalogue, `error` fails every facilities request.
@@ -169,9 +190,9 @@ export interface FacilityHandlerOptions {
 
 export function createFacilityHandlers(
   root: string,
-  { delayMs, getScenario }: FacilityHandlerOptions,
+  { delayMs, getScenario, dataset = 'real' }: FacilityHandlerOptions,
 ) {
-  const catalogue = () => (getScenario?.() === 'empty' ? [] : FACILITY_FIXTURES);
+  const catalogue = () => (getScenario?.() === 'empty' ? [] : DATASETS[dataset]);
   const wait = () => (delayMs > 0 ? delay(delayMs) : Promise.resolve());
 
   return [
@@ -210,21 +231,18 @@ export function buildFacilityDetail(
   facility: FacilitySummary,
   catalogue: readonly FacilitySummary[],
 ): FacilityDetail {
-  const slug = facility.primaryImageUrl?.split('/seed/')[1]?.split('/')[0];
   return {
     ...facility,
     description: [
       facility.shortDescription,
-      'Bookings are subject to approval by the facility administrator. Please arrange access, set up and clean up when you book, and leave the space as you found it.',
+      'Full details for this venue will be added once the facilities register has been supplied.',
     ].join('\n\n'),
+    // No photographs: never present a borrowed picture of a real building as the venue.
     images:
-      facility.primaryImageUrl === null || slug === undefined
+      facility.primaryImageUrl === null
         ? []
-        : [1, 2, 3].map((n) => ({
-            url: `https://picsum.photos/seed/${slug}-${n}/960/540`,
-            alt: `${facility.name}, photo ${n}`,
-          })),
-    address: `${(facility.name.length % 40) + 1} ${facility.locality} Road, ${facility.locality}`,
+        : [{ url: facility.primaryImageUrl, alt: facility.name }],
+    address: null,
     childFacilities: catalogue
       .filter((f) => f.parentFacility?.id === facility.id)
       .map(({ id, name, type, capacity, status }) => ({ id, name, type, capacity, status })),

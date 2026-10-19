@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@/shared/auth/roles';
-import { createFacilityHandlers, type MockScenario } from './facilities';
+import { createFacilityHandlers, type MockDatasetName, type MockScenario } from './facilities';
 
 export interface HandlerOptions {
   /** Role returned by GET /me. */
@@ -8,11 +8,13 @@ export interface HandlerOptions {
   /** Artificial latency so loading states are visible. */
   delayMs?: number;
   getScenario?: () => MockScenario;
+  /** Which facilities fixture to serve (default: the confirmed Midvaal venues). */
+  dataset?: MockDatasetName;
 }
 
 export function createHandlers(
   baseUrl: string,
-  { role = ROLES.applicant, delayMs = 0, getScenario }: HandlerOptions = {},
+  { role = ROLES.applicant, delayMs = 0, getScenario, dataset }: HandlerOptions = {},
 ) {
   const root = baseUrl.replace(/\/+$/, '');
 
@@ -26,6 +28,6 @@ export function createHandlers(
       }),
     ),
 
-    ...createFacilityHandlers(root, { delayMs, getScenario }),
+    ...createFacilityHandlers(root, { delayMs, getScenario, dataset }),
   ];
 }

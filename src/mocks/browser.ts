@@ -17,5 +17,6 @@ export const worker = setupWorker(
     role: env.mockRole,
     delayMs: DEV_LATENCY_MS,
     getScenario: scenarioFromUrl,
+    dataset: env.mockDataset,
   }),
 );
