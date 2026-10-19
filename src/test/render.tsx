@@ -1,9 +1,11 @@
+import type { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { AppProviders } from '@/app/AppProviders';
 import { routes } from '@/app/router';
 import { server, TEST_API_BASE_URL } from '@/mocks/server';
+import { createQueryClient } from '@/shared/api';
 import type { Role } from '@/shared/auth';
 
 /** Make the mocked GET /me resolve to the given role for the current test. */
@@ -20,10 +22,20 @@ export function mockMeRole(role: Role) {
   );
 }
 
+/** The app's real defaults, minus retries, so failures surface immediately in tests. */
+export function createTestQueryClient(): QueryClient {
+  const client = createQueryClient();
+  client.setDefaultOptions({
+    ...client.getDefaultOptions(),
+    queries: { ...client.getDefaultOptions().queries, retry: false },
+  });
+  return client;
+}
+
 export function renderApp(initialPath: string) {
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] });
   const view = render(
-    <AppProviders>
+    <AppProviders queryClient={createTestQueryClient()}>
       <RouterProvider router={router} />
     </AppProviders>,
   );
