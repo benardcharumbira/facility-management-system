@@ -1,6 +1,7 @@
 import { SelectionSummaryBar } from '@/shared/components';
 import { useUrlState } from '@/shared/hooks';
 import { formatClock, formatLongDate } from '@/shared/utils/calendar';
+import { describeWindow } from '@/shared/utils/format';
 import { useMonthAvailability } from './queries';
 import { availabilityCodec, requestedMonth, selectionOf, type Selection } from './urlState';
 import type { ReactNode } from 'react';
@@ -23,7 +24,13 @@ export function SelectionSummary({
       facilityId={facilityId}
       facilityName={facilityName}
       selection={selection}
-      onChange={(date) => update({ date, month: date.slice(0, 7) })}
+      onChange={(date, dateTo) =>
+        update({
+          date,
+          dateTo: dateTo && dateTo > date ? dateTo : undefined,
+          month: date.slice(0, 7),
+        })
+      }
       onClear={() => update({ startsAt: undefined, endsAt: undefined })}
     >
       {children}
@@ -42,7 +49,7 @@ function ChosenWindow({
   facilityId: string;
   facilityName: string;
   selection: Selection;
-  onChange: (date: string) => void;
+  onChange: (date: string, dateTo?: string) => void;
   onClear: () => void;
   children?: ReactNode;
 }) {
@@ -54,16 +61,31 @@ function ChosenWindow({
 
   return (
     <SelectionSummaryBar
-      onChange={start ? () => onChange(start.toISODate() ?? '') : undefined}
+      onChange={
+        start
+          ? () =>
+              onChange(
+                start.toISODate() ?? '',
+                end?.minus({ milliseconds: 1 }).toISODate() ?? undefined,
+              )
+          : undefined
+      }
       onClear={onClear}
       summary={
         start && end ? (
           <p>
             <span className="font-semibold">{facilityName}</span>
-            {` · ${formatLongDate(start)} · `}
-            <span className="tabular-nums">
-              {formatClock(start)} to {formatClock(end)}
-            </span>
+            {start.hasSame(end.minus({ milliseconds: 1 }), 'day') ? (
+              <>
+                {` · ${formatLongDate(start)} · `}
+                <span className="tabular-nums">
+                  {formatClock(start)} to {formatClock(end)}
+                </span>
+              </>
+            ) : (
+              // One booking over several days, read as a range.
+              ` · ${describeWindow(selection.start.toUTC().toISO() ?? '', selection.end.toUTC().toISO() ?? '', zone ?? 'utc').text}`
+            )}
           </p>
         ) : (
           <p className="font-semibold">{facilityName}: time selected</p>

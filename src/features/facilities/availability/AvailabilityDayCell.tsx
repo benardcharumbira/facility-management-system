@@ -1,6 +1,11 @@
-import type { DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 import type { AvailabilityDay } from '@/shared/api';
-import { DayCell, type DayBarSegment, type DayRenderContext } from '@/shared/components';
+import {
+  DayCell,
+  type DayBarSegment,
+  type DayRenderContext,
+  type RangePosition,
+} from '@/shared/components';
 import { cn } from '@/shared/utils/cn';
 import {
   REASONS,
@@ -15,7 +20,11 @@ import {
 const MAX_ICONS = 3;
 
 function barFor(day: AvailabilityDay, zone: string): DayBarSegment[] {
-  const window = operatingWindow(day, zone);
+  // A day the venue is not open on, but that a booking spanning it holds in full, is a whole day.
+  const dayStart = DateTime.fromISO(day.date, { zone }).startOf('day');
+  const window =
+    operatingWindow(day, zone) ??
+    (day.segments.length > 0 ? { start: dayStart, end: dayStart.plus({ days: 1 }) } : null);
   if (!window || day.segments.length === 0) return [];
   const span = window.end.toMillis() - window.start.toMillis();
   const segments: DayBarSegment[] = [];
@@ -54,6 +63,11 @@ interface AvailabilityDayCellProps {
   now: DateTime;
   context: DayRenderContext;
   selected: boolean;
+  /** Where the day sits in a run of days being chosen or chosen, if it is in one. */
+  range?: RangePosition;
+  rangeInvalid?: boolean;
+  /** Pointer and focus handlers for choosing a run of days. */
+  rangeHandlers?: { onFocus: () => void; onPointerEnter: () => void; onPointerDown: () => void };
   onSelect: (date: string, selectable: boolean, reason: string) => void;
 }
 
@@ -65,6 +79,9 @@ export function AvailabilityDayCell({
   now,
   context,
   selected,
+  range,
+  rangeInvalid,
+  rangeHandlers,
   onSelect,
 }: AvailabilityDayCellProps) {
   if (!data) {
@@ -83,7 +100,7 @@ export function AvailabilityDayCell({
   const access = dayAccess(data, rules, now);
   const reasons = dayReasons(data, access);
   const caption = cellCaption(data, reasons);
-  const name = dayName({ day: data, access, rules, today: context.today, selected });
+  const name = dayName({ day: data, access, rules, today: context.today, selected, range });
   const unavailable = reasons.length > 0 && data.status !== 'partially_booked';
 
   return (
@@ -96,6 +113,9 @@ export function AvailabilityDayCell({
       disabled={!access.selectable}
       surface={unavailable ? 'sunken' : 'default'}
       tabIndex={context.tabIndex}
+      range={range}
+      rangeInvalid={rangeInvalid}
+      {...rangeHandlers}
       bar={access.selectable && data.status !== 'closed' ? barFor(data, rules.timeZone) : undefined}
       onSelect={() => onSelect(data.date, access.selectable, name)}
     >

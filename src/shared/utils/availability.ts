@@ -130,6 +130,30 @@ export function datesTouched(start: DateTime, end: DateTime, zone: string): stri
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+/** Every date from one to another, inclusive, as ISO dates. Date arithmetic only: no zone is involved. */
+export function datesBetween(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const last = DateTime.fromISO(to, { zone: 'utc' });
+  for (let d = DateTime.fromISO(from, { zone: 'utc' }); d <= last; d = d.plus({ days: 1 })) {
+    dates.push(d.toISODate() ?? '');
+  }
+  return dates;
+}
+
+/** Whether a run of days is longer than the facility allows, with the limit stated. */
+export function spanLengthProblem(dates: string[], rules: Rules): WindowProblem | null {
+  if (dates.length <= rules.maximumBookingDays) return null;
+  const first = dates[0] ?? '';
+  const last = dates[dates.length - 1] ?? first;
+  const long = (date: string) => formatLongDate(DateTime.fromISO(date, { zone: rules.timeZone }));
+  return {
+    message:
+      rules.maximumBookingDays <= 1
+        ? `This venue takes bookings within a single day. Yours runs from ${long(first)} to ${long(last)}.`
+        : `A booking here can cover at most ${plural(rules.maximumBookingDays, 'day', 'days')}. Yours covers ${dates.length}, from ${long(first)} to ${long(last)}.`,
+  };
+}
+
 /**
  * A window of one day or of several, and why it cannot stand, or null if it is fine. One day is
  * judged as before. Across several days the rules are:
@@ -158,14 +182,8 @@ export function spanProblem(
   if (dates.length === 1) return windowProblem(window, dayOf(firstDate), rules, now);
 
   const long = (date: string) => formatLongDate(DateTime.fromISO(date, { zone }));
-  if (dates.length > rules.maximumBookingDays) {
-    return {
-      message:
-        rules.maximumBookingDays <= 1
-          ? `This venue takes bookings within a single day. Yours runs from ${long(firstDate)} to ${long(lastDate)}.`
-          : `A booking here can cover at most ${plural(rules.maximumBookingDays, 'day', 'days')}. Yours covers ${dates.length}, from ${long(firstDate)} to ${long(lastDate)}.`,
-    };
-  }
+  const tooLong = spanLengthProblem(dates, rules);
+  if (tooLong) return tooLong;
 
   const first = dayOf(firstDate);
   const last = dayOf(lastDate);

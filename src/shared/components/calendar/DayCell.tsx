@@ -11,6 +11,12 @@ export interface DayBarSegment {
   className?: string;
 }
 
+/**
+ * Where a day sits in a chosen run of days. The run is drawn as one continuous band, tinted across
+ * the cells and joined at the ends of each row, not as separately highlighted days.
+ */
+export type RangePosition = 'only' | 'start' | 'middle' | 'end';
+
 export interface DayCellProps {
   date: DateTime;
   /** The full accessible name: date, state and reasons. */
@@ -29,6 +35,13 @@ export interface DayCellProps {
   bar?: DayBarSegment[];
   /** Compact visual indicators, such as icons and a short word. */
   children?: ReactNode;
+  /** Set when the day is part of a run of days being chosen or chosen. */
+  range?: RangePosition;
+  /** The run cannot stand: drawn in the danger tone. */
+  rangeInvalid?: boolean;
+  onFocus?: () => void;
+  onPointerEnter?: () => void;
+  onPointerDown?: () => void;
 }
 
 /** Fixed cell height, shared with the skeleton so the grid never shifts. */
@@ -46,6 +59,11 @@ export function DayCell({
   onSelect,
   bar,
   children,
+  range,
+  rangeInvalid = false,
+  onFocus,
+  onPointerEnter,
+  onPointerDown,
 }: DayCellProps) {
   return (
     <button
@@ -56,15 +74,36 @@ export function DayCell({
       aria-disabled={disabled || undefined}
       tabIndex={tabIndex}
       onClick={onSelect}
+      onFocus={onFocus}
+      onPointerEnter={onPointerEnter}
+      onPointerDown={onPointerDown}
       className={cn(
-        'flex w-full flex-col items-stretch gap-1 overflow-hidden p-1 text-left -outline-offset-2',
+        'relative flex w-full flex-col items-stretch gap-1 overflow-hidden p-1 text-left -outline-offset-2',
         CELL_HEIGHT,
-        surface === 'sunken' ? 'bg-sunken' : 'bg-surface',
+        range
+          ? rangeInvalid
+            ? 'bg-danger-soft'
+            : 'bg-primary-soft'
+          : surface === 'sunken'
+            ? 'bg-sunken'
+            : 'bg-surface',
         muted && 'opacity-60',
         disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-primary-soft',
-        selected && 'ring-2 ring-primary ring-inset',
+        selected && !range && 'ring-2 ring-primary ring-inset',
       )}
     >
+      {range && (
+        <span
+          aria-hidden
+          data-range={range}
+          className={cn(
+            'absolute inset-x-0 top-0 h-1.5',
+            rangeInvalid ? 'bg-danger' : 'bg-primary',
+            (range === 'start' || range === 'only') && 'rounded-l-full',
+            (range === 'end' || range === 'only') && 'rounded-r-full',
+          )}
+        />
+      )}
       <span
         aria-hidden
         className={cn(

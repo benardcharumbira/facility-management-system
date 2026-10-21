@@ -153,12 +153,15 @@ export function dayName({
   rules,
   today,
   selected,
+  range,
 }: {
   day: AvailabilityDay;
   access: ReturnType<typeof dayAccess>;
   rules: Rules;
   today: boolean;
   selected: boolean;
+  /** Where the day sits in a run of days being chosen or chosen. */
+  range?: 'only' | 'start' | 'middle' | 'end';
 }): string {
   const date = formatLongDate(DateTime.fromISO(day.date, { zone: rules.timeZone }));
   let state: string;
@@ -174,7 +177,15 @@ export function dayName({
     const phrases = [...new Set(day.segments.map(segmentPhrase))].join(', ');
     state = `${day.status === 'fully_booked' ? 'unavailable' : 'partly available'}, ${phrases}`;
   }
-  return [date, today ? 'today' : null, state, selected ? 'selected' : null]
+  const inRange =
+    range === 'start'
+      ? 'first day of your range'
+      : range === 'end'
+        ? 'last day of your range'
+        : range === 'middle'
+          ? 'in your range'
+          : null;
+  return [date, today ? 'today' : null, state, selected ? 'selected' : null, inRange]
     .filter(Boolean)
     .join(', ');
 }

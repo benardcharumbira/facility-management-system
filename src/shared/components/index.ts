@@ -122,3 +122,8 @@ export { Footer } from './Footer';
 export { ContentPage, ContentSection } from './content/ContentPage';
 export type { ContentPageProps } from './content/ContentPage';
 export { PlaceholderNotice } from './content/PlaceholderNotice';
+export { WeekBlock, WeekGrid } from './calendar/WeekGrid';
+export type { WeekAxis, WeekGridProps } from './calendar/WeekGrid';
+export { useRangeSelect } from './calendar/useRangeSelect';
+export type { DayRange } from './calendar/useRangeSelect';
+export type { RangePosition } from './calendar/DayCell';

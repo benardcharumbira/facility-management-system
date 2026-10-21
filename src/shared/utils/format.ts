@@ -1,12 +1,51 @@
 import { DateTime } from 'luxon';
 
-/** A window as words, in the facility's zone: never the browser's. */
+const NUMBER_WORDS = [
+  '',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+];
+
+/** "three days" for small numbers, "12 days" beyond. */
+export const daysInWords = (n: number): string =>
+  `${n <= 10 ? NUMBER_WORDS[n] : n} ${n === 1 ? 'day' : 'days'}`;
+
+/**
+ * A window as words, in the facility's zone: never the browser's. Within a day it is a date and
+ * "09:00 to 12:00". Across several it is one booking read as a range: the two dates, the two times
+ * (each on its own day), how many days it covers, and the whole of it in one sentence.
+ */
 export function describeWindow(startsAt: string, endsAt: string, zone: string) {
   const start = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(zone);
   const end = DateTime.fromISO(endsAt, { zone: 'utc' }).setZone(zone);
+  const lastDay = end.minus({ milliseconds: 1 }).startOf('day');
+  const days = Math.round(lastDay.diff(start.startOf('day'), 'days').days) + 1;
+  const long = (t: DateTime) => t.setLocale('en').toFormat('cccc d LLLL');
+  const withYear = (t: DateTime) => t.setLocale('en').toFormat('cccc d LLLL yyyy');
+  if (days <= 1) {
+    const date = withYear(start);
+    const time = `${start.toFormat('HH:mm')} to ${end.toFormat('HH:mm')}`;
+    return { date, time, days: 1, span: false, length: '', text: `${date}, ${time}` };
+  }
   return {
-    date: start.setLocale('en').toFormat('cccc d LLLL yyyy'),
-    time: `${start.toFormat('HH:mm')} to ${end.toFormat('HH:mm')}`,
+    // The year once, at the end, unless the span crosses into a new one.
+    date:
+      start.year === end.year
+        ? `${long(start)} to ${withYear(end)}`
+        : `${withYear(start)} to ${withYear(end)}`,
+    time: `${start.toFormat('HH:mm')} on the first day to ${end.toFormat('HH:mm')} on the last day`,
+    days,
+    span: true,
+    length: daysInWords(days),
+    text: `${long(start)} ${start.toFormat('HH:mm')} to ${long(end)} ${end.toFormat('HH:mm')}, ${daysInWords(days)}`,
   };
 }
 
@@ -48,10 +87,19 @@ export function compactDate(instant: string, zone: string): string {
     .toFormat('ccc d LLL');
 }
 
-/** "Sat 14 Nov, 08:00 to 17:00" in the given zone. */
+/**
+ * "Sat 14 Nov, 08:00 to 17:00" in the given zone. For dense lists. Across days: "Fri 13 Nov, 14:00
+ * to Sun 15 Nov, 12:00".
+ */
 export function compactWindow(startsAt: string, endsAt: string, zone: string): string {
-  const end = DateTime.fromISO(endsAt, { zone: 'utc' }).setZone(zone).toFormat('HH:mm');
-  const start = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(zone).toFormat('HH:mm');
+  const startZoned = DateTime.fromISO(startsAt, { zone: 'utc' }).setZone(zone);
+  const endZoned = DateTime.fromISO(endsAt, { zone: 'utc' }).setZone(zone);
+  const start = startZoned.toFormat('HH:mm');
+  const end = endZoned.toFormat('HH:mm');
+  const lastDay = endZoned.minus({ milliseconds: 1 });
+  if (!startZoned.hasSame(lastDay, 'day')) {
+    return `${compactDate(startsAt, zone)}, ${start} to ${compactDate(endsAt, zone)}, ${end}`;
+  }
   return `${compactDate(startsAt, zone)}, ${start} to ${end}`;
 }
 

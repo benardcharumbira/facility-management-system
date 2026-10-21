@@ -7,13 +7,22 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?Z$/;
 
 /**
- * The calendar's state in the URL: the month shown, the day whose panel is open, and the chosen
- * window as a start and end instant (UTC). A range rather than a date plus times, so a multi day
- * selection is an extension of this shape and not a rewrite.
+ * The calendar's state in the URL: the view and the month or week shown, the day whose panel is
+ * open (or the first and last day, for a span), and the chosen window as a start and end instant
+ * (UTC). A range rather than a date plus times, so a multi day selection was an extension of this
+ * shape and not a rewrite: only `dateTo` is new for it.
  */
+export type CalendarView = 'month' | 'week';
+export const CALENDAR_VIEWS: readonly CalendarView[] = ['month', 'week'];
+
 export interface AvailabilityUrlState {
+  view: CalendarView;
   month: string | undefined;
+  /** Any date in the week to show. The week runs Monday to Sunday. */
+  week: string | undefined;
   date: string | undefined;
+  /** The last day of a span whose first day is `date`. Absent for a single day. */
+  dateTo: string | undefined;
   startsAt: string | undefined;
   endsAt: string | undefined;
   /** A booking draft being continued, carried through so "Request booking" resumes it. */
@@ -23,8 +32,11 @@ export interface AvailabilityUrlState {
 }
 
 export const availabilityCodec = createParamsCodec<AvailabilityUrlState>({
+  view: param.oneOf(CALENDAR_VIEWS, 'month'),
   month: param.matching(YEAR_MONTH),
+  week: param.matching(ISO_DATE),
   date: param.matching(ISO_DATE),
+  dateTo: param.matching(ISO_DATE),
   startsAt: param.matching(ISO_INSTANT),
   endsAt: param.matching(ISO_INSTANT),
   draft: param.matching(/^[\w-]+$/),
@@ -84,4 +96,21 @@ export function rescheduleHref(bookingId: string, selection: Selection): string 
     proposedEndsAt: toInstant(selection.end),
   });
   return `/bookings/${encodeURIComponent(bookingId)}?${params.toString()}`;
+}
+
+/** The Monday of the week to show: the URL's, else the chosen day's, else the browser's today. */
+export function requestedWeek(state: AvailabilityUrlState, zone?: string): DateTime {
+  const base = state.week ?? state.date ?? state.startsAt?.slice(0, 10);
+  const day = base
+    ? DateTime.fromISO(base, { zone: zone ?? 'utc' })
+    : DateTime.now().setZone(zone ?? 'utc');
+  const valid = day.isValid ? day : DateTime.now().setZone(zone ?? 'utc');
+  return valid.startOf('day').minus({ days: valid.weekday - 1 });
+}
+
+/** The days a chosen span covers, first to last, as dates in the facility zone. */
+export function selectionDates(selection: Selection, zone: string): [string, string] {
+  const first = selection.start.setZone(zone).toISODate() ?? '';
+  const last = selection.end.setZone(zone).minus({ milliseconds: 1 }).toISODate() ?? first;
+  return [first, last];
 }
