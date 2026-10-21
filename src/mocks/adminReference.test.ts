@@ -7,6 +7,7 @@ import {
   type AuditList,
   type Booking,
   type BookingOptions,
+  type FacilityDetail,
   type PublishedTerms,
   type ReferenceEntry,
   type ReferenceImpactResult,
@@ -164,6 +165,21 @@ describe('seating arrangements', () => {
     });
     const refused = await failure(applicant.post(`/bookings/${draft.id}/submit`));
     expect(refused.errors.seatingArrangementId).toBeDefined();
+  });
+
+  it('stops showing the public a capacity figure for it, but keeps the figure for the administrator', async () => {
+    const publicFigures = async () =>
+      (await applicant.get<FacilityDetail>('/facilities/rothdene-hall')).capacityByArrangement?.map(
+        (c) => c.arrangement,
+      );
+    expect(await publicFigures()).toContain('Banquet');
+    await sysadmin.post('/admin/seating-arrangements/banquet/archive');
+    expect(await publicFigures()).not.toContain('Banquet');
+    expect((await capacityOf('rothdene-hall')).byArrangement.map((c) => c.arrangement)).toContain(
+      'Banquet',
+    );
+    await sysadmin.post('/admin/seating-arrangements/banquet/restore');
+    expect(await publicFigures()).toContain('Banquet');
   });
 
   it('can be restored', async () => {

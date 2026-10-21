@@ -221,6 +221,30 @@ describe('step 2: event details', () => {
 
 const resourcesReady = () => screen.findByRole('group', { name: 'Venue resources' });
 
+describe('the lists administrators keep', () => {
+  it('offers the event types and seating arrangements that are current, not the archived ones', async () => {
+    const sysadmin = createApiClient({ baseUrl: API, getToken: async () => 'user:mock-sysadmin' });
+    await sysadmin.post('/admin/seating-arrangements/banquet/archive');
+    await sysadmin.post('/admin/event-types/wedding/archive');
+    await sysadmin.post('/admin/seating-arrangements', { body: { name: 'Cabaret' } });
+
+    renderApp(ROTHDENE);
+    await stepHeading('When and where');
+    await screen.findByText('This time is still available.');
+    await next();
+    await stepHeading('Event details');
+
+    const seating = within(screen.getByLabelText(/^Seating arrangement/)).getAllByRole('option');
+    expect(seating.map((o) => o.textContent)).toContain('Cabaret');
+    expect(seating.map((o) => o.textContent)).not.toContain('Banquet');
+    const events = within(screen.getByLabelText(/^Type of meeting or event/)).getAllByRole(
+      'option',
+    );
+    expect(events.map((o) => o.textContent)).not.toContain('Wedding');
+    expect(events.map((o) => o.textContent)).toContain('Meeting');
+  });
+});
+
 describe('step 3: resources', () => {
   it('starts with everything off, reveals a quantity on selection and counts what is selected', async () => {
     renderApp(`/bookings/new${params('rothdene-hall')}&step=resources`);
@@ -562,6 +586,39 @@ describe('step 5: review and submit', () => {
     expect(await api.get<Booking>(`/bookings/${id}`)).toMatchObject({
       status: 'pending',
       acceptedTermsVersion: TERMS_VERSION,
+    });
+  });
+
+  it('asks for the new terms to be accepted when they were replaced during the request', async () => {
+    const { router } = await toReview();
+    // Someone publishes new terms while this applicant is on the review step.
+    const sysadmin = createApiClient({ baseUrl: API, getToken: async () => 'user:mock-sysadmin' });
+    await sysadmin.post('/admin/terms/terms-2026-2/publish');
+
+    await userEvent.click(screen.getByLabelText(/I accept the terms and conditions/));
+    await press('Submit request');
+    expect(
+      await screen.findByRole('link', {
+        name: /The terms and conditions were updated while you were completing this request \(now version 2026-2\)/,
+      }),
+    ).toBeVisible();
+    // Nothing was submitted, and the old acceptance is withdrawn.
+    expect(router.state.location.pathname).toBe('/bookings/new');
+    await waitFor(() =>
+      expect(screen.getByLabelText(/I accept the terms and conditions/)).not.toBeChecked(),
+    );
+
+    // The new words are what is now offered, and accepting them records the new version.
+    await userEvent.click(screen.getByRole('button', { name: 'Read the terms and conditions' }));
+    expect(await screen.findByText(/Cancellations made fewer than seven days/)).toBeVisible();
+    await userEvent.click(screen.getByLabelText(/I accept the terms and conditions/));
+    await press('Submit request');
+    await waitFor(() =>
+      expect(router.state.location.pathname).toMatch(/^\/bookings\/bk-\d+\/confirmation$/),
+    );
+    const id = router.state.location.pathname.split('/')[2] ?? '';
+    expect(await api.get<Booking>(`/bookings/${id}`)).toMatchObject({
+      acceptedTermsVersion: '2026-2',
     });
   });
 

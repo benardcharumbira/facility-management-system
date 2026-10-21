@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedBookings } from '@/mocks/data/bookingSeeds';
 import { bookingStore } from '@/mocks/data/bookingStore';
+import { TEST_API_BASE_URL } from '@/mocks/server';
+import { createApiClient } from '@/shared/api';
 import { ROLES } from '@/shared/auth';
 import { FIXED_NOW } from '@/test/clock';
 import { mockMeRole, renderApp } from '@/test/render';
@@ -118,6 +120,24 @@ describe('the answer, before any scrolling', () => {
       unmount();
     }
     expect(seen.size).toBe(5);
+  });
+});
+
+describe('after the lists they were made from change', () => {
+  it('still names the event type and seating arrangement of a booking, once they are archived', async () => {
+    const sysadmin = createApiClient({
+      baseUrl: TEST_API_BASE_URL,
+      getToken: async () => 'user:mock-sysadmin',
+    });
+    await sysadmin.post('/admin/event-types/workshop/archive');
+    await sysadmin.post('/admin/seating-arrangements/school-room/archive');
+    await open('seed-approved', 'MVL-2026-9002');
+
+    const details = screen
+      .getByRole('heading', { level: 2, name: 'Booking details' })
+      .closest('section') as HTMLElement;
+    expect(await within(details).findByText('Workshop or training')).toBeVisible();
+    expect(within(details).getByText('School room')).toBeVisible();
   });
 });
 
