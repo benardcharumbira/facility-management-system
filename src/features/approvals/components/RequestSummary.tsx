@@ -23,7 +23,9 @@ export function RequestSummary({
   onDownload: (documentId: string, name: string) => void;
 }) {
   const resources = (category: 'venue' | 'kitchen') =>
-    detail.resources.filter((r) => r.category === category).map((r) => `${r.name} × ${r.quantity}`);
+    detail.resources
+      .filter((r) => r.category === category)
+      .map((r) => (r.quantified ? `${r.name} × ${r.quantity}` : r.name));
 
   const items: ReviewItem[] = [
     { key: 'applicant', label: 'Applicant', value: detail.applicantName },

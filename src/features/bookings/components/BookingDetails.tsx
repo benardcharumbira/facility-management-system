@@ -1,16 +1,23 @@
 import { Download } from 'lucide-react';
 import type { Booking, BookingOptions } from '@/shared/api';
 import { Button, formatBytes, ReviewList, type ReviewItem } from '@/shared/components';
+import { allResources, describeRequest } from '../resources';
 
 function resourceList(
   booking: Booking,
   options: BookingOptions | undefined,
   category: 'venue' | 'kitchen',
 ) {
-  const names = new Map(options?.resources.map((r) => [r.id, r]));
+  const names = new Map(allResources(options).map((r) => [r.id, r]));
   const items = booking.resources
     .filter((r) => names.get(r.resourceId)?.category === category)
-    .map((r) => `${names.get(r.resourceId)?.name ?? r.resourceId} × ${r.quantity}`);
+    .map((r) =>
+      describeRequest(
+        names.get(r.resourceId)?.name ?? r.resourceId,
+        r.quantity,
+        names.get(r.resourceId)?.quantified ?? true,
+      ),
+    );
   return items;
 }
 

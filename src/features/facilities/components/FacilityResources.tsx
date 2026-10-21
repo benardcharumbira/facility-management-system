@@ -8,7 +8,7 @@ function ResourceList({ items, label }: { items: FacilityResource[]; label: stri
       {items.map((item) => (
         <li key={item.id} className="flex justify-between gap-4 border-b border-line py-1.5">
           <span>{item.name}</span>
-          {item.quantity !== null && (
+          {item.quantified && item.quantity !== null && (
             <span className="text-muted tabular-nums">
               <span aria-hidden>×</span> {item.quantity}
               <span className="sr-only"> available</span>

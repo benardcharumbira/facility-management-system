@@ -9,6 +9,7 @@ import {
 } from '@/shared/components';
 import type { StepId } from '../config';
 import { describeWindow } from '@/shared/utils/format';
+import { describeRequest } from '../resources';
 import { fieldId, type BookingFormValues } from '../schema';
 
 export function StepReview({
@@ -32,7 +33,7 @@ export function StepReview({
   const requested = (category: 'venue' | 'kitchen') =>
     options.resources
       .filter((r) => r.category === category && values.resources[r.id] !== undefined)
-      .map((r) => `${r.name} × ${values.resources[r.id]}`);
+      .map((r) => describeRequest(r.name, values.resources[r.id] ?? 1, r.quantified));
   const venue = requested('venue');
   const kitchen = requested('kitchen');
   const list = (items: string[]) =>

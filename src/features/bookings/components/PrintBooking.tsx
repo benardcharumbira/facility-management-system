@@ -1,6 +1,7 @@
 import type { Booking, BookingOptions } from '@/shared/api';
 import { PrintOnly } from '@/shared/components';
 import { describeWindow } from '@/shared/utils/format';
+import { allResources, describeRequest } from '../resources';
 
 /**
  * The record a person takes to the venue: reference, venue, time, event details and the approved
@@ -16,11 +17,12 @@ export function PrintBooking({
 }) {
   const window = describeWindow(booking.startsAt, booking.endsAt, booking.facility.timeZone);
   const resources = booking.resources.map((r) => {
-    const resource = options?.resources.find((o) => o.id === r.resourceId);
+    const resource = allResources(options).find((o) => o.id === r.resourceId);
     return {
       id: r.resourceId,
       name: resource?.name ?? r.resourceId,
       quantity: r.quantity,
+      quantified: resource?.quantified ?? true,
       category: resource?.category,
     };
   });
@@ -56,13 +58,13 @@ export function PrintBooking({
           {row(
             'Venue resources',
             group('venue')
-              .map((r) => `${r.name} × ${r.quantity}`)
+              .map((r) => describeRequest(r.name, r.quantity, r.quantified))
               .join(', ') || 'None',
           )}
           {row(
             'Kitchen resources',
             group('kitchen')
-              .map((r) => `${r.name} × ${r.quantity}`)
+              .map((r) => describeRequest(r.name, r.quantity, r.quantified))
               .join(', ') || 'None',
           )}
         </dl>

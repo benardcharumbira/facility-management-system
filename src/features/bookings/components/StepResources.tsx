@@ -24,6 +24,7 @@ function ResourceRow({
   onChange: (quantity: number | undefined) => void;
 }) {
   const selected = quantity !== undefined;
+  const counted = resource.quantified;
   return (
     <li className="flex flex-col gap-2 border-b border-line py-2 last:border-b-0">
       <CheckboxField
@@ -34,7 +35,8 @@ function ResourceRow({
         hint={offered ? undefined : 'Not listed for this venue.'}
         onChange={(checked) => onChange(checked ? 1 : undefined)}
       />
-      {selected && (
+      {/* Something that is present or not has no quantity to choose. */}
+      {selected && counted && (
         <div className="pl-8">
           <QuantityStepper
             name={resource.name}
