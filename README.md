@@ -598,6 +598,154 @@ Checked under jsdom, which has no layout. I have not opened it in a browser, so 
 and scrolling of a wide grid, real arrow-key behaviour in number fields across browsers, and use
 with a screen reader are unconfirmed.
 
+## Users, roles, reference data and the audit trail
+
+System administrators only, throughout: `/admin/users`, `/admin/users/:id`, `/admin/reference`
+(`?section=seating|event-types|terms`) and `/admin/audit`. Facility administrators get a forbidden
+page on every one of them, the navigation does not show the links, and the mock API answers them 403
+whatever the screen does. The contracts are `admin-users.ts`, `admin-reference.ts` and
+`admin-audit.ts` in `src/shared/api/contracts`. To see them with the mock, set
+`VITE_MOCK_ROLE=system_admin`: the mock then signs the caller in as Sipho Nkosi, and in tests a
+`user:<id>` token does the same.
+
+**Clerk and this service.** Clerk owns credentials, verification, sessions and the profile (name,
+email address, contact details). This service owns the role, an approver's facilities, and the
+status of the account. So the user screen shows the Clerk profile read only, with a note and a link
+saying where it is changed, and there is no endpoint that writes it. There is no password reset, no
+email change and no invitation: "Invite staff in Clerk" is a link out.
+
+### Users
+
+- **The list** is every user, applicants and staff, at the compact density. It opens on **Staff**
+  with **Applicants** and **Everyone** a tab away, each showing how many are behind it, because the
+  applicant list dwarfs the staff list. Search is by name and email; filters are role, status and
+  "approvers with no facilities"; sort includes who signed in most recently. A row shows the role,
+  the status, when they last signed in (what Clerk exposes), and for an approver how many facilities
+  they cover. A facility administrator designated against nothing is **flagged** in the row, and a
+  banner above the list offers to show just those people.
+- **One role per user** (the slice 1 model), so "roles" is a single choice of four.
+- **Granting is never a dropdown that saves.** Choosing a role changes nothing. "Change role" on a
+  grant opens a dialog that says what the role permits in words (a list per role, in
+  `users/labels.ts`), that it takes effect at once, that nothing on the person's screen announces
+  it and nobody else is told, and names the person and the role on the confirm button. The server
+  refuses a grant that arrives without `confirmGrant: true`, so a client that skips the dialog
+  fails.
+- **Taking a role away, or deactivating, runs the slice 9 impact check** and reports in specific
+  terms: "This leaves Vaal Marina Board Room and Vaal Marina Hall with no designated approver, and 3
+  pending requests with nobody to decide them", followed by those requests. `UserImpactResult`
+  extends the slice 9 shape with `facilitiesLeftWithoutApprover`, `unroutedPendingRequests` and
+  `designationsRemoved`; the pending requests are the `affectedBookings` (reason `no_approver`).
+  **A role change that strands nothing saves with no dialog**, with a message saying what changed
+  ("They were removed from 1 facility").
+- **Deactivation is asked for by name every time**, even when it strands nothing, like archiving in
+  slice 9 and for the same reason: the click is the decision. That is one place I read "skip the
+  dialog where nothing is affected" as applying to role changes and not to deactivation.
+- **Facilities** (for a facility administrator) is the same relationship the facility's Approvers
+  section edits, held once on the facility, so the two cannot disagree: edit it from either side and
+  the other shows it. Changes from the facility side are recorded against each person they touch.
+  A designation edit that would strand something is checked the same way.
+- **Leaving the facility administrator role, or being deactivated, removes the designations, and
+  reactivating does not restore them.** The alternative, keeping them while the person cannot sign
+  in, leaves a facility looking covered by someone who cannot act. It is Q33.
+- **Guard rails are shown, not discovered on save.** The user detail carries `protections`: the
+  reason, in words, that a role cannot be changed or an account deactivated. The interface then does
+  not offer it and says why. At least one active system administrator always exists; you cannot
+  remove your own system administrator role, nor deactivate yourself; the server refuses all three
+  with 409 and a `code`. A deactivated person is nobody to the server (no role, no access).
+- **History** on the person is their entries in the audit trail: role changes, facility changes,
+  deactivation, with who and when.
+- **Unsaved choices** (a role picked, facilities ticked) are guarded: leaving asks first.
+
+### Reference data
+
+- **Seating arrangements and event types** share one editor (`VocabularyEditor`): add, rename,
+  display order (a number, lowest first), archive and restore. Never deleted. They drive the booking
+  form (`GET /booking-options` lists the current ones and carries `retiredEventTypes` and
+  `retiredSeatingArrangements` so an old booking can still be named) and, for arrangements, the
+  capacity editor from slice 9. The seed is provisional: cinema, banquet, school room, u-shape,
+  boardroom, open floor; and the nine event types the form already had.
+- **Archiving an arrangement that facilities hold capacity figures against runs an impact check**
+  (`POST /admin/seating-arrangements/:id/impact`, an addition): the dialog lists the facilities and
+  their figures, which stop being offered (the public page stops showing them; the administrator
+  still sees them, so restoring brings them back), and the approved and pending bookings that chose
+  it, which are left as they are. Renaming one carries the figures with it, because they refer to
+  the arrangement by name.
+- **Event type affects nothing beyond reporting today**: not routing and not eligibility. The
+  screen says so, and whether it should is Q31.
+- **Terms and conditions** are versions: draft, published, superseded, each with its words, who
+  wrote and published it, the dates and how many bookings accepted it. You write a draft, preview it
+  as applicants will read it, and publish it. **Publishing supersedes the previous version in the same
+  step. A published version is immutable**: the screen offers no edit and the server answers 409
+  (`terms_immutable`); to correct one you start a new draft from it. The terms are plain paragraphs
+  (a blank line between them), not rich text (Q35).
+- **The rule for a request in flight**, stated on the publish confirmation: a booking records the
+  version current at the moment it is submitted, not when its draft was started. Concretely, the
+  server refuses a submission carrying a version that is no longer current (422 on `termsAccepted`,
+  "updated while you were completing this request"), so the recorded version is always the one the
+  applicant was shown. The booking form then unticks the box, refetches, and asks them to read and
+  accept the new words.
+- **`GET /terms/current`** (public, an addition) is what slice 12's terms page renders.
+
+### The audit trail
+
+- **Read only, newest first**, paginated with the slice 2 envelope. The question people actually ask
+  is "what happened to booking MVL-2026-00417", so the booking reference is the first control, and a
+  fully traced booking with that reference is in the mock. Date range, who did it, kind of record,
+  record identifier and action are the other filters; everything is in the URL so a question can be
+  linked.
+- **Each entry expands to the state before and after** as a table, with the fields that changed
+  marked in words as well as weight, and a note when there was nothing before.
+- **Export as CSV** needs both ends of a date range (the button is disabled with the reason, and the
+  server answers 422 without them): there is no export of everything. **The export is itself an
+  event**: actor, the filters and the row count, and the screen shows it in the trail afterwards.
+  Cells a spreadsheet would run as a formula are neutralised. An export that is refused leaves no
+  entry, because nothing was exported.
+- **What is recorded:** booking creation, submission, approval, rejection, cancellation and move
+  requests, from the existing booking and approval handlers; and every change made in this slice.
+  The facility and resource administration of slices 9 and 10 is **not** recorded, apart from
+  approver designation, which is user access (Q36).
+- **Personal information:** the trail holds it, so it is for system administrators only and the
+  page says so. Retention and who may see what are questions for the client (Q36).
+
+### The mock
+
+The seed has fourteen staff beside about two hundred and forty applicants (a few of whom are
+deactivated), two system administrators, a facility administrator designated for nothing, and a
+Vaal Marina pair covered only by Pieter van Wyk with three pending requests, so removing his role
+strands two facilities and three requests (`seedUnroutedRequests`). Removing Kagiso Mahlangu's
+role strands nothing. Sipho Nkosi cannot remove his own role; if you deactivate Zodwa Khumalo, he
+becomes the last administrator. There is a published, a superseded and a draft terms version.
+Archiving Banquet reaches many facilities and bookings. The audit trail holds a few hundred entries.
+
+### Additions to the contract beyond the brief
+
+`confirmGrant` on a role change; `roles/impact` takes a role change, a deactivation or a designation
+edit (one endpoint for all three); `designationsRemoved` on the impact; `protections` on the user
+detail; `POST /admin/seating-arrangements/:id/impact`; `restore` for both vocabularies; the
+`no_approver` and `arrangement_archived` impact reasons; `GET /terms/current`; and the retired
+lists on the booking options.
+
+### Design system
+
+**0 components added to the shared kit; 2 existing pieces changed; 1 thing moved.** The brief
+expected `RoleAssignment`, `PermissionConfirmDialog`, `VersionedContentEditor` and `AuditEntry`.
+All four were needed, and all four are in the feature, not `shared/`, because each has one use:
+nothing else grants roles, edits versioned text or shows a before and after. `ImpactDialog`,
+`useImpactGuard`, `ArchiveConfirm`, `SectionedEditLayout`, `ConfirmDialog`, `Disclosure`,
+`ActivityLog` and the list set were reused. Changed: `ArchiveConfirm` takes `details` (a list of
+what holds a figure against the thing archived), and `ImpactDialog` knows the two new reasons.
+Moved: `ROLE_LABELS` from the app shell to `shared/auth`, since a feature needed it. The
+abstractions held, with one honest sign of strain: **the "leave without saving?" blocker, a
+`useBlocker` plus a `ConfirmDialog`, is now written out in six screens** (facility edit, resource
+edit, the allocation grid, the per facility resources form, user detail and reference data). It is
+the first thing to extract, as a hook, when anything next touches those screens.
+
+### Not verified
+
+Checked under jsdom, which has no layout. I have not opened it in a browser: how the audit table
+and the role radios look and wrap on a small screen, real keyboard focus order across the dialogs,
+the CSV opening in a spreadsheet, and use with a screen reader are unconfirmed.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).

@@ -134,6 +134,35 @@ Sicelo Hall, Lakeside Hall.
     nothing else. What should happen next: should the applicant be told, should it be flagged for an
     approver, or is it handled by hand? (See also Q24.)
 
+31. **What an event type should do.** Today it affects nothing beyond reporting: not who approves a
+    request and not whether a venue can be booked. Should it ever (a funeral or a wedding routed to a
+    different approver, a venue closed to some kinds of event)? And what are the real lists of event
+    types and seating arrangements? Ours are invented.
+
+32. **One role or several.** We treat a person as holding exactly one of applicant, internal user,
+    facility administrator or system administrator. Does anyone need two (an approver who is also an
+    applicant for their own events)? And what, precisely, should an internal user be able to do that
+    an applicant cannot? We have said nothing, only that they are municipal staff who book.
+
+33. **When someone stops being an approver.** Leaving the facility administrator role, or being
+    deactivated, removes their facilities, and reactivating does not give them back. The alternative
+    is to keep them and ignore them while the account is off. Which do you want? And when that leaves
+    a facility with nobody, should it become unavailable by itself, or only be reported, as now?
+
+34. **Who may grant what.** Any system administrator can make any other a system administrator, and
+    can deactivate one (but never the last). Should granting that role need two people, or a reason
+    written down?
+
+35. **The words of the terms.** We store them as plain paragraphs. Will the municipality supply them
+    as a document, with headings and numbered clauses, or as a PDF? Rich text, or a link to a
+    document, changes how an applicant accepts "the version they read". And may a published version
+    ever be withdrawn without a replacement?
+
+36. **The audit trail.** We record bookings, approvals and administration of users and reference
+    data, and not yet facility or resource changes. Which should it cover? How long should entries
+    be kept, who besides system administrators (an auditor, say) may read it, and is a written
+    reason needed to export it? An export is recorded with who, the filters and the row count.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

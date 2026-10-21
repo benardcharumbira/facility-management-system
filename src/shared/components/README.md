@@ -130,6 +130,15 @@ booking is affected (a catalogue change that discards what facilities hold), and
 the impact type; `ArchiveConfirm`'s sentence can be replaced for something that is not a facility;
 `ScheduleEditor`'s copy dialog returns focus. `EditableGrid` is generic and holds no resource logic.
 
+**Added for users, reference data and the audit trail: 0 added, 2 changed, 1 moved.** The four
+pieces the brief expected (`RoleAssignment`, `PermissionConfirmDialog`, `VersionedContentEditor`,
+`AuditEntry`) were all written, and all stayed in the feature because each has a single user.
+`ArchiveConfirm` gained `details`, for a list of what holds a figure against the thing being
+archived; `ImpactDialog` gained the `no_approver` and `arrangement_archived` reasons; and
+`ROLE_LABELS` moved from the app shell to `shared/auth`. The one strain the abstractions showed is
+the unsaved-changes blocker (`useBlocker` plus a `ConfirmDialog`), now written out in six screens: the
+next candidate to extract.
+
 **Still open, unchanged:** two disclosure primitives, two sheet primitives (the filter side sheet
 is a third presentation of one), three skeleton patterns, and field errors styled apart from
 `Alert`.
