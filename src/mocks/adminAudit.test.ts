@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   createApiClient,
   isApiProblem,
@@ -173,6 +174,7 @@ describe('the query', () => {
   });
 
   it('rejects an impossible query', async () => {
+    sendsInvalidRequests();
     expect((await failure(audit({ from: 'yesterday' }))).status).toBe(422);
     expect((await failure(audit({ from: '2026-10-31', to: '2026-10-01' }))).status).toBe(422);
     expect((await failure(audit({ entityType: 'nonsense' }))).status).toBe(400);
@@ -183,6 +185,7 @@ describe('the export', () => {
   const range = { from: '2026-08-01', to: '2026-11-02' };
 
   it('will not export everything: it needs both ends of a date range', async () => {
+    sendsInvalidRequests();
     for (const query of [{}, { from: '2026-10-01' }, { to: '2026-10-31' }] as Array<
       Record<string, string>
     >) {
@@ -222,6 +225,7 @@ describe('the export', () => {
   });
 
   it('does not record an export that was refused', async () => {
+    sendsInvalidRequests();
     await failure(sysadmin.download('/admin/audit/export'));
     expect((await audit({ action: 'audit.exported' })).totalItems).toBe(0);
   });

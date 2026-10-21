@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { sendsInvalidRequests } from '@/test/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createApiClient,
@@ -486,6 +487,7 @@ describe('the schedule', () => {
   });
 
   it('validates the hours it is given', async () => {
+    sendsInvalidRequests();
     const schedule = await scheduleOf('lakeside-hall');
     const put = (body: object) =>
       failure(admin.put('/admin/facilities/lakeside-hall/schedule', { body }));
@@ -625,6 +627,7 @@ describe('status and archiving', () => {
   });
 
   it('has no way to delete a facility at all', async () => {
+    sendsInvalidRequests();
     const failed = await failure(admin.delete('/admin/facilities/rothdene-hall'));
     // There is no such endpoint, so nothing answers it.
     expect(failed.status).not.toBe(204);

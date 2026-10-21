@@ -33,13 +33,10 @@ export const facilitySummary = obj({
 export const facilityList = paginated(facilitySummary);
 
 export const facilityListQuery = z.strictObject({
-  q: z
-    .string()
-    .optional()
-    .meta({
-      description:
-        'Every whitespace separated word must match name, code, short description or locality.',
-    }),
+  q: z.string().optional().meta({
+    description:
+      'Every whitespace separated word must match name, code, short description or locality.',
+  }),
   type: z.array(z.string()).optional().meta({ description: 'Repeated. Values are OR.' }),
   locality: z.array(z.string()).optional().meta({ description: 'Repeated. Values are OR.' }),
   minCapacity: nonNegativeInt.optional(),

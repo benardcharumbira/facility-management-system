@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { server, TEST_API_BASE_URL } from '@/mocks/server';
 import type { Paginated } from '@/shared/types/pagination';
 import { createApiClient } from './client';
@@ -11,6 +12,9 @@ const client = createApiClient({
 });
 
 describe('api client', () => {
+  // These test the client against routes of their own, which are not the API's.
+  beforeEach(() => sendsInvalidRequests());
+
   it('turns an RFC 7807 response into a typed ApiProblem', async () => {
     server.use(
       http.post(`${TEST_API_BASE_URL}/bookings`, () =>

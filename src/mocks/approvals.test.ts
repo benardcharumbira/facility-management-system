@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   ACTION_NOT_ALLOWED_PROBLEM_TYPE,
   ALREADY_DECIDED_PROBLEM_TYPE,
@@ -239,6 +240,7 @@ describe('decisions', () => {
   });
 
   it('refuses to reject without a reason', async () => {
+    sendsInvalidRequests();
     for (const reason of ['', '   \n  ']) {
       const failed = await failure(reject('appr-9116', reason));
       expect(failed.status).toBe(422);

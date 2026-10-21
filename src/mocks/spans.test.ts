@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { sendsInvalidRequests } from '@/test/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createApiClient,
@@ -298,6 +299,7 @@ describe('the limit on a span', () => {
   });
 
   it('is set in the schedule, whole and at least 1', async () => {
+    sendsInvalidRequests();
     const facility = await admin.get<AdminFacility>('/admin/facilities/lakeside-hall');
     for (const maximumBookingDays of [0, 1.5, 400]) {
       const refused = await failure(

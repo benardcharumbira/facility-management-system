@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   createApiClient,
   type FacilityDetail,
@@ -93,6 +94,7 @@ describe('GET /facilities against the Midvaal venues', () => {
   });
 
   it('reports totalPages 0 when nothing matches, and rejects invalid parameters', async () => {
+    sendsInvalidRequests();
     expect(await list({ q: 'zzzzzz' })).toMatchObject({ items: [], totalItems: 0, totalPages: 0 });
     await expect(list({ sort: 'size' })).rejects.toMatchObject({
       status: 400,
@@ -104,6 +106,7 @@ describe('GET /facilities against the Midvaal venues', () => {
 
 describe('GET /facilities against the volume fixture', () => {
   it('paginates and clamps page size', async () => {
+    sendsInvalidRequests();
     useVolume();
     const first = await list({ pageSize: 10, page: 1 });
     const last = await list({ pageSize: 10, page: 7 });

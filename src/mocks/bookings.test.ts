@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   SLOT_CONFLICT_PROBLEM_TYPE,
   createApiClient,
@@ -127,6 +128,7 @@ describe('drafts', () => {
   });
 
   it('rejects malformed resources and unknown facilities with field errors', async () => {
+    sendsInvalidRequests();
     const draft = await create('rothdene-hall');
     const bad = await failure(
       api.patch(`/bookings/${draft.id}`, {

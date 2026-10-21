@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   createApiClient,
   isApiProblem,
@@ -245,6 +246,7 @@ describe('saving a batch', () => {
   });
 
   it('refuses the whole batch, naming the changes at fault, when any is invalid, and changes nothing', async () => {
+    sendsInvalidRequests();
     const failed = await failure(
       save([
         { facilityId: 'rothdene-hall', resourceId: 'kitchen-urn', value: 3 },
@@ -285,6 +287,7 @@ describe('saving a batch', () => {
   });
 
   it('refuses an empty or malformed request', async () => {
+    sendsInvalidRequests();
     expect((await failure(admin.put('/admin/resource-allocations', { body: {} }))).status).toBe(
       422,
     );
@@ -321,6 +324,7 @@ describe('creating and changing the catalogue', () => {
   });
 
   it('refuses a duplicate or missing name and a category outside the vocabulary', async () => {
+    sendsInvalidRequests();
     const failed = await failure(create({ name: 'chairs', category: 'garden', quantified: true }));
     expect(failed.errors.name?.[0]).toMatch(/already a resource called Chairs/);
     expect(failed.errors.category).toBeDefined();
@@ -440,6 +444,7 @@ describe('archiving a resource', () => {
   });
 
   it('cannot be edited while archived, and cannot be deleted at all', async () => {
+    sendsInvalidRequests();
     await admin.post('/admin/resources/stage/archive');
     expect(
       (await failure(admin.patch('/admin/resources/stage', { body: { name: 'Platform' } }))).status,
@@ -465,6 +470,7 @@ describe('one facility', () => {
   });
 
   it('saves its values atomically, and refuses the lot on one bad value', async () => {
+    sendsInvalidRequests();
     await admin.put('/admin/facilities/rothdene-hall/resources', {
       body: {
         values: [

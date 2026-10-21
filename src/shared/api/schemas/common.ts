@@ -11,20 +11,16 @@ import { z } from 'zod';
 export const obj = z.strictObject;
 
 /** A UTC instant, ISO 8601, with a `Z` and no offset: `2026-11-14T06:00:00Z`. */
-export const instant = z.iso
-  .datetime()
-  .meta({
-    description: 'A UTC instant, ISO 8601, always ending in Z.',
-    example: '2026-11-14T06:00:00Z',
-  });
+export const instant = z.iso.datetime().meta({
+  description: 'A UTC instant, ISO 8601, always ending in Z.',
+  example: '2026-11-14T06:00:00Z',
+});
 
 /** A calendar date with no time: `2026-11-14`. In the facility's time zone unless stated. */
-export const isoDate = z.iso
-  .date()
-  .meta({
-    description: 'A calendar date, yyyy-MM-dd, in the facility time zone.',
-    example: '2026-11-14',
-  });
+export const isoDate = z.iso.date().meta({
+  description: 'A calendar date, yyyy-MM-dd, in the facility time zone.',
+  example: '2026-11-14',
+});
 
 /** A 24 hour wall clock time in the facility's time zone: `08:00`. */
 export const timeOfDay = z

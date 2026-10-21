@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   ACTION_NOT_ALLOWED_PROBLEM_TYPE,
   SLOT_CONFLICT_PROBLEM_TYPE,
@@ -63,6 +64,7 @@ describe('GET /bookings', () => {
   });
 
   it("returns only the caller's bookings, decided by identity and never by a parameter", async () => {
+    sendsInvalidRequests();
     expect(ids(await list())).not.toContain('seed-other');
     expect(ids(await list({}, other))).toEqual(['seed-other']);
     // A user parameter is ignored: it is not how the caller is known.
@@ -123,6 +125,7 @@ describe('GET /bookings', () => {
   });
 
   it('rejects bad parameters with problem details', async () => {
+    sendsInvalidRequests();
     expect((await failure(list({ sort: 'newest' }))).status).toBe(400);
     expect((await failure(list({ status: ['archived'] }))).status).toBe(400);
     expect((await failure(list({ from: 'yesterday' }))).status).toBe(400);

@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { sendsInvalidRequests } from '@/test/contract';
 import { describe, expect, it } from 'vitest';
 import {
   createApiClient,
@@ -224,6 +225,7 @@ describe('GET /facilities/:id/availability', () => {
   });
 
   it('accepts 62 days and refuses more, bad dates and unknown facilities', async () => {
+    sendsInvalidRequests();
     expect((await get('city-hall', { from: '2026-11-01', to: '2026-12-02' })).days).toHaveLength(
       32,
     );

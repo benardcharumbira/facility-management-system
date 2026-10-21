@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   createApiClient,
   isApiProblem,
@@ -239,6 +240,7 @@ describe('what removing a role strands', () => {
   });
 
   it('rejects a change it cannot understand', async () => {
+    sendsInvalidRequests();
     expect((await failure(impact('approver-vaal', { kind: 'nonsense' }))).status).toBe(422);
   });
 });
@@ -339,6 +341,7 @@ describe('designation, from either side', () => {
 
 describe('the clerk profile', () => {
   it('is returned for display and has no endpoint that writes it', async () => {
+    sendsInvalidRequests();
     const detail = await user('mock-approver-1');
     expect(detail.profile).toMatchObject({
       firstName: 'Nomsa',

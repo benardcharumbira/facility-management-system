@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { sendsInvalidRequests } from '@/test/contract';
 import {
   createApiClient,
   isApiProblem,
@@ -90,6 +91,7 @@ describe('seating arrangements', () => {
   });
 
   it('refuses a missing, long or duplicate name', async () => {
+    sendsInvalidRequests();
     const empty = await failure(
       sysadmin.post('/admin/seating-arrangements', { body: { name: ' ' } }),
     );
