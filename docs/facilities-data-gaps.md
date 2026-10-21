@@ -200,6 +200,32 @@ Sicelo Hall, Lakeside Hall.
     help page are our wording ("Book a hall or meeting room in Midvaal"). Please review them, tell us
     which four venues to feature, and supply photographs of them (we have placeholders).
 
+44. **Operating hours inside a booking over several days.** We have assumed hours bind only the start
+    on the first day and the end on the last, and that days in between are held in full whether or not
+    the venue is open, so a hall closed on Sundays can take a Friday to Sunday wedding. The booker's
+    property is then in the hall on a day nobody is staffed there. Is that what you intend? And a
+    public holiday: we let a booking run across one (a long weekend) but not begin or end on one.
+    Blackouts always block the whole booking.
+
+45. **A set-up day or the set-up buffer.** Someone who wants Friday to decorate for a Saturday wedding
+    can book Friday to Saturday, or book Saturday and rely on the venue's set-up buffer. We have kept
+    both: booked days are the applicant's own (and the ones that would be charged), and the buffer is
+    time the municipality grants around a booking, never replacing days. Do you want that, or should
+    the buffer be what covers set-up and a longer booking never be needed for it?
+
+46. **How long a booking may be.** Each facility has a longest booking, set in administration, and we
+    start every facility at 7 days. Please give the real figure per venue. Should anything longer be
+    possible by a request to the municipality, rather than being refused outright?
+
+47. **A long request holds a lot of calendar.** A pending request holds its time for the hold period
+    whatever its length, so a week long request holds a week while it waits. Is that acceptable, or
+    should the hold of a long booking be shorter, or not apply?
+
+48. **Per day changes.** A booking over several days is one booking: it is approved, cancelled and
+    moved as a whole, and there is no part of it that can be dropped. If you want to cancel one day, or
+    to have a venue free on some days within a stretch, that is partial availability or a series
+    under another name, and it should be scoped on its own.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

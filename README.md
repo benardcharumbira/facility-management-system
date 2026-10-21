@@ -887,6 +887,140 @@ Checked under jsdom, which has no layout or print engine. I have not opened any 
 how the landing page looks at 360px and in sunlight, what the print stylesheet produces, how Clerk's
 profile screens open, and the real transferred sizes of images (there are none yet beyond the SVGs).
 
+## Multi day bookings and the calendar week view
+
+Two things slices 4 and 5 deferred. Recurring bookings are out of scope for the product, so every
+booking is one occurrence: nothing here repeats, and there are no occurrences, no partial
+availability and no per day cancellation anywhere in the code (a test checks a booking carries none).
+
+### The assumption, checked first
+
+Slice 4 held the calendar selection as a start and an end **instant** and slice 5 carried the booking
+window as two UTC instants, so the data model already held a span: **`Booking`, the submission, the
+URL and the booking form needed no new fields.** What did not hold was the rule around them. Every
+check of a window (`windowProblem`, the mock's submit and reschedule) looked at the day the window
+**started on** and nothing after it, so a Friday to Sunday request was judged on Friday alone. The
+work was selection, validation and presentation, as expected, plus the additions below.
+
+### The rules (to confirm with the client: Q44 and Q45)
+
+- **Operating hours constrain the start on the first day and the end on the last. Days wholly inside
+  a span are occupied in full, whatever the hours.** A venue closed on Sundays can take a Friday to
+  Sunday wedding. The days in between show as booked (in the committee room's case, on days it is
+  closed) and block the related facilities for the same stretch. A span cannot start or end on a day
+  the venue is closed. A **public holiday is treated like weekly hours, not like a blackout**, so a
+  span may cross one (a long weekend), but cannot begin or end on one. Q44.
+- **A blackout blocks the whole span**, because it means the venue is genuinely unavailable: a closure
+  anywhere inside a span, whole day or part of one, refuses it, naming the day and the reason.
+- **Anything already on a day the span would occupy blocks it**: on the first day, anything after the
+  start; on the last, anything before the end; on the days between, anything at all. The booker's
+  property is in the hall from the start to the end, so a request that would meet another booking
+  between is refused whichever end it touches.
+- **Set-up and clear-down time apply at the outer edges only.** They belong to the booking, so they
+  appear before its first moment and after its last, and never between its days. A test checks all
+  three days of a weekend span with a 60 minute buffer.
+- **Set-up days versus the buffer, decided: they are two different things, and the span does not
+  replace the buffer.** An applicant who wants Friday to decorate for a Saturday wedding books Friday
+  to Saturday: those days are theirs, are what they asked for, and are held in full (and, once there
+  are fees, are what would be chargeable). The facility's configured buffer is operational time the
+  municipality grants around a booking, and is added outside the span's ends whichever it is. The
+  calendar never blocks a moment twice: the engine resolves overlapping intervals once, by priority,
+  so the booking and its own buffer are one block, and a buffer that reaches back into an earlier day
+  shows as buffer there. A span's days do not count against the buffer, and the buffer does not count
+  against the span's length. Q45.
+- **The longest booking is bounded per facility**, in the schedule section beside the notice and the
+  horizon: `maximumBookingDays`, default **7**, 1 to 31. A request that reaches further is refused
+  saying so and stating the limit ("A booking here can cover at most 7 days. Yours covers 9, from … to
+  …"), and a facility set to 1 says it takes bookings within a single day. The 31 is what one
+  availability request can check (62 days) with room either side. Q46.
+- **Cancelling and moving a span is of the whole booking**, as it was.
+- **A pending span holds all of its days** for the length of the hold, like any request. For a long
+  span that is a lot of calendar to hold on a request not yet decided. Q47.
+
+### Selection
+
+- **Choose several days** is a button beside the view switch (off by default, so a click on a day
+  opens that day as it always did). With it on: click the first day and then the last (either order),
+  or press on the first and drag to the last, or by keyboard press Enter on the first day, move to the
+  last with the arrow keys (Shift or not) and press Enter again. Escape drops it. Hovering or moving
+  focus previews the run. Touch uses the two taps; dragging a finger across the grid is not supported,
+  because it is also scrolling.
+- **The run is drawn as one band**: every cell in it is tinted and carries a bar across its top that
+  is rounded at the two ends, so it reads as continuous along a row and from the end of one week to the
+  start of the next. A run that cannot stand is drawn in the danger tone. A cell's accessible name
+  says "first day of your range", "in your range" or "last day of your range".
+- **Times are chosen in the panel**: a start time on the first day and an end time on the last, only
+  from times that can stand (after anything already on the first day and the minimum notice; before
+  anything on the last). The days between need no times and the panel says they are held in full.
+- **Any day that cannot be part of it rules out the whole run**, and the panel names the day and the
+  reason, naming the related facility where that is the cause ("Friday 20 November is not free: City
+  Hall is booked, so a booking cannot run across it."), with a button to choose different days.
+- The chosen span is a start and an end instant in the URL, as before. `dateTo` is the one new
+  parameter, and only for the panel of a span whose times are not chosen yet.
+
+### The week view
+
+Seven day columns against a time axis across the hours the week's open days cover, an hour per row,
+switched from the toolbar with the view in the URL (`view=week&week=2026-11-16`). Blocks are drawn
+over the cells by time with the same six treatments (patterns and icons) and the same words as the
+month; a block for a booking from a related facility names that facility. A closed day is a whole
+closed column, hours the venue is shut are faded, today carries a marker at the current time, and a
+span is one block that runs into its neighbours across the columns (the sides that join are squared
+off and lose their border). Previous and next week, a way back to the month this week mostly falls in,
+the week on screen kept (dimmed, marked busy) while the next loads, and the neighbours prefetched.
+
+It is a grid of hour cells: arrows move between hours and days (off the edge of the week they go to
+the next or the previous one), Page Up and Page Down by week, Home and End to the first and last day
+of the week, Enter opens the day's panel. Each cell is named with its day, its hour and its state in
+words. The drawing of the blocks is for the eye; the names carry the meaning. On a phone the grid
+scrolls sideways inside its own box rather than squeezing the days out of reach.
+
+### Elsewhere
+
+My bookings, the booking detail, the confirmation, the print page, the approval queue and its detail,
+and the competing request list all read a span as a range ("Friday 8 January 14:00 to Sunday 10
+January 12:00, three days") through one function. The approval detail adds its length and that it is
+one request with one decision. The booking form shows a span's dates as a range, not two dates, and
+the review step reads it whole. The slice 9 impact dialog says, for a closure that falls on one day of
+a span, which day it was and that the booking is one unit so all of it is affected. A change of hours
+in administration no longer counts the days between a span's ends against the operating hours.
+
+### Additions to the contract (and why)
+
+None of these is a new endpoint. They are what the model needed once a window could cover days:
+`maximumBookingDays` on the schedule and on the availability response; `closedBy`
+(`schedule`, `holiday` or `blackout`) on a day, so a client can tell a day a span may cross from one
+it may not; `continuesBefore`/`continuesAfter` on a segment, so a block that belongs to a span is
+drawn joined; a day closed by its hours but held in full by a span is returned `fully_booked` with a
+whole-day segment (it was `closed` with none); and `day` on an impacted booking. The slice 4 and 5
+range assumption held for the data. It was the validation that was single day.
+
+### The mock
+
+Where to look (in the tests the date is Monday 2 November 2026; weeks count from the current one):
+an available three day span (week 3 is free for everything); a span blocked by one day in the middle
+(Mitchell Wing, Thursday 19 to Saturday 21 November, with City Hall booked on the Friday); a span
+across a closed day (the committee room, Friday 27 to Monday 30 November); a span across a blackout
+(Vaal Marina Hall, 7 to 10 December); a span over the maximum (any nine days); an approved span in both
+views (Lakeside Hall and the committee room, week 6, and Rothdene Hall 8 to 10 January); and a span
+competing with a single day request (Vaal Marina Hall, requests MVL-…-9302 and 9303).
+
+### Design system
+
+**2 additions and 1 existing piece changed.** `WeekGrid` (with `WeekBlock`) is new and generic: it
+knows days, hours and blocks, not availability. `useRangeSelect` is the range selection (the brief's
+`RangeSelect`), also generic. `DayCell` gained the run's position and the pointer and focus handlers.
+The slice 4 `Timeline` was not reused for the week: it is a vertical list of one day's entries, and the
+week is a grid of seven positioned columns, so forcing one into the other would have served neither.
+The feature adds `SpanPanel`, `WeekNavigator` and the week's blocks.
+
+### Not verified
+
+Checked under jsdom, which has no layout or pointer geometry. I have not opened the calendar in a
+browser, so how the week grid looks and scrolls at 360px, how a drag across the month feels, and the
+look of the joined blocks are unconfirmed. The tests prove the structure (what is joined, named and
+tinted), not how it looks.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).
