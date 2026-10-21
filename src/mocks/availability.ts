@@ -10,6 +10,7 @@ import {
   type AvailabilityDay,
   type AvailabilitySegment,
   type AvailabilitySegmentStatus,
+  type ClosedBy,
   type FacilityAvailability,
   type FacilitySummary,
   type RelatedFacility,
@@ -44,6 +45,11 @@ interface Interval {
   related: RelatedFacility | null;
   /** For a closure: why. */
   reason?: string;
+  /** Where the booking this came from really starts and ends, before any clipping to a day. */
+  sourceStart?: number;
+  sourceEnd?: number;
+  continuesBefore?: boolean;
+  continuesAfter?: boolean;
 }
 
 function activeBookings(ledger: Ledger, facilityId: string, now: DateTime) {
@@ -70,6 +76,8 @@ function intervalsFor(
       end,
       status: b.status === 'approved' ? 'booked' : 'held',
       related: null,
+      sourceStart: start,
+      sourceEnd: end,
     });
     if (b.setupMinutes > 0) {
       intervals.push({
@@ -106,6 +114,8 @@ function intervalsFor(
         end: b.endsAt.toMillis() + b.teardownMinutes * 60_000,
         status: 'blocked_by_related',
         related: { id: other.id, name: other.name, relationship },
+        sourceStart: b.startsAt.toMillis(),
+        sourceEnd: b.endsAt.toMillis(),
       });
     }
   }
@@ -113,7 +123,13 @@ function intervalsFor(
 }
 
 /** Splits overlaps by priority, then merges abutting pieces of the same status and relation. */
-function resolve(intervals: Interval[], windowStart: number, windowEnd: number): Interval[] {
+function resolve(
+  intervals: Interval[],
+  windowStart: number,
+  windowEnd: number,
+  /** The calendar day, so a piece can say whether its booking carries on past either end of it. */
+  day?: { start: number; end: number },
+): Interval[] {
   const clipped = intervals
     .map((i) => ({ ...i, start: Math.max(i.start, windowStart), end: Math.min(i.end, windowEnd) }))
     .filter((i) => i.end > i.start);
@@ -135,6 +151,8 @@ function resolve(intervals: Interval[], windowStart: number, windowEnd: number):
       );
     const winner = covering[0];
     if (!winner) continue;
+    const before = day !== undefined && (winner.sourceStart ?? start) < day.start;
+    const after = day !== undefined && (winner.sourceEnd ?? end) > day.end;
     const previous = pieces[pieces.length - 1];
     if (
       previous &&
@@ -144,6 +162,8 @@ function resolve(intervals: Interval[], windowStart: number, windowEnd: number):
       previous.reason === winner.reason
     ) {
       previous.end = end;
+      previous.continuesBefore ||= before;
+      previous.continuesAfter ||= after;
     } else {
       pieces.push({
         start,
@@ -151,6 +171,8 @@ function resolve(intervals: Interval[], windowStart: number, windowEnd: number):
         status: winner.status,
         related: winner.related,
         reason: winner.reason,
+        continuesBefore: before,
+        continuesAfter: after,
       });
     }
   }
@@ -159,6 +181,16 @@ function resolve(intervals: Interval[], windowStart: number, windowEnd: number):
 
 const iso = (millis: number) =>
   DateTime.fromMillis(millis, { zone: 'utc' }).toISO({ suppressMilliseconds: true }) ?? '';
+
+const toSegment = (p: Interval): AvailabilitySegment => ({
+  startsAt: iso(p.start),
+  endsAt: iso(p.end),
+  status: p.status,
+  relatedFacility: p.status === 'blocked_by_related' ? p.related : null,
+  ...(p.status === 'closure' && p.reason ? { reason: p.reason } : {}),
+  ...(p.continuesBefore ? { continuesBefore: true } : {}),
+  ...(p.continuesAfter ? { continuesAfter: true } : {}),
+});
 
 export function computeAvailability({
   facility,
@@ -186,6 +218,7 @@ export function computeAvailability({
         minimumNoticeHours: own.minimumNoticeHours,
         maximumHorizonDays: own.maximumHorizonDays,
         minimumDurationMinutes: MOCK_AVAILABILITY_RULES.minimumDurationMinutes,
+        maximumBookingDays: own.maximumBookingDays,
       }
     : MOCK_AVAILABILITY_RULES;
   const intervals = intervalsFor(facility, catalogue, ledger, now);
@@ -201,6 +234,16 @@ export function computeAvailability({
         (b.facilityId === null || b.facilityId === facility.id) && b.from <= date && date <= b.to,
     );
 
+    const dayStart = day.startOf('day').toMillis();
+    const dayEnd = day.plus({ days: 1 }).startOf('day').toMillis();
+    const closedBy: ClosedBy | null = blackout
+      ? 'blackout'
+      : holiday
+        ? 'holiday'
+        : !hours?.opensAt || !hours.closesAt
+          ? 'schedule'
+          : null;
+
     const closedReason = holiday
       ? `Public holiday: ${holiday}`
       : blackout
@@ -210,12 +253,38 @@ export function computeAvailability({
           : null;
 
     if (closedReason !== null || !hours?.opensAt || !hours.closesAt) {
+      // Closed by its hours or a holiday, but wholly inside someone's multi day booking: the venue
+      // is not staffed, yet the booker's property is in it, so the day is occupied in full.
+      if (closedBy === 'schedule' || closedBy === 'holiday') {
+        const whole = resolve(
+          intervals.filter((i) => i.status !== 'buffer' && i.status !== 'closure'),
+          dayStart,
+          dayEnd,
+          { start: dayStart, end: dayEnd },
+        );
+        if (
+          whole.length > 0 &&
+          whole.reduce((sum, p) => sum + (p.end - p.start), 0) >= dayEnd - dayStart
+        ) {
+          days.push({
+            date,
+            status: 'fully_booked',
+            opensAt: null,
+            closesAt: null,
+            closedReason,
+            closedBy,
+            segments: whole.map(toSegment),
+          });
+          continue;
+        }
+      }
       days.push({
         date,
         status: 'closed',
         opensAt: null,
         closesAt: null,
         closedReason,
+        closedBy,
         segments: [],
       });
       continue;
@@ -241,6 +310,7 @@ export function computeAvailability({
         opensAt: null,
         closesAt: null,
         closedReason: total.reason,
+        closedBy: 'blackout',
         segments: [],
       });
       continue;
@@ -258,16 +328,11 @@ export function computeAvailability({
       ],
       windowStart,
       windowEnd,
+      { start: dayStart, end: dayEnd },
     );
     const covered = pieces.reduce((sum, p) => sum + (p.end - p.start), 0);
 
-    const segments: AvailabilitySegment[] = pieces.map((p) => ({
-      startsAt: iso(p.start),
-      endsAt: iso(p.end),
-      status: p.status,
-      relatedFacility: p.status === 'blocked_by_related' ? p.related : null,
-      ...(p.status === 'closure' && p.reason ? { reason: p.reason } : {}),
-    }));
+    const segments: AvailabilitySegment[] = pieces.map(toSegment);
     days.push({
       date,
       status:

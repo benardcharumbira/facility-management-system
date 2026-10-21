@@ -159,6 +159,11 @@ export interface FacilitySchedule {
   minimumNoticeHours: number;
   /** How far ahead booking is permitted, in days. */
   maximumHorizonDays: number;
+  /**
+   * The most calendar days one booking may cover. A request that reaches further is refused with
+   * the limit stated. Operating hours bind only the first day's start and the last day's end.
+   */
+  maximumBookingDays: number;
 }
 
 export interface FacilityCapacity {
@@ -301,6 +306,11 @@ export interface ImpactedBooking {
     /** What would be held; null for a resource that is simply present or absent. */
     available: number | null;
   };
+  /**
+   * For a booking that spans several days, the day that caused the finding (yyyy-MM-dd in the
+   * facility's zone): the closure's first day that falls inside it. An addition.
+   */
+  day?: string;
   /** For `new_conflict`: the other booking it would now clash with. (An addition.) */
   conflictsWith: {
     bookingId: string;

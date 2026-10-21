@@ -12,6 +12,12 @@
  * - Week 4: Rothdene Hall booked on the Saturday with set-up the day before and clear-down the
  *   day after.
  * - Week 5: Vaal Marina Hall closed for maintenance on the Tuesday and Wednesday.
+ * - Week 6: two approved multi day bookings. Lakeside Hall from Friday 14:00 to Sunday 12:00, and the
+ *   committee room (open on weekdays only) from Friday 14:00 to Monday 12:00, which occupies its
+ *   closed Saturday and Sunday in full and blocks City Hall, its parent, for the same stretch.
+ * - Weeks 2, 3 and 5 are also where a multi day request meets a blocked day in the middle (week 2),
+ *   a free run to cross (week 3, including the committee room's closed weekend), and a blackout
+ *   (week 5).
  * - South African public holidays close every venue.
  * Everything else is deterministic pseudo random filler.
  */
@@ -102,7 +108,8 @@ const RESERVED_WEEKS: Record<string, number[]> = {
   'city-hall': [2],
   'mitchell-wing': [2],
   'loch-wing': [1, 2],
-  'city-hall-committee-room': [2],
+  'city-hall-committee-room': [2, 6],
+  'lakeside-hall': [6],
   'rothdene-hall': [4],
   'vaal-marina-hall': [1],
   'vaal-marina-board-room': [1],
@@ -152,7 +159,23 @@ export function buildLedger({
     });
   };
 
+  /** One booking over several days: from a time on the first to a time on the last. */
+  const addSpan = (
+    facilityId: string,
+    first: DateTime,
+    from: string,
+    last: DateTime,
+    to: string,
+    extra: Partial<LedgerBooking> = {},
+  ) => {
+    add(facilityId, first, from, to, extra);
+    const added = bookings[bookings.length - 1];
+    if (added?.facilityId === facilityId) added.endsAt = at(last, to);
+  };
+
   // Scenarios.
+  addSpan('lakeside-hall', day(6, 5), '14:00', day(6, 7), '12:00');
+  addSpan('city-hall-committee-room', day(6, 5), '14:00', day(6, 8), '12:00');
   add('city-hall', day(2, 5), '07:00', '23:00');
   add('mitchell-wing', day(2, 4), '10:00', '15:00');
   add('rothdene-hall', day(4, 6), '10:00', '16:00', {

@@ -4,7 +4,11 @@ import { ROLES, type Role } from '@/shared/auth/roles';
 import { seedApprovals } from './data/approvalSeeds';
 import { seedAudit } from './data/auditSeeds';
 import { setDefaultCaller } from './data/staff';
-import { seedFacilityAdmin, seedUnroutedRequests } from './data/facilityAdminSeeds';
+import {
+  seedFacilityAdmin,
+  seedSpanRequests,
+  seedUnroutedRequests,
+} from './data/facilityAdminSeeds';
 import { seedBookings } from './data/bookingSeeds';
 import { createFacilityHandlers, type MockDatasetName, type MockScenario } from './facilities';
 
@@ -41,6 +45,7 @@ export function createHandlers(
     seedApprovals(now?.() ?? DateTime.now());
     seedFacilityAdmin(now?.() ?? DateTime.now());
     seedUnroutedRequests(now?.() ?? DateTime.now());
+    seedSpanRequests(now?.() ?? DateTime.now());
     seedAudit(now?.() ?? DateTime.now());
   }
 

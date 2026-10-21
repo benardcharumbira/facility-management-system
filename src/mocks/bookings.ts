@@ -12,6 +12,7 @@
 import { DateTime } from 'luxon';
 import { HttpResponse, http, delay } from 'msw';
 import {
+  AVAILABILITY_MAX_SPAN_DAYS,
   ACTION_NOT_ALLOWED_PROBLEM_TYPE,
   BOOKING_SORTS,
   BOOKING_STATUSES,
@@ -31,7 +32,12 @@ import {
   type FacilitySummary,
   type SlotConflictExtensions,
 } from '@/shared/api';
-import { rulesOf, windowProblem } from '@/shared/utils/availability';
+import {
+  datesTouched,
+  rulesOf,
+  spanProblem,
+  type WindowProblem,
+} from '@/shared/utils/availability';
 import { bufferOf, computeAvailability, MOCK_AVAILABILITY_RULES } from './availability';
 import { FACILITY_TIME_ZONE, buildLedger } from './data/bookingLedger';
 import type { FacilitySettings } from './data/facilityStore';
@@ -373,7 +379,12 @@ export function createBookingHandlers(
   ];
 
   /** The availability engine, including requests that already hold time. */
-  const availabilityFor = (facility: FacilitySummary, date: string, excludeId?: string) => {
+  const availabilityFor = (
+    facility: FacilitySummary,
+    date: string,
+    excludeId?: string,
+    to: string = date,
+  ) => {
     const current = now();
     startedAt ??= current;
     const ledger = buildLedger({
@@ -388,17 +399,37 @@ export function createBookingHandlers(
       catalogue: catalogue(),
       ledger,
       from: date,
-      to: date,
+      to,
       now: current,
       settings,
     });
   };
 
-  /** A window the engine says is not free, as a 409 slot conflict. */
-  const conflictFor = (
+  /** The whole window judged across every day it touches, not only the first. */
+  const problemWithin = (
+    facility: FacilitySummary,
     window: { start: DateTime; end: DateTime },
-    blocked: NonNullable<ReturnType<typeof windowProblem>>,
+    excludeId?: string,
   ) => {
+    const dates = datesTouched(window.start, window.end, FACILITY_TIME_ZONE);
+    // Far longer than any booking can be: say so without asking the engine for months of days.
+    const checkable = dates.length <= AVAILABILITY_MAX_SPAN_DAYS - 2;
+    const availability = availabilityFor(
+      facility,
+      dates[0] ?? '',
+      excludeId,
+      checkable ? (dates[dates.length - 1] ?? '') : (dates[0] ?? ''),
+    );
+    return spanProblem(
+      window,
+      (date) => availability.days.find((d) => d.date === date),
+      rulesOf(availability),
+      now(),
+    );
+  };
+
+  /** A window the engine says is not free, as a 409 slot conflict. */
+  const conflictFor = (window: { start: DateTime; end: DateTime }, blocked: WindowProblem) => {
     const segment = blocked.segment;
     const extensions: SlotConflictExtensions = {
       conflictingWindow: segment
@@ -654,11 +685,9 @@ export function createBookingHandlers(
         start: DateTime.fromISO(booking.startsAt, { zone: 'utc' }),
         end: DateTime.fromISO(booking.endsAt, { zone: 'utc' }),
       };
-      const date = window.start.setZone(FACILITY_TIME_ZONE).toISODate() ?? '';
-      const availability = availabilityFor(facility, date, booking.id);
       const blocked = forceConflict?.()
         ? { message: 'Booked', segment: undefined }
-        : windowProblem(window, availability.days[0], rulesOf(availability), now());
+        : problemWithin(facility, window, booking.id);
       if (blocked) return conflictFor(window, blocked);
 
       const submittedAt = stamp();
@@ -736,10 +765,8 @@ export function createBookingHandlers(
       };
       const facility = catalogue().find((f) => f.id === booking.facilityId);
       if (!facility) return problem(404, 'Facility not found');
-      const date = window.start.setZone(FACILITY_TIME_ZONE).toISODate() ?? '';
       // The booking's own time does not count against its own move.
-      const availability = availabilityFor(facility, date, booking.id);
-      const blocked = windowProblem(window, availability.days[0], rulesOf(availability), now());
+      const blocked = problemWithin(facility, window, booking.id);
       if (blocked) return conflictFor(window, blocked);
 
       const moved: StoredBooking = {

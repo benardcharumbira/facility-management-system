@@ -66,6 +66,20 @@ export function toImpacted(
   };
 }
 
+/**
+ * For a booking that spans several days, the first day of it that the closure reaches. A booking
+ * is one unit, so the whole of it is affected; the day says which part caused that.
+ */
+function withDay(item: ImpactedBooking, live: Live, range: Span): ImpactedBooking {
+  const start = iso(live.booking.startsAt).setZone(FACILITY_TIME_ZONE);
+  const end = iso(live.booking.endsAt).setZone(FACILITY_TIME_ZONE).minus({ milliseconds: 1 });
+  if (start.hasSame(end, 'day')) return item;
+  const first = DateTime.fromMillis(Math.max(rawSpan(live.booking).start, range.start), {
+    zone: FACILITY_TIME_ZONE,
+  });
+  return { ...item, day: first.toISODate() ?? undefined };
+}
+
 // --- hours --------------------------------------------------------------------------------------
 
 const minutes = (time: string) => {
@@ -73,20 +87,39 @@ const minutes = (time: string) => {
   return h * 60 + m;
 };
 
-/** Whether a booking sits inside the operating hours, day by day, in the facility's zone. */
+/**
+ * Whether a booking sits inside the operating hours. Within one day, all of it must. Across several
+ * days, hours bind only the start on the first day and the end on the last: the days in between are
+ * occupied in full, whether or not the venue is open on them.
+ */
 export function withinHours(days: OperatingDay[], startsAt: string, endsAt: string): boolean {
   const start = iso(startsAt).setZone(FACILITY_TIME_ZONE);
   const end = iso(endsAt).setZone(FACILITY_TIME_ZONE);
-  for (let day = start.startOf('day'); day < end; day = day.plus({ days: 1 })) {
-    const hours = days.find((d) => d.dayOfWeek === day.weekday);
+  const firstDay = start.startOf('day');
+  const lastDay = end.minus({ milliseconds: 1 }).startOf('day');
+  const hoursOn = (day: DateTime) => days.find((d) => d.dayOfWeek === day.weekday);
+  const minuteOf = (t: DateTime, day: DateTime) => t.diff(day, 'minutes').minutes;
+
+  if (firstDay.toMillis() === lastDay.toMillis()) {
+    const hours = hoursOn(firstDay);
     if (!hours?.opensAt || !hours.closesAt) return false;
-    const from = DateTime.max(start, day);
-    const to = DateTime.min(end, day.plus({ days: 1 }));
-    const fromMinutes = from.diff(day, 'minutes').minutes;
-    const toMinutes = to.diff(day, 'minutes').minutes;
-    if (fromMinutes < minutes(hours.opensAt) || toMinutes > minutes(hours.closesAt)) return false;
+    return (
+      minuteOf(start, firstDay) >= minutes(hours.opensAt) &&
+      minuteOf(end, firstDay) <= minutes(hours.closesAt)
+    );
   }
-  return true;
+  const opening = hoursOn(firstDay);
+  const closing = hoursOn(lastDay);
+  if (!opening?.opensAt || !opening.closesAt || !closing?.opensAt || !closing.closesAt)
+    return false;
+  const startAt = minuteOf(start, firstDay);
+  const endAt = minuteOf(end, lastDay);
+  return (
+    startAt >= minutes(opening.opensAt) &&
+    startAt < minutes(opening.closesAt) &&
+    endAt > minutes(closing.opensAt) &&
+    endAt <= minutes(closing.closesAt)
+  );
 }
 
 // --- conflicts ----------------------------------------------------------------------------------
@@ -213,7 +246,7 @@ export function computeImpact(
       affected.push(
         ...live
           .filter((l) => covered.has(l.booking.facilityId) && overlaps(rawSpan(l.booking), range))
-          .map((l) => toImpacted(l, 'inside_blackout')),
+          .map((l) => withDay(toImpacted(l, 'inside_blackout'), l, range)),
       );
       break;
     }

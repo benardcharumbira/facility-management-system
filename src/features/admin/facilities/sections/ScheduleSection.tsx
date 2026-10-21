@@ -19,6 +19,7 @@ interface Numbers {
   teardownMinutes: string;
   minimumNoticeHours: string;
   maximumHorizonDays: string;
+  maximumBookingDays: string;
 }
 
 const numbersOf = (s: FacilitySchedule): Numbers => ({
@@ -26,6 +27,7 @@ const numbersOf = (s: FacilitySchedule): Numbers => ({
   teardownMinutes: String(s.teardownMinutes),
   minimumNoticeHours: String(s.minimumNoticeHours),
   maximumHorizonDays: String(s.maximumHorizonDays),
+  maximumBookingDays: String(s.maximumBookingDays),
 });
 
 const FIELDS: Array<{ key: keyof Numbers; label: string; hint: string }> = [
@@ -49,6 +51,11 @@ const FIELDS: Array<{ key: keyof Numbers; label: string; hint: string }> = [
     label: 'Furthest ahead a booking can be made (days)',
     hint: 'Applicants cannot book beyond this many days from today.',
   },
+  {
+    key: 'maximumBookingDays',
+    label: 'Longest single booking (days)',
+    hint: 'One request can cover up to this many days in a row, such as a wedding from Friday to Sunday. 1 keeps every booking within a single day. Opening hours bind only the first day’s start and the last day’s end; days in between are held in full.',
+  },
 ];
 
 export function ScheduleSection({ facility, guard, onDirtyChange }: SectionProps) {
@@ -71,6 +78,7 @@ export function ScheduleSection({ facility, guard, onDirtyChange }: SectionProps
     teardownMinutes: Number(numbers.teardownMinutes),
     minimumNoticeHours: Number(numbers.minimumNoticeHours),
     maximumHorizonDays: Number(numbers.maximumHorizonDays),
+    maximumBookingDays: Number(numbers.maximumBookingDays),
   });
   const dirty =
     JSON.stringify(days) !== JSON.stringify(initial.days) ||
@@ -144,7 +152,9 @@ export function ScheduleSection({ facility, guard, onDirtyChange }: SectionProps
                   {...control}
                   type="number"
                   inputMode="numeric"
-                  min={field.key === 'maximumHorizonDays' ? 1 : 0}
+                  min={
+                    field.key === 'maximumHorizonDays' || field.key === 'maximumBookingDays' ? 1 : 0
+                  }
                   value={numbers[field.key]}
                   disabled={archived}
                   onChange={(e) => setNumbers({ ...numbers, [field.key]: e.target.value })}

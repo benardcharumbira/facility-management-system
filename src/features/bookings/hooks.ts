@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useApiClient, type BookingListParams } from '@/shared/api';
-import { rulesOf, windowProblem, type WindowProblem } from '@/shared/utils/availability';
+import { rulesOf, spanProblem, type WindowProblem } from '@/shared/utils/availability';
 import {
   bookingKeys,
   fetchAvailabilityRange,
@@ -78,15 +78,18 @@ export function useSlotCheck(facilityId: string, startsAt: string, endsAt: strin
         api,
         facilityId,
         start.minus({ days: 1 }).toISODate() ?? '',
-        end.plus({ days: 1 }).toISODate() ?? '',
+        DateTime.min(end.plus({ days: 1 }), start.plus({ days: 60 })).toISODate() ?? '',
         signal,
       );
       const rules = rulesOf(availability);
-      const date = start.setZone(rules.timeZone).toISODate();
-      const day = availability.days.find((d) => d.date === date);
       return {
         zone: rules.timeZone,
-        problem: windowProblem({ start, end }, day, rules, DateTime.now()),
+        problem: spanProblem(
+          { start, end },
+          (date) => availability.days.find((d) => d.date === date),
+          rules,
+          DateTime.now(),
+        ),
       };
     },
   });

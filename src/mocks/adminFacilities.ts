@@ -296,6 +296,9 @@ function validateParent(facilityId: string | undefined, parentId: string | null)
   return errors;
 }
 
+/** Bounded by what one availability request can check (AVAILABILITY_MAX_SPAN_DAYS), less the days either side. */
+const MAX_BOOKING_DAYS = 31;
+
 function validateSchedule(body: unknown): Errors {
   const errors: Errors = {};
   const schedule = body as Partial<FacilitySchedule> | null;
@@ -325,6 +328,17 @@ function validateSchedule(body: unknown): Errors {
   whole('teardownMinutes', 0, 'Clear-down time');
   whole('minimumNoticeHours', 0, 'Minimum notice');
   whole('maximumHorizonDays', 1, 'Booking horizon');
+  whole('maximumBookingDays', 1, 'Longest booking');
+  if (
+    typeof schedule.maximumBookingDays === 'number' &&
+    schedule.maximumBookingDays > MAX_BOOKING_DAYS
+  ) {
+    add(
+      errors,
+      'maximumBookingDays',
+      `A booking cannot be set to cover more than ${MAX_BOOKING_DAYS} days.`,
+    );
+  }
   return errors;
 }
 
@@ -564,6 +578,7 @@ export function createAdminFacilityHandlers(
               teardownMinutes: 0,
               minimumNoticeHours: 48,
               maximumHorizonDays: 90,
+              maximumBookingDays: 7,
             },
             capacity: { maximum: null, byArrangement: [] },
             approverIds: [],
@@ -725,6 +740,7 @@ export function createAdminFacilityHandlers(
             teardownMinutes: body.teardownMinutes,
             minimumNoticeHours: body.minimumNoticeHours,
             maximumHorizonDays: body.maximumHorizonDays,
+            maximumBookingDays: body.maximumBookingDays,
           },
           cleared: new Set(facility.cleared),
         };

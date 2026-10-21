@@ -8,6 +8,12 @@
  *
  * The backend owns the merge, the buffer expansion and the hierarchy resolution. The client
  * renders what it is given and must not derive blocking from the facility hierarchy itself.
+ *
+ * **Multi day bookings.** A booking is two instants, so one may cover several days; the model needed
+ * no change, only the rules around it. A day wholly inside a booking is occupied in full, whatever
+ * the operating hours of that day, and appears so below. Operating hours constrain only the start on
+ * the first day and the end on the last. Blackouts still block a span. Set-up and clear-down time
+ * attach to the outer edges of a booking, so they appear at the span's ends and never between days.
  */
 
 export const AVAILABILITY_MAX_SPAN_DAYS = 62;
@@ -44,7 +50,16 @@ export interface AvailabilitySegment {
   relatedFacility: RelatedFacility | null;
   /** Present only for `closure`: why, as a sentence the public can read. */
   reason?: string;
+  /**
+   * The booking this belongs to began on an earlier day / ends on a later one, so the block is one
+   * piece of a multi day span and is drawn joined to its neighbours. Absent means false.
+   */
+  continuesBefore?: boolean;
+  continuesAfter?: boolean;
 }
+
+/** Why a day is closed: its weekly hours, a public holiday, or a blackout set in administration. */
+export type ClosedBy = 'schedule' | 'holiday' | 'blackout';
 
 export interface AvailabilityDay {
   /** ISO date in the facility time zone. */
@@ -55,6 +70,12 @@ export interface AvailabilityDay {
   closesAt: string | null;
   /** For example "Public holiday", "Maintenance". Present when `status` is `closed`. */
   closedReason: string | null;
+  /**
+   * What closes it, so a client can tell a day a span may cross (`schedule`, `holiday`) from one it
+   * may not (`blackout`). Null unless the day is closed, or is closed by hours but occupied in full
+   * by a booking that spans it.
+   */
+  closedBy?: ClosedBy | null;
   /** Sorted, non overlapping, and merged where they abut. Empty for a closed day. */
   segments: AvailabilitySegment[];
 }
@@ -78,5 +99,7 @@ export interface FacilityAvailability {
    * prevent a selection the backend would reject.
    */
   minimumDurationMinutes: number;
+  /** The most calendar days one booking may cover. 1 means a booking is within a single day. */
+  maximumBookingDays: number;
   days: AvailabilityDay[];
 }

@@ -48,6 +48,8 @@ interface Spec {
   owner: keyof typeof APPLICANTS;
   facilityId: keyof typeof FACILITIES;
   days: number;
+  /** The last day, for a booking that covers several: `from` is on `days`, `to` on `endDays`. */
+  endDays?: number;
   from: string;
   to: string;
   attendees: number;
@@ -264,6 +266,59 @@ const ROUTING_SPECS: Spec[] = [
   },
 ];
 
+/**
+ * Bookings over several days, as one booking each. Days are counted from today, so in the tests
+ * (Monday 2 November 2026) 67 to 69 is Friday 8 to Sunday 10 January, a weekend; in development
+ * they are the same distance ahead, whichever weekday that lands on.
+ *
+ * - 9301: approved, Rothdene Hall, Friday 14:00 to Sunday 12:00. Renders as one block in both views.
+ * - 9302: pending, Vaal Marina Hall, Thursday 12:00 to Saturday 12:00 ...
+ * - 9303: ... competing with a pending single day request on the Friday in the middle of it.
+ */
+const SPAN_SPECS: Spec[] = [
+  {
+    n: 9301,
+    owner: 'applicant-dawie',
+    facilityId: 'rothdene-hall',
+    days: 67,
+    endDays: 69,
+    from: '14:00',
+    to: '12:00',
+    attendees: 150,
+    seating: 'banquet',
+    resources: [['chairs', 150]],
+    description: 'Wedding weekend',
+    submittedHoursAgo: 24 * 6,
+  },
+  {
+    n: 9302,
+    owner: 'applicant-grace',
+    facilityId: 'vaal-marina-hall',
+    days: 73,
+    endDays: 75,
+    from: '12:00',
+    to: '12:00',
+    attendees: 120,
+    seating: 'school-room',
+    pending: true,
+    description: 'Three day regional conference',
+    submittedHoursAgo: 24 * 3,
+  },
+  {
+    n: 9303,
+    owner: 'applicant-priya',
+    facilityId: 'vaal-marina-hall',
+    days: 74,
+    from: '10:00',
+    to: '14:00',
+    attendees: 40,
+    seating: 'banquet',
+    pending: true,
+    description: 'Funeral tea',
+    submittedHoursAgo: 24 * 2,
+  },
+];
+
 export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
   seedSpecs(SPECS, now);
 }
@@ -271,6 +326,11 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
 /** The pending requests that a change to an approver's role would leave unrouted. */
 export function seedUnroutedRequests(now: DateTime = DateTime.now()) {
   seedSpecs(ROUTING_SPECS, now);
+}
+
+/** One booking over several days, a pending request competing with it, and an approved weekend. */
+export function seedSpanRequests(now: DateTime = DateTime.now()) {
+  seedSpecs(SPAN_SPECS, now);
 }
 
 function seedSpecs(specs: readonly Spec[], now: DateTime) {
@@ -325,7 +385,7 @@ function seedSpecs(specs: readonly Spec[], now: DateTime) {
       status: spec.pending ? 'pending' : 'approved',
       facilityId: spec.facilityId,
       startsAt: at(spec.days, spec.from),
-      endsAt: at(spec.days, spec.to),
+      endsAt: at(spec.endDays ?? spec.days, spec.to),
       eventTypeId: 'meeting',
       description: spec.description,
       attendeeCount: spec.attendees,

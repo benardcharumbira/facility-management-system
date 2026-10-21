@@ -9,7 +9,7 @@ import {
   type TimelineEntry,
   type UnavailableRange,
 } from '@/shared/components';
-import { windowProblem } from '@/shared/utils/availability';
+import { spanProblem } from '@/shared/utils/availability';
 import { formatClock, formatLongDate } from '@/shared/utils/calendar';
 import { facilityPath } from '../paths';
 import {
@@ -67,7 +67,14 @@ export function selectionProblem(
   availability: FacilityAvailability,
   now: DateTime,
 ): string | null {
-  return windowProblem(selection, day, rulesOf(availability), now)?.message ?? null;
+  return (
+    spanProblem(
+      selection,
+      (date) => (date === day.date ? day : undefined),
+      rulesOf(availability),
+      now,
+    )?.message ?? null
+  );
 }
 
 interface DayPanelProps {

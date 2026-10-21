@@ -64,6 +64,7 @@ export interface FacilitySettings {
   teardownMinutes: number;
   minimumNoticeHours: number;
   maximumHorizonDays: number;
+  maximumBookingDays: number;
   /** This facility's own blackouts and those inherited from its parents. */
   blackouts: Array<{ startsAt: DateTime; endsAt: DateTime; reason: string }>;
 }
@@ -115,6 +116,7 @@ function seedFacility(summary: FacilitySummary, catalogue: readonly FacilitySumm
       teardownMinutes: 0,
       minimumNoticeHours: MOCK_AVAILABILITY_RULES.minimumNoticeHours,
       maximumHorizonDays: MOCK_AVAILABILITY_RULES.maximumHorizonDays,
+      maximumBookingDays: MOCK_AVAILABILITY_RULES.maximumBookingDays,
     },
     capacity: {
       maximum: summary.capacity,
@@ -283,6 +285,7 @@ export const facilityStore = {
       teardownMinutes: f.schedule.teardownMinutes,
       minimumNoticeHours: f.schedule.minimumNoticeHours,
       maximumHorizonDays: f.schedule.maximumHorizonDays,
+      maximumBookingDays: f.schedule.maximumBookingDays,
       blackouts: this.effectiveBlackouts(id).map((b) => ({
         startsAt: DateTime.fromISO(b.startsAt, { zone: 'utc' }),
         endsAt: DateTime.fromISO(b.endsAt, { zone: 'utc' }),

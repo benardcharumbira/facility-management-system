@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import type { ReactNode } from 'react';
 import type { ImpactedBooking, ImpactReason, ImpactResult } from '@/shared/api';
 import { compactWindow } from '@/shared/utils/format';
@@ -6,7 +7,10 @@ import { Badge } from '../ui/Badge';
 
 /** What each reason means for the booking it names, in a sentence. */
 const REASON_COPY: Record<ImpactReason, (item: ImpactedBooking) => string> = {
-  inside_blackout: () => 'Falls inside the closure.',
+  inside_blackout: (item) =>
+    item.day
+      ? `The closure falls on ${DateTime.fromISO(item.day).setLocale('en').toFormat('cccc d LLLL')}, one day of this booking. The booking is one unit, so all of it is affected.`
+      : 'Falls inside the closure.',
   outside_operating_hours: () => 'Would fall outside the new operating hours.',
   new_conflict: (item) =>
     item.conflictsWith
