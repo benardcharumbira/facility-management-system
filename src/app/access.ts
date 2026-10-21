@@ -12,6 +12,12 @@ export const PATHS = {
   adminFacilities: '/admin/facilities',
   adminResources: '/admin/resources',
   adminUsers: '/admin/users',
+  account: '/account',
+  terms: '/terms',
+  privacy: '/privacy',
+  accessibility: '/accessibility',
+  help: '/help',
+  contact: '/contact',
   adminReference: '/admin/reference',
   adminAudit: '/admin/audit',
 } as const;
@@ -37,3 +43,15 @@ const ROLE_HOME: Record<Role, string> = {
 export function homePathForRole(role: Role): string {
   return ROLE_HOME[role];
 }
+
+/**
+ * Whether people who have not signed in may browse the facilities. It is an open decision, and
+ * today they may not, so the landing page's one action is to sign in. If browsing is opened up,
+ * set this to true and the action becomes "Browse venues". (The facility routes must also move out
+ * from behind sign in; that is a separate change to the router.)
+ */
+export const ANONYMOUS_BROWSING = false;
+
+export const LANDING_ACTION = ANONYMOUS_BROWSING
+  ? { label: 'Browse venues', to: PATHS.facilities }
+  : { label: 'Sign in to book a venue', to: PATHS.signIn };

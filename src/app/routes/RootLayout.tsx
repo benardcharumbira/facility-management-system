@@ -2,7 +2,7 @@ import { ClerkProvider } from '@clerk/react';
 import { Outlet, useNavigate } from 'react-router';
 import { ApiClientProvider } from '@/shared/api';
 import { useSessionTokenGetter } from '@/shared/auth';
-import { ErrorBoundary } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components/feedback/ErrorBoundary';
 import { getEnv } from '../env';
 import { clerkAppearance } from '../theme/clerkAppearance';
 import { PATHS } from '../access';

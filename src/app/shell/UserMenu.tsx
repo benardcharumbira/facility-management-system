@@ -1,5 +1,6 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, UserRound } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
+import { Link } from 'react-router';
 import { ROLE_LABELS, type CurrentUser } from '@/shared/auth';
 
 interface UserMenuProps {
@@ -36,6 +37,15 @@ export function UserMenu({ user, onSignOut }: UserMenuProps) {
             <p className="[overflow-wrap:anywhere] text-muted">{user.email}</p>
             <p className="mt-1 text-xs text-subtle">{ROLE_LABELS[user.role]}</p>
           </div>
+          <DropdownMenu.Item
+            asChild
+            className="m-1 flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 outline-none data-highlighted:bg-sunken"
+          >
+            <Link to="/account">
+              <UserRound aria-hidden className="size-4 text-muted" />
+              Your account
+            </Link>
+          </DropdownMenu.Item>
           <DropdownMenu.Item
             onSelect={onSignOut}
             className="m-1 flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 outline-none data-highlighted:bg-sunken"

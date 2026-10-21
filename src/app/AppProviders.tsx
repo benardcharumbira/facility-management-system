@@ -1,7 +1,8 @@
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { createQueryClient } from '@/shared/api';
-import { ConfirmProvider, SnackbarProvider, useSnackbar } from '@/shared/components';
+import { ConfirmProvider } from '@/shared/components/dialogs/ConfirmProvider';
+import { SnackbarProvider, useSnackbar } from '@/shared/components/feedback/SnackbarProvider';
 
 interface AppProvidersProps {
   children: ReactNode;

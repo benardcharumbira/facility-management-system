@@ -5,6 +5,7 @@ import { Outlet } from 'react-router';
 import { useCurrentUser } from '@/shared/auth';
 import {
   ErrorBoundary,
+  Footer,
   IconButton,
   LoadingState,
   PageHeaderProvider,
@@ -14,7 +15,7 @@ import { AppBar } from './AppBar';
 import { NavList } from './NavList';
 import { UserMenu } from './UserMenu';
 
-export function AppShell() {
+export default function AppShell() {
   const { user, signOut } = useCurrentUser();
   const [navOpen, setNavOpen] = useState(false);
 
@@ -22,7 +23,7 @@ export function AppShell() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <AppBar
         leading={
           <IconButton
@@ -60,7 +61,7 @@ export function AppShell() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <main className="min-w-0 pt-16 lg:pl-60 print:pt-0 print:pl-0">
+      <main className="min-w-0 flex-1 pt-16 lg:pl-60 print:pt-0 print:pl-0">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
           <PageHeaderProvider>
             <div className="print:hidden">
@@ -74,6 +75,7 @@ export function AppShell() {
           </PageHeaderProvider>
         </div>
       </main>
+      <Footer className="lg:pl-60" />
     </div>
   );
 }

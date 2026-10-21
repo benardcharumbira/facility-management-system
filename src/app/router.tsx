@@ -1,13 +1,16 @@
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router';
 import { ProtectedRoute, RequireRole } from '@/shared/auth';
+import { LoadingState } from '@/shared/components/feedback/LoadingState';
 import { ACCESS } from './access';
 import { PublicLayout } from './routes/PublicLayout';
-import { RoleRedirect } from './routes/RoleRedirect';
+import { HomeRoute } from './routes/HomeRoute';
 import { RootLayout } from './routes/RootLayout';
-import { AppShell } from './shell/AppShell';
+import { SiteLayout } from './routes/SiteLayout';
 
-// Route components are lazy loaded, so they are default exports.
+// Route components are lazy loaded, so they are default exports. That includes the signed in
+// shell: someone who only reads the landing page or the terms never downloads it.
+const AppShell = lazy(() => import('./shell/AppShell'));
 const SignInPage = lazy(() => import('./routes/SignInPage'));
 const SignUpPage = lazy(() => import('./routes/SignUpPage'));
 const NotFoundPage = lazy(() => import('./routes/NotFoundPage'));
@@ -30,6 +33,20 @@ const AdminAllocationPage = lazy(() => import('@/features/admin/pages/AdminAlloc
 const AdminFacilityResourcesPage = lazy(
   () => import('@/features/admin/pages/AdminFacilityResourcesPage'),
 );
+const TermsPage = lazy(() => import('@/features/public/pages/TermsPage'));
+const PrivacyPage = lazy(() =>
+  import('@/features/public/pages/ContentRoute').then((m) => ({ default: m.PrivacyPage })),
+);
+const AccessibilityPage = lazy(() =>
+  import('@/features/public/pages/ContentRoute').then((m) => ({ default: m.AccessibilityPage })),
+);
+const HelpPage = lazy(() =>
+  import('@/features/public/pages/ContentRoute').then((m) => ({ default: m.HelpPage })),
+);
+const ContactPage = lazy(() =>
+  import('@/features/public/pages/ContentRoute').then((m) => ({ default: m.ContactPage })),
+);
+const AccountPage = lazy(() => import('@/features/account/pages/AccountPage'));
 const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'));
 const AdminUserDetailPage = lazy(() => import('@/features/admin/pages/AdminUserDetailPage'));
 const AdminReferencePage = lazy(() => import('@/features/admin/pages/AdminReferencePage'));
@@ -47,12 +64,29 @@ export const routes: RouteObject[] = [
         ],
       },
       {
+        // Anyone can read these, signed in or not: someone must be able to read the terms before
+        // deciding whether to register.
+        element: <SiteLayout />,
+        children: [
+          { index: true, element: <HomeRoute /> },
+          { path: 'terms', element: <TermsPage /> },
+          { path: 'privacy', element: <PrivacyPage /> },
+          { path: 'accessibility', element: <AccessibilityPage /> },
+          { path: 'help', element: <HelpPage /> },
+          { path: 'contact', element: <ContactPage /> },
+        ],
+      },
+      {
         element: <ProtectedRoute />,
         children: [
           {
-            element: <AppShell />,
+            element: (
+              <Suspense fallback={<LoadingState fullPage />}>
+                <AppShell />
+              </Suspense>
+            ),
             children: [
-              { index: true, element: <RoleRedirect /> },
+              { path: 'account', element: <AccountPage /> },
               { path: 'facilities', element: <FacilitiesPage /> },
               { path: 'facilities/:id', element: <FacilityDetailPage /> },
               { path: 'bookings/:id', element: <BookingDetailPage /> },

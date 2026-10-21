@@ -119,6 +119,17 @@ export function StepReview({
             <p className="text-sm text-muted">Version {options.terms.version}</p>
           </div>
         </Disclosure>
+        <p className="text-sm">
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2"
+          >
+            Open the terms and conditions in a new tab
+            <span className="sr-only"> (opens in a new tab; your request here is kept)</span>
+          </a>
+        </p>
         <CheckboxField
           id={fieldId('termsAccepted')}
           checked={values.termsAccepted}
