@@ -303,6 +303,12 @@ export function BookingForm({ options, initialBooking, url, update }: BookingFor
   };
 
   const applyServerErrors = (problem: ApiProblem) => {
+    // The terms were replaced while this request was being written. What the applicant ticked was
+    // the old words, so they read the current ones and accept again.
+    if (problem.errors.termsAccepted) {
+      form.setValue('termsAccepted', false);
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.options() });
+    }
     const items: ErrorSummaryItem[] = [];
     let earliest = Number.POSITIVE_INFINITY;
     for (const [key, messages] of Object.entries(problem.errors)) {

@@ -1,6 +1,7 @@
 import { Download } from 'lucide-react';
 import type { Booking, BookingOptions } from '@/shared/api';
 import { Button, formatBytes, ReviewList, type ReviewItem } from '@/shared/components';
+import { arrangementName, eventTypeName } from '../optionNames';
 import { allResources, describeRequest } from '../resources';
 
 function resourceList(
@@ -42,14 +43,11 @@ export function BookingDetails({
   options: BookingOptions | undefined;
   onDownload: (documentId: string, name: string) => void;
 }) {
-  const nameOf = (list: Array<{ id: string; name: string }> | undefined, id: string | null) =>
-    list?.find((item) => item.id === id)?.name ?? '';
-
   const items: ReviewItem[] = [
     {
       key: 'type',
       label: 'Type of meeting or event',
-      value: nameOf(options?.eventTypes, booking.eventTypeId) || 'Not given',
+      value: eventTypeName(options, booking.eventTypeId) || 'Not given',
     },
     {
       key: 'description',
@@ -60,7 +58,7 @@ export function BookingDetails({
     {
       key: 'seating',
       label: 'Seating arrangement',
-      value: nameOf(options?.seatingArrangements, booking.seatingArrangementId) || 'Not given',
+      value: arrangementName(options, booking.seatingArrangementId) || 'Not given',
     },
     {
       key: 'venue',

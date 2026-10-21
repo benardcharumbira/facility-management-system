@@ -17,6 +17,7 @@ import { MOCK_AVAILABILITY_RULES } from '../availabilityRules';
 import { bookingStore } from './bookingStore';
 import { deriveDetail } from './facilityDetail';
 import { REAL_FACILITIES } from './facilities.real';
+import { referenceStore } from './referenceStore';
 import { resourceStore } from './resourceStore';
 import { slugify } from './slug';
 
@@ -240,6 +241,13 @@ export const facilityStore = {
     const catalogue = this.publicCatalogue();
     const summary = this.summary(f);
     const base = deriveDetail(summary, catalogue);
+    // A figure for an arrangement that has been archived is kept, but no longer offered.
+    const current = new Set(
+      referenceStore.active('seating_arrangement').map((r) => r.name.toLowerCase()),
+    );
+    const offered = f.capacity.byArrangement.filter((c) =>
+      current.has(c.arrangement.toLowerCase()),
+    );
     const primary = f.images.find((i) => i.isPrimary);
     const ordered = primary ? [primary, ...f.images.filter((i) => i !== primary)] : f.images;
     return {
@@ -247,7 +255,7 @@ export const facilityStore = {
       description: f.description,
       resources: resourceStore.detailResources(f.id),
       images: ordered.map((i) => ({ url: i.url, caption: i.caption })),
-      capacityByArrangement: f.capacity.byArrangement.length > 0 ? f.capacity.byArrangement : null,
+      capacityByArrangement: offered.length > 0 ? offered : null,
       operatingSchedule: f.schedule.days,
       provisionalFields: f.detailProvisional.filter((field) => !f.cleared.has(field)),
     };

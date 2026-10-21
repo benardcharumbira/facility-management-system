@@ -1,6 +1,7 @@
 import type { Booking, BookingOptions } from '@/shared/api';
 import { PrintOnly } from '@/shared/components';
 import { describeWindow } from '@/shared/utils/format';
+import { arrangementName, eventTypeName } from '../optionNames';
 import { allResources, describeRequest } from '../resources';
 
 /**
@@ -27,9 +28,6 @@ export function PrintBooking({
     };
   });
   const group = (category: 'venue' | 'kitchen') => resources.filter((r) => r.category === category);
-  const name = (list: Array<{ id: string; name: string }> | undefined, id: string | null) =>
-    list?.find((i) => i.id === id)?.name;
-
   const row = (label: string, value: string | number | null | undefined) =>
     value === null || value === undefined || value === '' ? null : (
       <div className="flex gap-4 border-b border-line py-2">
@@ -48,13 +46,10 @@ export function PrintBooking({
           {row('Venue', booking.facility.name)}
           {row('Date', window.date)}
           {row('Time', `${window.time} (${booking.facility.timeZone} time)`)}
-          {row('Event type', name(options?.eventTypes, booking.eventTypeId))}
+          {row('Event type', eventTypeName(options, booking.eventTypeId))}
           {row('Event description', booking.description)}
           {row('Expected attendees', booking.attendeeCount)}
-          {row(
-            'Seating arrangement',
-            name(options?.seatingArrangements, booking.seatingArrangementId),
-          )}
+          {row('Seating arrangement', arrangementName(options, booking.seatingArrangementId))}
           {row(
             'Venue resources',
             group('venue')
