@@ -148,6 +148,14 @@ masthead) and `PlaceholderNotice` (says on the page that its words are not the m
 library is not part of what a visitor to the landing page downloads. `Hero` and `StepsList`, which
 the brief expected, are in `features/public` because each is used once.
 
+**Added for multi day bookings and the week view: 2 additions, 1 changed.** `WeekGrid` (with
+`WeekBlock`) is a week as an ARIA grid of hour cells with blocks positioned by time over them; it knows
+days, hours and blocks and nothing about availability. `useRangeSelect` chooses a run of days by two
+clicks, a drag, or the keyboard, and knows nothing about what a day is. `DayCell` gained the run's
+position (`only`, `start`, `middle`, `end`) drawn as one band, `rangeInvalid`, and pointer and focus
+handlers. The slice 4 `Timeline` was not generalised for the week: it lists one day's stretches in
+order, and the week is seven columns positioned by time.
+
 **Still open, unchanged:** two disclosure primitives, two sheet primitives (the filter side sheet
 is a third presentation of one), three skeleton patterns, and field errors styled apart from
 `Alert`.

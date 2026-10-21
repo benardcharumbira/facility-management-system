@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { DateTime } from 'luxon';
 import type { ApiProblem, SlotConflictExtensions } from '@/shared/api';
 import { Alert, buttonStyles } from '@/shared/components';
+import { compactWindow } from '@/shared/utils/format';
 
 /**
  * The lost race: another request took the slot between choosing it and submitting. Says what
@@ -19,9 +20,19 @@ export function ConflictNotice({
   const extensions = problem.extensions as Partial<SlotConflictExtensions>;
   const window = extensions.conflictingWindow;
   const related = extensions.relatedFacility;
+  const clock = (instant: string) =>
+    DateTime.fromISO(instant, { zone: 'utc' }).setZone(zone).toFormat('HH:mm');
+  // A clash that reaches across days says which days; within one, the hours are enough.
   const times =
     window &&
-    `${DateTime.fromISO(window.startsAt, { zone: 'utc' }).setZone(zone).toFormat('HH:mm')} to ${DateTime.fromISO(window.endsAt, { zone: 'utc' }).setZone(zone).toFormat('HH:mm')}`;
+    (DateTime.fromISO(window.startsAt, { zone: 'utc' })
+      .setZone(zone)
+      .hasSame(
+        DateTime.fromISO(window.endsAt, { zone: 'utc' }).setZone(zone).minus({ milliseconds: 1 }),
+        'day',
+      )
+      ? `${clock(window.startsAt)} to ${clock(window.endsAt)}`
+      : compactWindow(window.startsAt, window.endsAt, zone));
 
   return (
     <Alert severity="error" title="That time is no longer available">

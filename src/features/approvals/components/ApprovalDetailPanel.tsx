@@ -199,6 +199,12 @@ export function ApprovalDetailPanel({
           ) : (
             <p className="text-lg font-semibold">{when.text}</p>
           )}
+          {when.span && (
+            <p>
+              Covers {when.length} in a row, as one request with one decision. Operating hours bind
+              only the start on the first day and the end on the last.
+            </p>
+          )}
           {pending && (
             <>
               <p>
