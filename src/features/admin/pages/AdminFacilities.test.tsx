@@ -362,6 +362,25 @@ describe('the schedule', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
+  it('sets the longest booking beside the notice and the horizon, with what it means', async () => {
+    await openFacility('lakeside-hall', 'schedule');
+    await screen.findByRole('list', { name: 'Operating hours' });
+    const field = screen.getByLabelText('Longest single booking (days)') as HTMLInputElement;
+    expect(field).toHaveValue(7);
+    expect(field).toHaveAccessibleDescription(/up to this many days in a row/);
+    expect(field).toHaveAccessibleDescription(/Opening hours bind only the first day/);
+    set('Longest single booking (days)', '3');
+    await userEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
+    expect(await screen.findByText('Schedule saved.')).toBeVisible();
+    expect(
+      (
+        await api.get<{ schedule: { maximumBookingDays: number } }>(
+          '/admin/facilities/lakeside-hall',
+        )
+      ).schedule.maximumBookingDays,
+    ).toBe(3);
+  });
+
   it('surfaces a booking left outside narrowed hours', async () => {
     await openFacility('vaal-marina-hall', 'schedule');
     await screen.findByRole('list', { name: 'Operating hours' });

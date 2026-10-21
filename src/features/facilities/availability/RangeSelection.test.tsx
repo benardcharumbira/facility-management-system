@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedFacilityAdmin, seedSpanRequests } from '@/mocks/data/facilityAdminSeeds';
 import { ROLES } from '@/shared/auth';
 import { FIXED_NOW } from '@/test/clock';
@@ -418,6 +418,36 @@ describe('choosing the times of a run', () => {
       'middle',
       'end',
     ]);
+  });
+});
+
+describe('the facility zone, whatever the system zone', () => {
+  it.each(['America/Los_Angeles', 'Pacific/Auckland'])(
+    'draws a span on the days it covers in Johannesburg, not in %s',
+    async (zone) => {
+      vi.stubEnv('TZ', zone);
+      await open('rothdene-hall', '2027-01');
+      // Friday 8 to Sunday 10 January, 14:00 to 12:00 Johannesburg time.
+      for (const iso of ['2027-01-08', '2027-01-09', '2027-01-10']) {
+        expect(day(iso)).toHaveAccessibleName(/booked/);
+      }
+      expect(day('2027-01-07')).toHaveAccessibleName(/available/);
+      expect(day('2027-01-11')).toHaveAccessibleName(/available/);
+      vi.unstubAllEnvs();
+    },
+  );
+
+  it('reads a chosen span as the same days under another system zone', async () => {
+    vi.stubEnv('TZ', 'Pacific/Auckland');
+    await open(
+      'lakeside-hall',
+      '2026-11',
+      '&startsAt=2026-11-27T12:00:00Z&endsAt=2026-11-29T10:00:00Z',
+    );
+    expect(
+      ['2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29', '2026-11-30'].map(band),
+    ).toEqual([null, 'start', 'middle', 'end', null]);
+    vi.unstubAllEnvs();
   });
 });
 
