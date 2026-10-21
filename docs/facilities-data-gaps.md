@@ -94,6 +94,27 @@ Sicelo Hall, Lakeside Hall.
     shown to later approvers? Should the applicant be told which staff member decided? (See Q17.)
     We assumed the note is internal and permanent, and that the reason is sent exactly as written.
 
+22. **Who may edit which facilities?** We assumed every facility administrator and system
+    administrator can change every facility. Should a facility administrator be limited to the
+    facilities they are responsible for?
+
+23. **Set-up and clear-down.** We assumed a buffer per facility, the same for every booking, held
+    both before and after, and that it blocks related spaces too. Does it vary by event type or by
+    how many people are expected? None of the current facilities has one until you set it.
+
+24. **When a change reaches existing bookings.** Today the screen names the bookings and leaves it
+    there. Should it also flag them for review, put them in someone's queue, or tell the applicant?
+    And when a facility is archived or made unavailable, what should happen to its pending requests?
+    They stay in the approvers' queue for now.
+
+25. **Facilities without an approver.** We prevent activating one and prevent removing the last
+    approver of an active one. Three facilities in the fixture have none. Who should approve for the
+    Activity Room, Bantu Bonke Hall and the Council Chambers? Should a facility with none ever be
+    allowed to take bookings?
+
+26. **Closure wording.** The reason for a closure is shown to the public as written. Should there be
+    standard wording, or a check before it is published?
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

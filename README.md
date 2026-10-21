@@ -392,6 +392,104 @@ Everything here is checked under jsdom, which has no layout. I have not opened i
 the sticky and independently scrolling panes, real focus behaviour, the 768px and 360px layouts
 and real keyboard use are unconfirmed.
 
+## Facility administration
+
+`/admin/facilities`, `/admin/facilities/new` and `/admin/facilities/:id?section=…`. The contract is in
+`src/shared/api/contracts/admin-facilities.ts`. This is the screen through which the municipality's
+real register replaces the provisional fixture data: every facility can be created, edited and
+arranged into its hierarchy here, and saving a section clears that section's "provisional" marks.
+
+- **Every retroactive change runs an impact check first.** One pattern, used by every change that
+  can reach a booking that already exists: the screen posts the proposed change to
+  `POST /admin/facilities/:id/impact`; if nothing is affected it makes the change at once, with no
+  dialog (a warning on every harmless edit teaches people not to read warnings); if something is,
+  a dialog names each booking (reference, applicant, facility, window, status and a sentence saying
+  why) and the change is made only on explicit confirmation. The dialog says that confirming does not
+  cancel or move anything and notifies nobody: what happens to each booking is a separate human
+  decision. It is `useImpactGuard` plus `ImpactDialog` in `shared/components/admin/`, and slice 10
+  can use it unchanged.
+- **What each change checks**, all on the server, over approved and pending bookings that have not
+  ended: a **blackout** (bookings overlapping it, including those in the spaces inside the facility);
+  **hours** (bookings that were inside them and now fall outside); **buffers and hierarchy** (pairs
+  of bookings that now clash and did not before; the later booking of each pair is named, with the
+  one it clashes with); **status to unavailable** and **archive** (every future booking there);
+  **capacity** (bookings that now expect more people than the arrangement seats). Details that touch
+  no booking (a name, a description) always affect nothing.
+- **The hierarchy cannot become a cycle.** The control only lists places a facility can go: the
+  server leaves out itself and everything inside it. The server refuses a cycle with 422 as well.
+  The screen states the containment rule in words: booking a parent blocks every space inside it,
+  booking any space inside blocks the parent, and two spaces in one building do not block each other.
+- **Archive, never delete.** There is no delete endpoint and no delete button. Archiving asks by name
+  even when it reaches nothing, because the click is the decision; it is refused while the facility
+  still contains unarchived spaces; an archived facility is read-only, absent from the public estate
+  and from new bookings, and can be restored (it comes back unavailable). A hard delete for a
+  facility created in error is a separate decision and is not built.
+- **Approvers drive the approval queue.** The approvers designated here are exactly who sees a
+  facility's requests in the slice 8 queue. A facility with nobody is flagged in words on the list
+  (a banner and a "No approver" mark per row) and on its own screen, cannot be made active, and
+  cannot lose its last approver while active. A new facility therefore starts unavailable. The
+  fixture's Activity Room, Bantu Bonke Hall and Council Chambers have no approver, on purpose.
+- **Images need a caption.** It is the public alternative text, so a file is not uploaded without
+  one; the accepted types and limit are stated before a file is chosen; each file shows progress and
+  has its own remove and retry; images can be recaptioned (never blanked), reordered and one made the
+  main image.
+- **Blackouts** are whole days or a time range, in the facility's own zone whatever the browser's.
+  The reason is shown to the public, so the form asks for a sentence. A blackout on a parent applies
+  to its spaces and shows on them as inherited. Only one that has not started can be deleted. The
+  public calendar closes a whole day with the reason, and shows part of a day as a new `closure`
+  segment.
+- **Sections** are in the URL and each saves on its own. Leaving a section with unsaved edits asks
+  first.
+- **Permissions.** System administrators and facility administrators, enforced by the mock server
+  from the session identity (anyone else gets 403) and by the route guard. Both kinds can do
+  everything, so there is nothing to hide between them; whether a facility administrator should be
+  limited to their own facilities is a question (Q22).
+- **Not here:** resources and amenities (slice 10, linked from each facility), user and role
+  administration and the seating arrangement vocabulary (slice 11; capacity rows choose from the
+  booking form's list), bulk import and notifying affected applicants.
+
+### How the mock works
+
+The mock's facility estate is now one mutable store (`src/mocks/data/facilityStore.ts`), seeded from
+the fixture. The public browse, detail and availability endpoints, the booking handlers and the
+approval queue's scope all read from it, so a change made in administration shows everywhere without
+a reload of the mock. Two things changed as a result: no facility starts with a set-up or clear-down
+buffer (it used to be 30 minutes for halls in the fictional ledger; an administrator sets it), and
+approver designations come from the store rather than a constant. `resetFacilityStore` undoes every
+change between tests.
+
+In development the sample data gives each retroactive change something to find (references
+MVL-…-9201 to 9210 and the list at the top of `src/mocks/data/facilityAdminSeeds.ts`): a closure
+across three Rothdene Hall bookings, moving the Activity Room into Rothdene Hall to create a clash,
+a thirty minute set-up buffer at Lakeside Hall, closing Vaal Marina Hall at 22:00, archiving the
+Vaal Marina Board Room, and reducing Rothdene Hall's banquet seating. City Hall has a closure in
+effect now. Changes that affect nothing, like a new description, save without a dialog.
+
+### Additions to the contract beyond the brief
+
+`eligibleParents` (so the screen never offers a cycle), `timeZone` on the facility, `conflictsWith`
+and `timeZone` on an impacted booking, `GET /admin/approver-candidates`, `withoutApprover` and
+`localities` on the list, and a `closure` segment with a `reason` on the public availability
+contract.
+
+### Design system
+
+**7 components and 1 hook added**, in `src/shared/components/admin/` (the brief's likely list, exactly):
+`SectionedEditLayout`, `ImpactDialog` (with `ImpactList`), `HierarchySelect`, `ScheduleEditor`,
+`DateRangeField`, `ImageManager`, `ArchiveConfirm`, and `useImpactGuard`. **No earlier shared
+primitive had to change**: `ConfirmDialog`, `FormField`, `Section`, `DetailHeader`, and the whole list
+set at the slice 8 density were reused as they were. That is more additions than a ninth screen
+should need, and honestly only three are shared by design (`useImpactGuard`/`ImpactDialog`,
+`ArchiveConfirm`, `SectionedEditLayout`); `ScheduleEditor`, `ImageManager`, `HierarchySelect` and
+`DateRangeField` have one user so far and should move into the feature if slice 10 and 11 do not
+need them. The public availability calendar did change: it learned the `closure` segment.
+
+### Not verified
+
+Checked under jsdom, which has no layout: I have not opened it in a browser, so the real keyboard
+and focus behaviour of the dialogs, the date and time inputs, and the layout at tablet and phone
+widths are unconfirmed.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).
