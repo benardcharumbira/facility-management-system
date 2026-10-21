@@ -17,6 +17,7 @@ import { MOCK_AVAILABILITY_RULES } from '../availabilityRules';
 import { bookingStore } from './bookingStore';
 import { deriveDetail } from './facilityDetail';
 import { REAL_FACILITIES } from './facilities.real';
+import { resourceStore } from './resourceStore';
 import { slugify } from './slug';
 
 export interface StoredBlackout {
@@ -44,7 +45,6 @@ export interface StoredFacility {
   status: 'active' | 'unavailable';
   archived: boolean;
   parentId: string | null;
-  amenities: FacilitySummary['amenities'];
   images: AdminFacilityImage[];
   schedule: FacilitySchedule;
   capacity: FacilityCapacity;
@@ -106,7 +106,6 @@ function seedFacility(summary: FacilitySummary, catalogue: readonly FacilitySumm
     status: summary.status,
     archived: false,
     parentId: summary.parentFacility?.id ?? null,
-    amenities: summary.amenities,
     images: [],
     schedule: {
       days: detail.operatingSchedule.map((d) => ({ ...d })),
@@ -136,6 +135,7 @@ export const facilityStore = {
     types.clear();
     counter = 0;
     for (const summary of catalogue) seedFacility(summary, catalogue);
+    resourceStore.seed(catalogue);
     seedType('open-space', 'Open space', false);
   },
   /**
@@ -218,7 +218,7 @@ export const facilityStore = {
       locality: f.locality,
       shortDescription: f.shortDescription,
       primaryImageUrl: primary?.url ?? null,
-      amenities: f.amenities,
+      amenities: resourceStore.amenitiesOf(f.id),
       status: f.status,
       provisionalFields: f.baseProvisional.filter((field) => !f.cleared.has(field)),
     };
@@ -245,6 +245,7 @@ export const facilityStore = {
     return {
       ...base,
       description: f.description,
+      resources: resourceStore.detailResources(f.id),
       images: ordered.map((i) => ({ url: i.url, caption: i.caption })),
       capacityByArrangement: f.capacity.byArrangement.length > 0 ? f.capacity.byArrangement : null,
       operatingSchedule: f.schedule.days,

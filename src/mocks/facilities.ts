@@ -15,6 +15,7 @@ import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
 import { bufferOf, createAvailabilityHandlers } from './availability';
 import { createAdminFacilityHandlers } from './adminFacilities';
+import { createAdminResourceHandlers } from './adminResources';
 import { createApprovalHandlers } from './approvals';
 import { createBookingHandlers } from './bookings';
 import { bookingStore } from './data/bookingStore';
@@ -246,6 +247,13 @@ export function createFacilityHandlers(
     }),
 
     ...createAdminFacilityHandlers(root, {
+      delayMs,
+      now,
+      ready,
+      fail: () => getScenario?.() === 'error',
+    }),
+
+    ...createAdminResourceHandlers(root, {
       delayMs,
       now,
       ready,

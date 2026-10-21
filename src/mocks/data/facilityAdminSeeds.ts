@@ -12,6 +12,11 @@
  * - 9208: the Vaal Marina Board Room, so archiving it has a booking to list.
  * - 9209: Rothdene Hall banquet for 140. Cutting banquet seating to 120 puts it over.
  *
+ * They also ask for resources, so resource administration has something to find: 9201 to 9209 ask
+ * for chairs (9202 also the stage and an urn, 9209 an urn and 140 cups) and 9211, a pending
+ * request at Bantu Bonke Hall, asks for an urn and the sound system. Taking 140 chairs below 100 at
+ * Rothdene Hall, withdrawing its stage, or archiving the urn each reaches bookings.
+ *
  * Also: a blackout on City Hall that is in effect now (and so on its three spaces), for the list.
  * The Activity Room, Bantu Bonke Hall and the Council Chambers have no approver, from the fixture.
  */
@@ -28,6 +33,7 @@ const FACILITIES: Record<string, string> = {
   'lakeside-hall': 'Lakeside Hall',
   'vaal-marina-hall': 'Vaal Marina Hall',
   'vaal-marina-board-room': 'Vaal Marina Board Room',
+  'bantu-bonke-hall': 'Bantu Bonke Hall',
 };
 
 const APPLICANTS: Record<string, string> = {
@@ -46,6 +52,10 @@ interface Spec {
   to: string;
   attendees: number;
   seating: string;
+  /** Resource id and quantity asked for. */
+  resources?: Array<[string, number]>;
+  /** Still waiting for a decision. */
+  pending?: boolean;
   description: string;
   /** Hours before now that it was submitted: later submissions are the ones a clash names. */
   submittedHoursAgo: number;
@@ -61,6 +71,10 @@ const SPECS: Spec[] = [
     to: '13:00',
     attendees: 90,
     seating: 'school-room',
+    resources: [
+      ['chairs', 90],
+      ['tables', 12],
+    ],
     description: 'Community market, Saturday morning',
     submittedHoursAgo: 24 * 14,
   },
@@ -73,6 +87,11 @@ const SPECS: Spec[] = [
     to: '18:00',
     attendees: 100,
     seating: 'banquet',
+    resources: [
+      ['chairs', 100],
+      ['stage', 1],
+      ['kitchen-urn', 1],
+    ],
     description: 'Wedding reception',
     submittedHoursAgo: 24 * 13,
   },
@@ -109,6 +128,7 @@ const SPECS: Spec[] = [
     to: '12:00',
     attendees: 70,
     seating: 'school-room',
+    resources: [['chairs', 70]],
     description: 'Training workshop',
     submittedHoursAgo: 24 * 10,
   },
@@ -121,6 +141,7 @@ const SPECS: Spec[] = [
     to: '15:00',
     attendees: 70,
     seating: 'school-room',
+    resources: [['chairs', 70]],
     description: 'Afternoon seminar',
     submittedHoursAgo: 24 * 8,
   },
@@ -169,8 +190,30 @@ const SPECS: Spec[] = [
     to: '17:00',
     attendees: 140,
     seating: 'banquet',
+    resources: [
+      ['chairs', 140],
+      ['kitchen-urn', 1],
+      ['kitchen-cups', 140],
+    ],
     description: 'Anniversary lunch',
     submittedHoursAgo: 24 * 4,
+  },
+  {
+    n: 9211,
+    owner: 'applicant-tebogo',
+    facilityId: 'bantu-bonke-hall',
+    days: 36,
+    from: '10:00',
+    to: '14:00',
+    attendees: 80,
+    seating: 'school-room',
+    resources: [
+      ['kitchen-urn', 1],
+      ['sound-system', 1],
+    ],
+    pending: true,
+    description: 'Community lunch',
+    submittedHoursAgo: 24 * 2,
   },
 ];
 
@@ -219,7 +262,7 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
     const booking: StoredBooking = {
       id,
       reference: `MVL-${now.year}-${spec.n}`,
-      status: 'approved',
+      status: spec.pending ? 'pending' : 'approved',
       facilityId: spec.facilityId,
       startsAt: at(spec.days, spec.from),
       endsAt: at(spec.days, spec.to),
@@ -227,7 +270,7 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
       description: spec.description,
       attendeeCount: spec.attendees,
       seatingArrangementId: spec.seating,
-      resources: [],
+      resources: (spec.resources ?? []).map(([resourceId, quantity]) => ({ resourceId, quantity })),
       acceptedTermsVersion: TERMS_VERSION,
       facility: {
         id: spec.facilityId,
@@ -237,8 +280,10 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
       documents: [],
       updatedAt: ago(spec.submittedHoursAgo - 24),
       submittedAt: ago(spec.submittedHoursAgo),
-      holdExpiresAt: null,
-      decidedAt: ago(spec.submittedHoursAgo - 24),
+      holdExpiresAt: spec.pending
+        ? now.plus({ hours: 24 }).toUTC().toISO({ suppressMilliseconds: true })
+        : null,
+      decidedAt: spec.pending ? null : ago(spec.submittedHoursAgo - 24),
       rejectionReason: null,
       cancellation: null,
       history,

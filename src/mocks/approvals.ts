@@ -46,6 +46,7 @@ import {
 } from './data/bookingStore';
 import { deriveDetail } from './data/facilityDetail';
 import { facilityStore } from './data/facilityStore';
+import { resourceStore } from './data/resourceStore';
 import { relationOf } from './data/hierarchy';
 import { roleOfUser, staffName, userIdOf } from './data/staff';
 import { ROLES } from '@/shared/auth/roles';
@@ -302,12 +303,14 @@ function contextFor(
 
   const shortfalls: string[] = [];
   for (const request of booking.resources) {
-    const name = BOOKING_OPTIONS.resources.find((r) => r.id === request.resourceId)?.name;
-    const held = detail?.resources.find((r) => r.id === request.resourceId);
-    if (!name) continue;
-    if (!held) shortfalls.push(`${name} is not held at this venue`);
-    else if (held.quantity !== null && request.quantity > held.quantity) {
-      shortfalls.push(`${name}: ${request.quantity} requested, ${held.quantity} held`);
+    const resource = resourceStore.get(request.resourceId);
+    if (!resource) continue;
+    const held = resourceStore.valueOf(booking.facilityId, resource.id);
+    if (resource.archived) shortfalls.push(`${resource.name} is no longer offered`);
+    else if (!resourceStore.isHeld(booking.facilityId, resource.id)) {
+      shortfalls.push(`${resource.name} is not held at this venue`);
+    } else if (typeof held === 'number' && request.quantity > held) {
+      shortfalls.push(`${resource.name}: ${request.quantity} requested, ${held} held`);
     }
   }
   const resourceWarning = shortfalls.length > 0 ? `${sentenceList(shortfalls)}.` : null;
@@ -412,8 +415,17 @@ export function toDetail(
       BOOKING_OPTIONS.seatingArrangements.find((s) => s.id === booking.seatingArrangementId)
         ?.name ?? null,
     resources: booking.resources.flatMap((r) => {
-      const option = BOOKING_OPTIONS.resources.find((o) => o.id === r.resourceId);
-      return option ? [{ name: option.name, category: option.category, quantity: r.quantity }] : [];
+      const option = resourceStore.get(r.resourceId);
+      return option
+        ? [
+            {
+              name: option.name,
+              category: option.category,
+              quantity: r.quantity,
+              quantified: option.quantified,
+            },
+          ]
+        : [];
     }),
     documents: booking.documents,
     context: contextFor(item, competition, catalogue, now),

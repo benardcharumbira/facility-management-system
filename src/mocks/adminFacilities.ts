@@ -34,12 +34,12 @@ import {
   type UpdateFacilityRequest,
   type UpdateImageRequest,
 } from '@/shared/api';
-import { ROLES } from '@/shared/auth/roles';
 import { FACILITY_TIME_ZONE } from './data/bookingLedger';
 import { BOOKING_OPTIONS } from './data/bookingOptions';
 import { computeImpact } from './data/facilityImpact';
 import { facilityStore, type StoredFacility } from './data/facilityStore';
-import { approverCandidates, roleOfUser, STAFF, userIdOf } from './data/staff';
+import { approverCandidates, STAFF } from './data/staff';
+import { addError as add, invalid, problem, requireAdmin, type Errors } from './adminGuard';
 
 const MAX_NAME = 80;
 const MAX_SHORT = 160;
@@ -47,19 +47,6 @@ const MAX_DESCRIPTION = 4000;
 const MAX_REASON = 200;
 const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-function problem(
-  status: number,
-  title: string,
-  detail?: string,
-  extra: Record<string, unknown> = {},
-) {
-  return HttpResponse.json(
-    { type: 'about:blank', title, status, detail, ...extra },
-    { status, headers: { 'Content-Type': 'application/problem+json' } },
-  );
-}
-const invalid = (errors: Record<string, string[]>) =>
-  problem(422, 'Validation failed', 'One or more fields are invalid.', { errors });
 const notFound = () => problem(404, 'Facility not found');
 
 const iso = (value: string) => DateTime.fromISO(value, { zone: 'utc' });
@@ -250,10 +237,6 @@ export function listFacilities(params: AdminFacilityListParams, now: DateTime): 
 
 // --- validation ---------------------------------------------------------------------------------
 
-type Errors = Record<string, string[]>;
-const add = (errors: Errors, field: string, message: string) =>
-  (errors[field] ??= []).push(message);
-
 function validateDetails(
   body: Partial<CreateFacilityRequest & UpdateFacilityRequest>,
   existing: StoredFacility | undefined,
@@ -426,10 +409,8 @@ export function createAdminFacilityHandlers(
     async ({ request, params }: { request: Request; params: Record<string, unknown> }) => {
       await wait();
       ready?.();
-      const role = roleOfUser(userIdOf(request));
-      if (role !== ROLES.facilityAdmin && role !== ROLES.systemAdmin) {
-        return problem(403, 'Not allowed', 'Only administrators can manage facilities.');
-      }
+      const refused = requireAdmin(request, 'facilities');
+      if (refused) return refused;
       if (fail?.()) return problem(500, 'Mock failure', 'The facilities service is unavailable.');
       const facility = needsFacility ? facilityStore.get(String(params.id)) : undefined;
       if (needsFacility && !facility) return notFound();
@@ -558,7 +539,6 @@ export function createAdminFacilityHandlers(
             status: 'unavailable',
             archived: false,
             parentId: body.parentFacilityId ?? null,
-            amenities: [],
             images: [],
             schedule: {
               days: Array.from({ length: 7 }, (_, i) => ({

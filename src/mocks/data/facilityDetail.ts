@@ -27,6 +27,9 @@ export const DETAIL_PROVISIONAL_FIELDS = [
   'siblingFacilities',
 ] as const;
 
+/** Venue resources that are present or absent, never counted. Everything else is a count. */
+export const UNCOUNTED_VENUE_RESOURCES = new Set(['stage', 'podium', 'sound-system']);
+
 const ROOM_TYPES = new Set(['committee-room', 'board-room', 'council-chamber']);
 const HALL_TYPES = new Set(['hall', 'civic-hall', 'hall-wing']);
 
@@ -80,6 +83,7 @@ function resources(facility: FacilitySummary): FacilityResource[] {
       id: a.id,
       name: a.name,
       category: 'venue' as const,
+      quantified: !UNCOUNTED_VENUE_RESOURCES.has(a.id),
       quantity:
         a.id === 'chairs'
           ? seats
@@ -94,6 +98,7 @@ function resources(facility: FacilitySummary): FacilityResource[] {
         id: `kitchen-${item.id}`,
         name: item.name,
         category: 'kitchen' as const,
+        quantified: true,
         quantity: item.perSeat ? seats : item.fixed,
       }))
     : [];

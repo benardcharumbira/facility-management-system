@@ -5,11 +5,11 @@
  * and the turnaround are assumed. See docs/facilities-data-gaps.md.
  */
 import type { BookingOptions } from '@/shared/api';
-import { KITCHEN_ITEMS } from './facilityDetail';
 
 export const TERMS_VERSION = '2026-1';
 
-export const BOOKING_OPTIONS: BookingOptions = {
+/** The lists that do not change; the resources come from the catalogue, which administrators maintain. */
+export const BOOKING_OPTIONS: Omit<BookingOptions, 'resources' | 'retiredResources'> = {
   eventTypes: [
     { id: 'meeting', name: 'Meeting' },
     { id: 'workshop', name: 'Workshop or training' },
@@ -27,18 +27,6 @@ export const BOOKING_OPTIONS: BookingOptions = {
     { id: 'school-room', name: 'School room' },
     { id: 'u-shape', name: 'U-shape' },
     { id: 'boardroom', name: 'Boardroom' },
-  ],
-  resources: [
-    { id: 'tables', name: 'Tables', category: 'venue' },
-    { id: 'chairs', name: 'Chairs', category: 'venue' },
-    { id: 'stage', name: 'Stage', category: 'venue' },
-    { id: 'podium', name: 'Podium', category: 'venue' },
-    { id: 'sound-system', name: 'Sound system', category: 'venue' },
-    ...KITCHEN_ITEMS.map((item) => ({
-      id: `kitchen-${item.id}`,
-      name: item.name,
-      category: 'kitchen' as const,
-    })),
   ],
   terms: {
     version: TERMS_VERSION,

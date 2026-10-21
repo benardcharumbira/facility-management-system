@@ -36,6 +36,7 @@ import { bufferOf, computeAvailability, MOCK_AVAILABILITY_RULES } from './availa
 import { FACILITY_TIME_ZONE, buildLedger } from './data/bookingLedger';
 import type { FacilitySettings } from './data/facilityStore';
 import { BOOKING_OPTIONS, TERMS_VERSION } from './data/bookingOptions';
+import { resourceStore } from './data/resourceStore';
 import { HOLD_HOURS, MOCK_USER_ID, bookingStore, type StoredBooking } from './data/bookingStore';
 
 const MAX_DESCRIPTION = 1000;
@@ -96,8 +97,14 @@ export function validateForSubmit(booking: StoredBooking): Record<string, string
     add('seatingArrangement', 'Choose a seating arrangement.');
     add('seatingArrangementId', 'Choose a seating arrangement.');
   }
-  const known = new Set(BOOKING_OPTIONS.resources.map((r) => r.id));
-  if (booking.resources.some((r) => !known.has(r.resourceId) || r.quantity < 1)) {
+  const known = new Set(resourceStore.active().map((r) => r.id));
+  const retired = booking.resources.filter((r) => resourceStore.get(r.resourceId)?.archived);
+  if (retired.length > 0) {
+    add(
+      'resources',
+      `${retired.map((r) => resourceStore.get(r.resourceId)?.name).join(', ')} can no longer be requested. Untick ${retired.length === 1 ? 'it' : 'them'} and try again.`,
+    );
+  } else if (booking.resources.some((r) => !known.has(r.resourceId) || r.quantity < 1)) {
     add('resources', 'One or more requested resources are not valid.');
   }
   if (booking.acceptedTermsVersion !== TERMS_VERSION) {
@@ -409,7 +416,11 @@ export function createBookingHandlers(
     http.get(`${root}/booking-options`, async () => {
       await wait();
       if (fail?.()) return failure();
-      return HttpResponse.json(BOOKING_OPTIONS);
+      return HttpResponse.json({
+        ...BOOKING_OPTIONS,
+        resources: resourceStore.options(),
+        retiredResources: resourceStore.retired(),
+      });
     }),
 
     // The caller's own bookings. The caller comes from the token, never from a parameter.
