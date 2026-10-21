@@ -1,4 +1,4 @@
-import { useAuth, useUser } from '@clerk/react';
+import { useAuth, useClerk, useUser } from '@clerk/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useApiClient, type ApiProblem } from '@/shared/api';
@@ -10,6 +10,8 @@ export interface CurrentUser {
   name: string;
   email: string;
   imageUrl: string | null;
+  /** Whether Clerk has verified the primary email address. */
+  emailVerified: boolean;
   role: Role;
 }
 
@@ -23,7 +25,13 @@ export type CurrentUserState =
       refetch: () => void;
       signOut: () => Promise<void>;
     }
-  | { status: 'ready'; user: CurrentUser; signOut: () => Promise<void> };
+  | {
+      status: 'ready';
+      user: CurrentUser;
+      signOut: () => Promise<void>;
+      /** Opens Clerk's own screens for changing name, email address, password and sessions. */
+      manageAccount: () => void;
+    };
 
 /**
  * The one place the app learns who is signed in. Identity comes from Clerk, the role
@@ -32,6 +40,7 @@ export type CurrentUserState =
 export function useCurrentUser(): CurrentUserState {
   const { isLoaded, isSignedIn, signOut: clerkSignOut } = useAuth();
   const { user: clerkUser } = useUser();
+  const clerk = useClerk();
   const api = useApiClient();
   const queryClient = useQueryClient();
 
@@ -63,11 +72,13 @@ export function useCurrentUser(): CurrentUserState {
   return {
     status: 'ready',
     signOut,
+    manageAccount: () => clerk.openUserProfile(),
     user: {
       id: me.data.id,
       name: clerkUser.fullName ?? me.data.displayName,
       email: clerkUser.primaryEmailAddress?.emailAddress ?? me.data.email,
       imageUrl: clerkUser.imageUrl || null,
+      emailVerified: clerkUser.primaryEmailAddress?.verification?.status === 'verified',
       role: me.data.role,
     },
   };

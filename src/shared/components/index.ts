@@ -118,3 +118,7 @@ export { EditableGrid } from './admin/EditableGrid';
 export type { GridFocusProps, GridGroup } from './admin/EditableGrid';
 export { UnsavedChangesBar } from './admin/UnsavedChangesBar';
 export { useRestoreFocus } from './admin/useRestoreFocus';
+export { Footer } from './Footer';
+export { ContentPage, ContentSection } from './content/ContentPage';
+export type { ContentPageProps } from './content/ContentPage';
+export { PlaceholderNotice } from './content/PlaceholderNotice';

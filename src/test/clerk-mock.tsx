@@ -9,7 +9,10 @@ export const clerkState = {
     id: 'user_test',
     fullName: 'Test User' as string | null,
     imageUrl: '',
-    primaryEmailAddress: { emailAddress: 'test.user@example.org' },
+    primaryEmailAddress: {
+      emailAddress: 'test.user@example.org',
+      verification: { status: 'verified' as string | null },
+    },
   },
   getToken: vi.fn<() => Promise<string | null>>(async () => 'test-token'),
   signOut: vi.fn(async () => {}),
@@ -43,6 +46,13 @@ export function useAuth() {
     getToken: clerkState.getToken,
     signOut: clerkState.signOut,
   };
+}
+
+/** Opens Clerk's own profile screens; a spy in tests. */
+export const openUserProfile = vi.fn();
+
+export function useClerk() {
+  return { openUserProfile };
 }
 
 export function useUser() {

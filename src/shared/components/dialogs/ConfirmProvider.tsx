@@ -1,6 +1,15 @@
-import { AlertDialog } from 'radix-ui';
-import { createContext, use, useCallback, useRef, useState, type ReactNode } from 'react';
-import { Button } from '../ui/Button';
+import {
+  createContext,
+  lazy,
+  Suspense,
+  use,
+  useCallback,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+
+const ConfirmPrompt = lazy(() => import('./ConfirmPrompt'));
 
 export interface ConfirmOptions {
   title: string;
@@ -38,32 +47,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext value={confirm}>
       {children}
-      <AlertDialog.Root open={open} onOpenChange={(next) => !next && settle(false)}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-50 bg-ink/40" />
-          <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-surface p-6 shadow-overlay">
-            <AlertDialog.Title className="text-lg font-semibold">
-              {options?.title}
-            </AlertDialog.Title>
-            <AlertDialog.Description asChild>
-              <div className="mt-2 text-muted">{options?.message}</div>
-            </AlertDialog.Description>
-            <div className="mt-6 flex justify-end gap-2">
-              <AlertDialog.Cancel asChild>
-                <Button variant="secondary">{options?.cancelLabel ?? 'Cancel'}</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant={options?.destructive ? 'danger' : 'primary'}
-                  onClick={() => settle(true)}
-                >
-                  {options?.confirmLabel ?? 'Confirm'}
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      {options && (
+        <Suspense fallback={null}>
+          <ConfirmPrompt options={options} open={open} onSettle={settle} />
+        </Suspense>
+      )}
     </ConfirmContext>
   );
 }

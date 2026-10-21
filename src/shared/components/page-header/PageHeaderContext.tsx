@@ -1,3 +1,4 @@
+import { setDocumentMeta } from '../../utils/documentMeta';
 import { createContext, use, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export interface Crumb {
@@ -41,7 +42,7 @@ export function usePageHeader(title: string, breadcrumbs: Crumb[] = []) {
 
   useEffect(() => {
     setHeader?.({ title, breadcrumbs: JSON.parse(crumbsKey) as Crumb[] });
-    document.title = title ? `${title} · Facilities Booking` : 'Facilities Booking';
+    setDocumentMeta(title);
     return () => setHeader?.(EMPTY);
   }, [setHeader, title, crumbsKey]);
 }
