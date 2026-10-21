@@ -16,6 +16,8 @@ export interface StoredTerms {
   publishedAt: string | null;
   publishedBy: { id: string; name: string } | null;
   supersededAt: string | null;
+  /** The delivery team's stand-in wording, awaiting the municipality's own. */
+  placeholder: boolean;
 }
 
 /** The version the seeded bookings accepted. */
@@ -38,6 +40,7 @@ const seedVersions = (): StoredTerms[] => [
     publishedAt: '2025-09-01T06:00:00Z',
     publishedBy: AUTHOR,
     supersededAt: '2026-02-01T06:00:00Z',
+    placeholder: true,
   },
   {
     id: 'terms-2026-1',
@@ -54,6 +57,7 @@ const seedVersions = (): StoredTerms[] => [
     publishedAt: '2026-02-01T06:00:00Z',
     publishedBy: AUTHOR,
     supersededAt: null,
+    placeholder: true,
   },
   {
     id: 'terms-2026-2',
@@ -71,6 +75,7 @@ const seedVersions = (): StoredTerms[] => [
     publishedAt: null,
     publishedBy: null,
     supersededAt: null,
+    placeholder: true,
   },
 ];
 

@@ -19,6 +19,7 @@ import { createAdminAuditHandlers } from './adminAudit';
 import { createAdminReferenceHandlers } from './adminReference';
 import { createAdminResourceHandlers } from './adminResources';
 import { createAdminUserHandlers } from './adminUsers';
+import { createPublicHandlers } from './publicContent';
 import { createApprovalHandlers } from './approvals';
 import { createBookingHandlers } from './bookings';
 import { bookingStore } from './data/bookingStore';
@@ -274,6 +275,14 @@ export function createFacilityHandlers(
       delayMs,
       now,
       ready,
+      fail: () => getScenario?.() === 'error',
+    }),
+
+    ...createPublicHandlers(root, {
+      delayMs,
+      now,
+      ready,
+      empty: () => getScenario?.() === 'empty',
       fail: () => getScenario?.() === 'error',
     }),
 

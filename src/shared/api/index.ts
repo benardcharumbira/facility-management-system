@@ -13,3 +13,5 @@ export * from './contracts/admin-resources';
 export * from './contracts/admin-users';
 export * from './contracts/admin-reference';
 export * from './contracts/admin-audit';
+export * from './contracts/public';
+export * from './contracts/profile';

@@ -21,7 +21,7 @@
  * PATCH  /api/admin/terms/{id}                          a draft only
  * POST   /api/admin/terms/{id}/publish
  *
- * GET    /api/terms/current                             public: the published version (an addition)
+ * GET    /api/public/terms                              public: the published version (see public.ts)
  * ```
  *
  * **System administrators only** on every `admin` route.
@@ -98,14 +98,6 @@ export interface CreateTermsRequest {
   paragraphs: string[];
 }
 export type UpdateTermsRequest = Partial<CreateTermsRequest>;
-
-/** `GET /api/terms/current`, which the public terms page renders. */
-export interface PublishedTerms {
-  version: string;
-  title: string;
-  paragraphs: string[];
-  publishedAt: string;
-}
 
 export const MAX_TERMS_PARAGRAPHS = 60;
 export const MAX_TERMS_PARAGRAPH_LENGTH = 2000;

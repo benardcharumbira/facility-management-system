@@ -1,6 +1,7 @@
 import { resetAuditStore } from './auditStore';
 import { resetBookingStore } from './bookingStore';
 import { resetFacilityStore } from './facilityStore';
+import { resetProfileStore } from './profileStore';
 import { resetReferenceStore } from './referenceStore';
 import { resetTermsStore } from './termsStore';
 import { resetUserStore } from './userStore';
@@ -13,4 +14,5 @@ export function resetMockStores() {
   resetReferenceStore();
   resetTermsStore();
   resetAuditStore();
+  resetProfileStore();
 }

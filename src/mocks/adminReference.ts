@@ -17,7 +17,6 @@ import {
   MAX_TERMS_PARAGRAPHS,
   type CreateReferenceRequest,
   type CreateTermsRequest,
-  type PublishedTerms,
   type ReferenceEntry,
   type TermsVersion,
   type UpdateReferenceRequest,
@@ -132,7 +131,16 @@ const cleanParagraphs = (paragraphs: string[]) =>
   paragraphs.map((p) => p.trim()).filter((p) => p !== '');
 
 const toTerms = (t: StoredTerms): TermsVersion => ({
-  ...t,
+  id: t.id,
+  version: t.version,
+  title: t.title,
+  paragraphs: t.paragraphs,
+  status: t.status,
+  createdAt: t.createdAt,
+  createdBy: t.createdBy,
+  publishedAt: t.publishedAt,
+  publishedBy: t.publishedBy,
+  supersededAt: t.supersededAt,
   bookings: bookingStore.all().filter((b) => b.booking.acceptedTermsVersion === t.version).length,
 });
 
@@ -354,6 +362,7 @@ export function createAdminReferenceHandlers(
           publishedAt: null,
           publishedBy: null,
           supersededAt: null,
+          placeholder: false,
         };
         termsStore.set(created);
         audit(request, {
@@ -438,19 +447,5 @@ export function createAdminReferenceHandlers(
         return HttpResponse.json(toTerms(published));
       }),
     ),
-
-    // Public: the published version, which the public terms page renders.
-    http.get(`${root}/terms/current`, async () => {
-      await wait();
-      ready?.();
-      const current = termsStore.published();
-      const body: PublishedTerms = {
-        version: current.version,
-        title: current.title,
-        paragraphs: current.paragraphs,
-        publishedAt: current.publishedAt ?? current.createdAt,
-      };
-      return HttpResponse.json(body);
-    }),
   ];
 }
