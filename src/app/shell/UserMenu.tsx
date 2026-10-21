@@ -1,7 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
-import type { CurrentUser } from '@/shared/auth';
-import { ROLE_LABELS } from './roleLabels';
+import { ROLE_LABELS, type CurrentUser } from '@/shared/auth';
 
 interface UserMenuProps {
   user: CurrentUser;

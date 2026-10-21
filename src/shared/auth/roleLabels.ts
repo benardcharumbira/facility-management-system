@@ -1,4 +1,4 @@
-import { ROLES, type Role } from '@/shared/auth';
+import { ROLES, type Role } from './roles';
 
 export const ROLE_LABELS: Record<Role, string> = {
   [ROLES.applicant]: 'Applicant',

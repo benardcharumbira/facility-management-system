@@ -9,6 +9,8 @@ export interface ArchiveConfirmProps {
   facilityName: string;
   /** Replaces the sentence about what archiving does, for something that is not a facility. */
   description?: ReactNode;
+  /** More than a sentence of consequence, such as a list of what holds a figure against it. */
+  details?: ReactNode;
   /** What archiving reaches. Null while it is being worked out. */
   impact: ImpactResult | null;
   onConfirm: () => Promise<void>;
@@ -23,6 +25,7 @@ export function ArchiveConfirm({
   onOpenChange,
   facilityName,
   description,
+  details,
   impact,
   onConfirm,
 }: ArchiveConfirmProps) {
@@ -39,6 +42,7 @@ export function ArchiveConfirm({
             {description ??
               `${facilityName} will leave the public estate and cannot be chosen for new bookings. Its history and its bookings are kept, and you can restore it later.`}
           </p>
+          {details}
           {count > 0 && (
             <p className="font-medium text-ink">
               {count === 1 ? '1 booking is affected:' : `${count} bookings are affected:`}
