@@ -35,6 +35,7 @@ import {
   type SetFacilityAllocationsRequest,
   type UpdateResourceRequest,
 } from '@/shared/api';
+import { PROBLEM_TYPES } from '@/shared/api/contracts/problem-types';
 import { addError, invalid, problem, requireAdmin, type Errors } from './adminGuard';
 import { batchImpact, catalogueImpact } from './data/resourceImpact';
 import { facilityStore } from './data/facilityStore';
@@ -454,7 +455,9 @@ export function createAdminResourceHandlers(
         const result = applyChanges(changes);
         return result.ok
           ? HttpResponse.json({ applied: changes.length })
-          : problem(409, 'The batch was not saved', result.message);
+          : problem(409, 'The batch was not saved', result.message, {
+              type: PROBLEM_TYPES.batchNotSaved,
+            });
       }),
     ),
 
@@ -483,7 +486,9 @@ export function createAdminResourceHandlers(
         const result = applyChanges(changes);
         return result.ok
           ? HttpResponse.json(facilityAllocations(facility.id))
-          : problem(409, 'The changes were not saved', result.message);
+          : problem(409, 'The changes were not saved', result.message, {
+              type: PROBLEM_TYPES.batchNotSaved,
+            });
       }),
     ),
   ];

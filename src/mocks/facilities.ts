@@ -1,4 +1,5 @@
 import type { DateTime } from 'luxon';
+import { problemTypeFor } from '@/shared/api/contracts/problem-types';
 import { HttpResponse, http, delay } from 'msw';
 import {
   FACILITY_LIST_DEFAULTS,
@@ -175,7 +176,7 @@ export function parseFacilityParams(searchParams: URLSearchParams): FacilityList
 
 function problem(status: number, title: string, detail?: string) {
   return HttpResponse.json(
-    { type: 'about:blank', title, status, detail },
+    { type: problemTypeFor(status), title, status, detail },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

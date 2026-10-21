@@ -32,6 +32,7 @@ import {
   type UserStatus,
 } from '@/shared/api';
 import { isRole, ROLES, type Role } from '@/shared/auth/roles';
+import { PROBLEM_TYPES } from '@/shared/api/contracts/problem-types';
 import { invalid, problem, requireSystemAdmin } from './adminGuard';
 import { auditStore } from './data/auditStore';
 import { designationsOf, setDesignations } from './data/designations';
@@ -321,7 +322,10 @@ export function createAdminUserHandlers(
         const caller = userIdOf(request);
         const { role: blocked, roleCode } = protectionsFor(user, caller);
         if (blocked) {
-          return problem(409, 'That is not allowed', blocked, { code: roleCode });
+          return problem(409, 'That is not allowed', blocked, {
+            code: roleCode,
+            type: PROBLEM_TYPES.actionNotAllowed,
+          });
         }
         if (isGrant(user.role, role) && body.confirmGrant !== true) {
           return invalid({
@@ -389,7 +393,10 @@ export function createAdminUserHandlers(
         const caller = userIdOf(request);
         const { deactivation, deactivationCode } = protectionsFor(user, caller);
         if (deactivation) {
-          return problem(409, 'That is not allowed', deactivation, { code: deactivationCode });
+          return problem(409, 'That is not allowed', deactivation, {
+            code: deactivationCode,
+            type: PROBLEM_TYPES.actionNotAllowed,
+          });
         }
         const designated = designationsOf(user.id).map((f) => f.id);
         setDesignations(user.id, [], caller, now(), 'Account deactivated');

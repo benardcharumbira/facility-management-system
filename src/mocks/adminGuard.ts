@@ -1,4 +1,5 @@
 import { HttpResponse } from 'msw';
+import { problemTypeFor } from '@/shared/api/contracts/problem-types';
 import { ROLES } from '@/shared/auth/roles';
 import { roleOfUser, userIdOf } from './data/staff';
 
@@ -10,7 +11,7 @@ export function problem(
   extra: Record<string, unknown> = {},
 ) {
   return HttpResponse.json(
-    { type: 'about:blank', title, status, detail, ...extra },
+    { type: problemTypeFor(status), title, status, detail, ...extra },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

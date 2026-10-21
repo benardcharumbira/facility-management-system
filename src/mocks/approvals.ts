@@ -15,6 +15,7 @@
  * seeded request "MVL-…-9115" is one another approver gets to first: the first decision you try
  * on it comes back as already decided.
  */
+import { problemTypeFor } from '@/shared/api/contracts/problem-types';
 import { DateTime } from 'luxon';
 import { HttpResponse, http, delay } from 'msw';
 import {
@@ -68,7 +69,7 @@ function problem(
   extra: Record<string, unknown> = {},
 ) {
   return HttpResponse.json(
-    { type: 'about:blank', title, status, detail, ...extra },
+    { type: problemTypeFor(status), title, status, detail, ...extra },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

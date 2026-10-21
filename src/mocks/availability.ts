@@ -3,6 +3,7 @@
  * closures, booking and buffer expansion, hierarchy resolution, overlap resolution and merging.
  * The client renders the result and does none of this itself.
  */
+import { problemTypeFor } from '@/shared/api/contracts/problem-types';
 import { DateTime } from 'luxon';
 import { HttpResponse, http, delay } from 'msw';
 import {
@@ -355,7 +356,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function problem(status: number, title: string, detail?: string) {
   return HttpResponse.json(
-    { type: 'about:blank', title, status, detail },
+    { type: problemTypeFor(status), title, status, detail },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
