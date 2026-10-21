@@ -76,6 +76,24 @@ Sicelo Hall, Lakeside Hall.
     the staff member who approved or rejected it, or only that the municipality did? And how long
     does a pending request hold the time before it is released? We assumed 72 hours.
 
+18. **When one request is approved, what happens to the ones it displaces?** We assumed they stay
+    in the queue, can no longer be approved, and must each be rejected by a person with a reason,
+    because the reason is the only explanation the applicant receives. The alternative is to
+    reject them automatically with a standard message. Which do you want?
+
+19. **Who approves which venues?** We assumed an approver is designated against a list of venues,
+    and that a building and its rooms are designated together. If a request for City Hall competes
+    with one for a wing the approver is not designated against, they see it named but cannot open
+    it. Is that right, and who decides when two approvers' venues overlap?
+
+20. **Turnaround.** We assumed a target of 5 working days (120 hours) from submission, flagged as
+    approaching within 24 hours of it, and that a hold ending within 24 hours deserves a flag. Are
+    those the right figures, and should a change of date have its own target?
+
+21. **What an approver may write.** Should an internal note on an approval be kept for audit and
+    shown to later approvers? Should the applicant be told which staff member decided? (See Q17.)
+    We assumed the note is internal and permanent, and that the reason is sent exactly as written.
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

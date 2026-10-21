@@ -252,7 +252,7 @@ is `src/shared/api/contracts/bookings.ts`; `src/mocks/bookings.ts` implements it
   theme from slice 3 onwards. So `StatusBadge` was built from what does exist, the calendar's fill
   patterns, icons and the semantic colour tokens, and each status differs by pattern, icon and
   words (Draft dashed, Pending striped, Approved solid, Rejected crosshatched, Cancelled outlined).
-  When a real design language arrives, `src/features/bookings/status.tsx` is the one file to
+  When a real design language arrives, `src/shared/components/ui/BookingStatusBadge.tsx` is the one file to
   restyle. The mechanical style rule (no hex or pixel values in components) is the ESLint rule
   from slice 1 and passes.
 - **List.** The default order is `attention`: drafts, then pending, then upcoming approved, then
@@ -287,6 +287,110 @@ is `src/shared/api/contracts/bookings.ts`; `src/mocks/bookings.ts` implements it
   the future, the window, but not the event details (copying those would need a `copyFrom` option
   on the draft). Added to the contract beyond the brief: `GET /bookings/summary`, and
   `actions`, `history`, `holdExpiresAt` and friends on the booking.
+
+## Approval queue
+
+`/approvals` and `/approvals/:itemId`. The contract is in `src/shared/api/contracts/approvals.ts`.
+This is an internal tool for someone who works in it every day, so it optimises for throughput, not
+first-time clarity: a queue beside the selected request, a compact density, and the keyboard as a
+first class path.
+
+- **Two kinds of work.** A _new request_ and a _change of date_ (a reschedule of an approved
+  booking) share the queue but are told apart by pattern, icon and words, and a change of date
+  carries both windows: "Now" and "Move to" in the row, "Booked now" and "Proposed" in the detail.
+  Each is decided at its own endpoint and has its own id. The id of a new request is the booking's.
+- **Scope is identity, never a parameter.** An approver sees the facilities they are designated
+  against, a system administrator sees all (the route is now open to both). Something outside
+  scope is a 404, the same as something that does not exist, and a `facilityId` filter cannot
+  widen the scope.
+- **Competition is the primary feature, and the server's job.** The API returns, for a pending
+  item, the other pending requests that want overlapping time in the same facility or across the
+  hierarchy (`competingRequests`, each with relationship `same_facility`, `parent` or `child`
+  _from the viewer's side_), the approved bookings already in the way (`blockedBy`) and the
+  related facilities approving would take (`affectedFacilities`). The client reads those lists and
+  never walks the hierarchy. Two wings of one building do not compete with each other; each
+  competes with the whole building. The approve confirmation names every request it makes
+  impossible, and the queue row says "Competes with N" before the item is opened.
+- **Rivals are stranded, not rejected.** Approving a request does not reject the ones it
+  displaces. They stay in the queue, can no longer be approved (the server says why, and the
+  screen offers only Reject), and need a reason written by a person, because the reason is the
+  only explanation the applicant gets. This is an assumption (Q18 in `docs/facilities-data-gaps.md`).
+- **Reasons.** Rejecting needs a reason; the field says it is sent verbatim and is the only
+  explanation. The server stores it exactly as typed and the applicant's booking returns it
+  unchanged (tested). An approval's internal note is never part of the applicant's booking.
+- **Already decided.** A decision on something another approver decided first is a 409 that says
+  what was decided, by whom and when. The dialog says so in place, keeps the typed note or reason
+  on view (it was not sent) and offers only "Continue", which moves to the next request.
+- **After a decision** the screen waits for the queue and counts to refresh, then selects the
+  next request (the one below, or the one above if it was last), and puts focus on it. On a phone
+  it opens the next request full screen.
+- **Keyboard.** `j`/`k` and the arrow keys (arrows only with focus in the queue, so the page still
+  scrolls) move through the queue; `a` and `r` open the confirmations; `/` focuses search; `?`
+  opens the reference (also a visible button). Shortcuts never fire from a field, with Ctrl, Cmd
+  or Alt held, or while a dialog is open. In a dialog Enter confirms, because focus starts on the
+  confirm button; **in the reason or note box Enter inserts a line break** (a reason is a
+  sentence, not a word) and **Ctrl or Cmd with Enter confirms**. That is the one place the brief's
+  "Enter confirms" is adjusted.
+- **URL.** Search, status (empty means pending), kind, event dates, facility, sort and page are
+  in the URL through the slice 2 hook, and selection is the path, so a link opens a request and
+  selecting keeps the view. Moving with `j`/`k` replaces the history entry, so Back leaves the
+  queue instead of stepping back through every request.
+- **Navigation badge.** The pending count beside "Approvals" refetches when the window regains
+  focus and after a decision. There is no polling (tested).
+- **Layout.** From 768px the queue and the request sit side by side and scroll independently; below
+  that it is one column, the queue or the request full screen with a way back that keeps the
+  filters. On a wide screen the first request is selected on arrival. Filters open as a side
+  sheet, not a sidebar, because a queue and a detail pane leave no room for one.
+- **No bulk actions, deliberately.** Every rejection carries a reason and every approval can
+  strand a competing request, and both are poor fits for a multi-select. Revisit once there is
+  evidence from real volumes.
+- **Thresholds that are this screen's, not the API's:** a request is "approaching" its target
+  within 24 hours of it, and a hold is "ending soon" within 24 hours (`features/approvals/urgency.ts`).
+  The target itself (5 days) comes from the API and is absent for the committee room, to exercise
+  that case.
+- **Withdrawn requests leave the queue.** A cancelled or draft booking is not work. A decided
+  item is reviewed by adding Approved or Rejected to the status filter.
+
+### Reviewing it with the mock API
+
+The default mock approver is designated against City Hall, Mitchell Wing, Loch Wing, the committee
+room, Rothdene Hall and Lakeside Hall. The seeded requests (listed at the top of
+`src/mocks/data/approvalSeeds.ts`) cover: City Hall, Mitchell Wing and Loch Wing for one
+Saturday (a parent and two children), two requests for Rothdene Hall at once, a request over its
+target, a hold ending within a day, a capacity and a resource warning, two changes of date, a
+request that cannot be approved because a booking is already approved over it, and decided items.
+Request MVL-…-9115 is one another approver decides first, so your first attempt on it comes back
+as already decided. `?mock=empty` empties the queue. In tests, and with a `user:<id>` token,
+`approver-vaal` sees only Vaal Marina Hall, `approver-empty` has an empty queue, `mock-sysadmin`
+sees everything and an unknown identity sees nothing.
+
+### Additions to the contract beyond the brief
+
+`blockedBy` and `affectedFacilities` (so the screen need not walk the hierarchy), `capacity` (the
+numbers behind `capacityWarning`), on each competitor the `workItemId`, `workItemType`, `overlap`
+and `inYourQueue` (a competitor outside the caller's scope is named but not linked), `approvable`
+and `actions` (the server decides what may be done), `facilities` with pending counts on
+`/approvals/counts` (the facility filter), `GET /approvals/:id/documents/:documentId` (an approver
+cannot use the applicant's own endpoint), the already-decided problem type, and the history entry
+types `reschedule_approved` and `reschedule_declined` on the applicant's booking.
+
+### Design system
+
+**4 components, 1 hook and 1 context added**, all in their own directory,
+`src/shared/components/backoffice/`: `MasterDetailLayout`, `QueueItem`, `DecisionDialog`,
+`KeyboardShortcutHelp`, `useKeyboardShortcuts` and `DensityProvider`. The competing request list
+stayed in the feature because it is about booking competition, not a general pattern. **10 existing
+pieces changed**: the density variant is read by eight list primitives (`SearchField`, `SortSelect`,
+`ResultsToolbar`, `ResultsGrid`, `Pagination`, `ActiveFilterChips`, `CardSkeleton`, `FilterButton`),
+`FilterPanel` gained a `placement`, and `Badge` gained a `warning` tone. Three modules moved to
+`shared` because a second feature needed them: the booking status badge, the date helpers and
+`saveBlob`. Details in `src/shared/components/README.md`.
+
+### Not verified
+
+Everything here is checked under jsdom, which has no layout. I have not opened it in a browser, so
+the sticky and independently scrolling panes, real focus behaviour, the 768px and 360px layouts
+and real keyboard use are unconfirmed.
 
 ## Conventions
 
