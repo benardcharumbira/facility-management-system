@@ -126,6 +126,37 @@ screen needs either, merge them.
 is a third presentation of one), three skeleton patterns, and field errors styled apart from
 `Alert`.
 
+## Admin primitives (`admin/`)
+
+For facility administration, where almost every change reaches bookings that already exist.
+
+| Piece                 | Props                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useImpactGuard`      | Returns `{ guard, dialog }`. `guard({ check, apply, title, summary, confirmLabel })` checks, applies at once if nothing is affected, else asks. Render `dialog` once.  |
+| `ImpactDialog`        | `open`, `onOpenChange`, `title`, `summary`, `impact`, `confirmLabel`, `describeReason?`, `onConfirm`. Names each affected booking and says confirming decides nothing. |
+| `ImpactList`          | `impact`, `describeReason?`. The list on its own: reference, status, who, where, when and why.                                                                         |
+| `ArchiveConfirm`      | `open`, `onOpenChange`, `facilityName`, `impact`, `onConfirm`. Asks even when nothing is affected.                                                                     |
+| `SectionedEditLayout` | `sections: {id,label,flag?}[]`, `current`, `hrefFor`, children. Sections are links, so they are in the URL.                                                            |
+| `HierarchySelect`     | `label`, `value`, `eligible`, `onChange`. Lists only the places given, so it cannot offer a cycle.                                                                     |
+| `ScheduleEditor`      | `value: OperatingDay[]`, `onChange`, `errors?`. Open or Closed per day, times, and "Copy to other days".                                                               |
+| `DateRangeField`      | `legend`, `value`, `onChange`, errors. `rangeToInstants(value, zone)` turns it into UTC instants in the facility's zone.                                               |
+| `ImageManager`        | Images, pending uploads, accepted types and limits, and the callbacks. Every image needs a caption before it is uploaded.                                              |
+
+**Count for this slice: 7 components and 1 hook added, no earlier primitive changed.** The list set
+(`SearchField`, `FilterPanel` as an overlay, `FilterButton`, `FilterSection`, `CheckboxGroupFilter`,
+`ActiveFilterChips`, `ResultsToolbar`, `SortSelect`, `ResultsGrid`, `Pagination`, `EmptyState`,
+`SkeletonGrid`, `ErrorState`) was reused at the compact density from the last slice, and
+`ConfirmDialog`, `FormField`, `Section`, `DetailHeader`, `NotFoundState`, `Alert`, `Badge` and
+`StatusBadge` as they were. Only `useImpactGuard`/`ImpactDialog`, `ArchiveConfirm` and
+`SectionedEditLayout` are shared by design; the other four have one user and are candidates to move
+into the feature if the next slices do not need them. `ImpactDialog` and `ConfirmDialog` overlap (an
+alert dialog with a list and a failure); `ImpactDialog` is a thin wrapper over `ConfirmDialog`
+rather than a second dialog.
+
+**Still open, unchanged:** two disclosure primitives, two sheet primitives, three skeleton patterns,
+and field errors styled apart from `Alert`. `DecisionDialog` and `ConfirmDialog` remain two
+confirmation dialogs.
+
 ## Form primitives (`form/`)
 
 | Component           | Props                                                                                                                                              |

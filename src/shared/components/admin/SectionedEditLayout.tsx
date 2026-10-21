@@ -50,6 +50,7 @@ export function SectionedEditLayout({
                   )}
                 >
                   {section.label}
+                  {section.flag && ' '}
                   {section.flag}
                 </Link>
               </li>
