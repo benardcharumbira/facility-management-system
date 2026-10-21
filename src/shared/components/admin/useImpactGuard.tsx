@@ -2,9 +2,9 @@ import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ImpactedBooking, ImpactResult } from '@/shared/api';
 import { ImpactDialog } from './ImpactDialog';
 
-export interface GuardRequest {
+export interface GuardRequest<I extends ImpactResult = ImpactResult> {
   /** Asks the server what the change would reach. Decides nothing. */
-  check: () => Promise<ImpactResult>;
+  check: () => Promise<I>;
   /** Makes the change. Called at once if nothing is affected, otherwise only after confirmation. */
   apply: () => Promise<void>;
   title: string;
@@ -15,15 +15,15 @@ export interface GuardRequest {
    * Whether to ask. By default only when a booking is affected. A change that loses something that
    * is not a booking, like discarded allocations, asks regardless.
    */
-  requiresConfirmation?: (impact: ImpactResult) => boolean;
+  requiresConfirmation?: (impact: I) => boolean;
   /** What else is lost, shown above the bookings. */
-  details?: (impact: ImpactResult) => ReactNode;
+  details?: (impact: I) => ReactNode;
 }
 
 export type GuardOutcome = 'applied' | 'cancelled';
 
 interface Pending {
-  request: GuardRequest;
+  request: GuardRequest<never>;
   impact: ImpactResult;
   settle: (outcome: GuardOutcome) => void;
 }
@@ -35,25 +35,28 @@ interface Pending {
  * Render `dialog` once on the screen. A failure of either step is thrown to the caller.
  */
 export function useImpactGuard(): {
-  guard: (request: GuardRequest) => Promise<GuardOutcome>;
+  guard: <I extends ImpactResult>(request: GuardRequest<I>) => Promise<GuardOutcome>;
   dialog: ReactNode;
 } {
   const [pending, setPending] = useState<Pending | null>(null);
   const [open, setOpen] = useState(false);
   const applied = useRef(false);
 
-  const guard = useCallback(async (request: GuardRequest): Promise<GuardOutcome> => {
-    const impact = await request.check();
-    if (!(request.requiresConfirmation?.(impact) ?? impact.totalAffected > 0)) {
-      await request.apply();
-      return 'applied';
-    }
-    applied.current = false;
-    return new Promise<GuardOutcome>((settle) => {
-      setPending({ request, impact, settle });
-      setOpen(true);
-    });
-  }, []);
+  const guard = useCallback(
+    async <I extends ImpactResult>(request: GuardRequest<I>): Promise<GuardOutcome> => {
+      const impact = await request.check();
+      if (!(request.requiresConfirmation?.(impact) ?? impact.totalAffected > 0)) {
+        await request.apply();
+        return 'applied';
+      }
+      applied.current = false;
+      return new Promise<GuardOutcome>((settle) => {
+        setPending({ request: request as unknown as GuardRequest<never>, impact, settle });
+        setOpen(true);
+      });
+    },
+    [],
+  );
 
   const dialog = pending && (
     <ImpactDialog
@@ -68,7 +71,7 @@ export function useImpactGuard(): {
       impact={pending.impact}
       confirmLabel={pending.request.confirmLabel}
       describeReason={pending.request.describeReason}
-      details={pending.request.details?.(pending.impact)}
+      details={pending.request.details?.(pending.impact as never)}
       onConfirm={async () => {
         await pending.request.apply();
         applied.current = true;

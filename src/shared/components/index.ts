@@ -114,3 +114,6 @@ export { SectionedEditLayout } from './admin/SectionedEditLayout';
 export type { EditSection } from './admin/SectionedEditLayout';
 export { useImpactGuard } from './admin/useImpactGuard';
 export type { GuardOutcome, GuardRequest } from './admin/useImpactGuard';
+export { EditableGrid } from './admin/EditableGrid';
+export type { GridFocusProps, GridGroup } from './admin/EditableGrid';
+export { UnsavedChangesBar } from './admin/UnsavedChangesBar';

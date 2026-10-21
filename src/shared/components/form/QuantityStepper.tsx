@@ -87,7 +87,11 @@ export function QuantityStepper({
       type="text"
       inputMode="numeric"
       aria-label={label ?? `${name} quantity`}
-      aria-describedby={max !== undefined && !compact ? noteId : undefined}
+      aria-describedby={
+        [inputProps?.['aria-describedby'], max !== undefined && !compact ? noteId : undefined]
+          .filter(Boolean)
+          .join(' ') || undefined
+      }
       value={draft ?? String(value)}
       onChange={(event) => setDraft(event.target.value.replace(/[^\d]/g, ''))}
       onBlur={(event) => {

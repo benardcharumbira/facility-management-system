@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ImpactResult } from '@/shared/api';
 import { ConfirmDialog } from '../dialogs/ConfirmDialog';
 import { ImpactList } from './ImpactDialog';
@@ -6,6 +7,8 @@ export interface ArchiveConfirmProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   facilityName: string;
+  /** Replaces the sentence about what archiving does, for something that is not a facility. */
+  description?: ReactNode;
   /** What archiving reaches. Null while it is being worked out. */
   impact: ImpactResult | null;
   onConfirm: () => Promise<void>;
@@ -19,6 +22,7 @@ export function ArchiveConfirm({
   open,
   onOpenChange,
   facilityName,
+  description,
   impact,
   onConfirm,
 }: ArchiveConfirmProps) {
@@ -32,8 +36,8 @@ export function ArchiveConfirm({
       description={
         <div className="flex flex-col gap-2">
           <p>
-            {facilityName} will leave the public estate and cannot be chosen for new bookings. Its
-            history and its bookings are kept, and you can restore it later.
+            {description ??
+              `${facilityName} will leave the public estate and cannot be chosen for new bookings. Its history and its bookings are kept, and you can restore it later.`}
           </p>
           {count > 0 && (
             <p className="font-medium text-ink">
