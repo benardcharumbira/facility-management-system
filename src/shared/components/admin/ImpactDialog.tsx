@@ -17,6 +17,9 @@ const REASON_COPY: Record<ImpactReason, (item: ImpactedBooking) => string> = {
   resource_shortfall: () => 'The facility would hold fewer than it asks for.',
   resource_withdrawn: () => 'It asks for something the facility would no longer offer.',
   resource_archived: () => 'It asks for a resource that would no longer be offered.',
+  no_approver: () => 'Nobody would be designated to decide this request.',
+  arrangement_archived: () =>
+    'It uses a seating arrangement that would no longer be offered. The booking is left as it is.',
 };
 
 /** For a resource reason, exactly what was asked for and what would be held. */

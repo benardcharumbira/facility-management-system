@@ -233,6 +233,12 @@ export interface BookingOptions {
   /** Names match `FacilityDetail.capacityByArrangement[].arrangement` (case insensitive). */
   seatingArrangements: BookingOptionItem[];
   /**
+   * Event types and seating arrangements that administrators have archived. They cannot be chosen,
+   * but earlier bookings that did still need a name. (An addition.)
+   */
+  retiredEventTypes: BookingOptionItem[];
+  retiredSeatingArrangements: BookingOptionItem[];
+  /**
    * Every resource a booking can request, whatever the venue. Venue specific quantities come
    * from `FacilityDetail.resources`. (An addition to the brief: keeps the list out of the client.)
    */

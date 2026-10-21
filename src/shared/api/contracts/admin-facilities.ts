@@ -277,7 +277,11 @@ export type ImpactReason =
   | 'resource_shortfall'
   /** A resource that is present or absent would no longer be offered at a facility. */
   | 'resource_withdrawn'
-  | 'resource_archived';
+  | 'resource_archived'
+  /** A pending request that would have nobody designated to decide it. */
+  | 'no_approver'
+  /** A booking that uses a seating arrangement that would no longer be offered. */
+  | 'arrangement_archived';
 
 export interface ImpactedBooking {
   bookingId: string;

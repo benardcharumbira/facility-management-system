@@ -10,3 +10,6 @@ export * from './contracts/bookings';
 export * from './contracts/approvals';
 export * from './contracts/admin-facilities';
 export * from './contracts/admin-resources';
+export * from './contracts/admin-users';
+export * from './contracts/admin-reference';
+export * from './contracts/admin-audit';
