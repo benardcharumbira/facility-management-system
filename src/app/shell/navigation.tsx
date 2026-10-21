@@ -48,7 +48,7 @@ const NAV_ITEMS: readonly NavItem[] = [
     label: 'Manage resources',
     to: PATHS.adminResources,
     icon: <Package aria-hidden className={icon} />,
-    roles: ACCESS.facilityAdmins,
+    roles: ACCESS.estateAdmins,
   },
   {
     label: 'Users',

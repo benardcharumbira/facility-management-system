@@ -245,7 +245,10 @@ function Loaded({ facility, listTo }: { facility: AdminFacility; listTo: string 
             </Alert>
           )}
           <p>
-            <Link to="/admin/resources" className="text-primary underline underline-offset-2">
+            <Link
+              to={`/admin/facilities/${encodeURIComponent(facility.id)}/resources`}
+              className="text-primary underline underline-offset-2"
+            >
               Manage the resources of this facility
             </Link>
           </p>

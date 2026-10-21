@@ -735,7 +735,7 @@ describe('the sections', () => {
     ).toEqual(['Details', 'Hierarchy', 'Images', 'Schedule', 'Blackouts', 'Capacity', 'Approvers']);
     expect(
       screen.getByRole('link', { name: /Manage the resources of this facility/ }),
-    ).toHaveAttribute('href', '/admin/resources');
+    ).toHaveAttribute('href', '/admin/facilities/rothdene-hall/resources');
   });
 
   it('asks before unsaved edits are lost, and keeps them if the person stays', async () => {

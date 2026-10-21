@@ -24,6 +24,12 @@ const AdminFacilitiesPage = lazy(() => import('@/features/admin/pages/AdminFacil
 const AdminFacilityNewPage = lazy(() => import('@/features/admin/pages/AdminFacilityNewPage'));
 const AdminFacilityEditPage = lazy(() => import('@/features/admin/pages/AdminFacilityEditPage'));
 const AdminResourcesPage = lazy(() => import('@/features/admin/pages/AdminResourcesPage'));
+const AdminResourceNewPage = lazy(() => import('@/features/admin/pages/AdminResourceNewPage'));
+const AdminResourceEditPage = lazy(() => import('@/features/admin/pages/AdminResourceEditPage'));
+const AdminAllocationPage = lazy(() => import('@/features/admin/pages/AdminAllocationPage'));
+const AdminFacilityResourcesPage = lazy(
+  () => import('@/features/admin/pages/AdminFacilityResourcesPage'),
+);
 const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'));
 
 export const routes: RouteObject[] = [
@@ -60,15 +66,19 @@ export const routes: RouteObject[] = [
                 children: [{ path: 'approvals/:itemId?', element: <ApprovalsPage /> }],
               },
               {
-                element: <RequireRole roles={ACCESS.facilityAdmins} />,
-                children: [{ path: 'admin/resources', element: <AdminResourcesPage /> }],
-              },
-              {
                 element: <RequireRole roles={ACCESS.estateAdmins} />,
                 children: [
                   { path: 'admin/facilities', element: <AdminFacilitiesPage /> },
                   { path: 'admin/facilities/new', element: <AdminFacilityNewPage /> },
                   { path: 'admin/facilities/:id', element: <AdminFacilityEditPage /> },
+                  {
+                    path: 'admin/facilities/:id/resources',
+                    element: <AdminFacilityResourcesPage />,
+                  },
+                  { path: 'admin/resources', element: <AdminResourcesPage /> },
+                  { path: 'admin/resources/new', element: <AdminResourceNewPage /> },
+                  { path: 'admin/resources/allocation', element: <AdminAllocationPage /> },
+                  { path: 'admin/resources/:id', element: <AdminResourceEditPage /> },
                 ],
               },
               {

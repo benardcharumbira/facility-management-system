@@ -77,7 +77,7 @@ describe('routing', () => {
     [ROLES.internal, '/bookings/abc', 'Booking not found'],
     [ROLES.facilityAdmin, '/approvals', 'Approvals'],
     [ROLES.facilityAdmin, '/admin/facilities', 'Manage facilities'],
-    [ROLES.facilityAdmin, '/admin/resources', 'Manage resources'],
+    [ROLES.facilityAdmin, '/admin/resources', 'Resources'],
     [ROLES.systemAdmin, '/admin/users', 'Users'],
     [ROLES.systemAdmin, '/does-not-exist', 'Page not found'],
   ])('lets a %s reach %s inside the shell', async (role, path, title) => {
