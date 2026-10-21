@@ -18,6 +18,8 @@ export const PATHS = {
 export const ACCESS = {
   bookers: BOOKING_ROLES,
   facilityAdmins: [ROLES.facilityAdmin],
+  /** A facility administrator sees the requests for their facilities; a system administrator sees all. */
+  approvers: [ROLES.facilityAdmin, ROLES.systemAdmin],
   systemAdmins: [ROLES.systemAdmin],
 } as const satisfies Record<string, readonly Role[]>;
 

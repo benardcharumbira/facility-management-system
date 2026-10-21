@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Role } from '@/shared/auth';
+import { ApprovalsNavBadge } from '@/features/approvals/components/ApprovalsNavBadge';
 import { ACCESS, PATHS } from '../access';
 
 export interface NavItem {
@@ -16,6 +17,8 @@ export interface NavItem {
   icon: ReactNode;
   /** Omit for every authenticated user. */
   roles?: readonly Role[];
+  /** Shown at the end of the item, e.g. a count. */
+  badge?: ReactNode;
 }
 
 const icon = 'size-5 shrink-0';
@@ -32,7 +35,8 @@ const NAV_ITEMS: readonly NavItem[] = [
     label: 'Approvals',
     to: PATHS.approvals,
     icon: <ClipboardCheck aria-hidden className={icon} />,
-    roles: ACCESS.facilityAdmins,
+    roles: ACCESS.approvers,
+    badge: <ApprovalsNavBadge />,
   },
   {
     label: 'Manage facilities',

@@ -15,7 +15,7 @@ export function NavList({ role, onNavigate }: NavListProps) {
     <nav aria-label="Main navigation" className="p-3">
       <ul className="flex flex-col gap-1">
         {navItemsForRole(role).map((item) => {
-          const selected = pathname === item.to;
+          const selected = pathname === item.to || pathname.startsWith(`${item.to}/`);
           return (
             <li key={item.to}>
               <Link
@@ -31,6 +31,7 @@ export function NavList({ role, onNavigate }: NavListProps) {
               >
                 {item.icon}
                 {item.label}
+                {item.badge}
               </Link>
             </li>
           );

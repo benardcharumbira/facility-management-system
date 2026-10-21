@@ -54,9 +54,12 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                element: <RequireRole roles={ACCESS.approvers} />,
+                children: [{ path: 'approvals/:itemId?', element: <ApprovalsPage /> }],
+              },
+              {
                 element: <RequireRole roles={ACCESS.facilityAdmins} />,
                 children: [
-                  { path: 'approvals', element: <ApprovalsPage /> },
                   { path: 'admin/facilities', element: <AdminFacilitiesPage /> },
                   { path: 'admin/resources', element: <AdminResourcesPage /> },
                 ],
