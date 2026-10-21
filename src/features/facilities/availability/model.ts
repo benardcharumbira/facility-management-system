@@ -24,7 +24,14 @@ import { formatLongDate } from '@/shared/utils/calendar';
  * segments; the last three are decided here from the day itself and the booking rules.
  */
 export type Reason =
-  'booked' | 'held' | 'buffer' | 'blocked_by_related' | 'closed' | 'past' | 'beyond_horizon';
+  | 'booked'
+  | 'held'
+  | 'buffer'
+  | 'blocked_by_related'
+  | 'closure'
+  | 'closed'
+  | 'past'
+  | 'beyond_horizon';
 
 interface ReasonInfo {
   label: string;
@@ -63,6 +70,13 @@ export const REASONS: Record<Reason, ReasonInfo> = {
     pattern: 'crosshatch',
     className: 'text-danger',
     icon: Layers,
+  },
+  closure: {
+    label: 'Closed for a time',
+    meaning: 'closed for part of the day by a blackout',
+    pattern: 'outline',
+    className: 'text-subtle',
+    icon: DoorClosed,
   },
   closed: {
     label: 'Closed',
@@ -112,7 +126,7 @@ export function dayAccess(
 export function dayReasons(day: AvailabilityDay, access: ReturnType<typeof dayAccess>): Reason[] {
   if (access.reason) return [access.reason];
   if (day.status === 'closed') return ['closed'];
-  const order: Reason[] = ['booked', 'held', 'blocked_by_related', 'buffer'];
+  const order: Reason[] = ['booked', 'held', 'blocked_by_related', 'buffer', 'closure'];
   return order.filter((reason) => day.segments.some((s) => s.status === reason));
 }
 

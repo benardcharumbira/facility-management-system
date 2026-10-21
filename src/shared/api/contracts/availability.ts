@@ -19,8 +19,11 @@ export type AvailabilityDayStatus = 'available' | 'partially_booked' | 'fully_bo
  * - `held`: a pending request holds the time temporarily.
  * - `buffer`: set-up or clear-down time attached to an adjacent booking.
  * - `blocked_by_related`: another facility in the hierarchy is booked (see `relatedFacility`).
+ * - `closure`: part of the day is closed by a blackout (see `reason`). A blackout covering the whole
+ *   operating day closes the day instead.
  */
-export type AvailabilitySegmentStatus = 'booked' | 'held' | 'buffer' | 'blocked_by_related';
+export type AvailabilitySegmentStatus =
+  'booked' | 'held' | 'buffer' | 'blocked_by_related' | 'closure';
 
 export interface RelatedFacility {
   id: string;
@@ -39,6 +42,8 @@ export interface AvailabilitySegment {
   status: AvailabilitySegmentStatus;
   /** Present only for `blocked_by_related`. */
   relatedFacility: RelatedFacility | null;
+  /** Present only for `closure`: why, as a sentence the public can read. */
+  reason?: string;
 }
 
 export interface AvailabilityDay {

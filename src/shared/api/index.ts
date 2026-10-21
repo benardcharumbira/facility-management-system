@@ -8,3 +8,4 @@ export * from './contracts/facilities';
 export * from './contracts/availability';
 export * from './contracts/bookings';
 export * from './contracts/approvals';
+export * from './contracts/admin-facilities';

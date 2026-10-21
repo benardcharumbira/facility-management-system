@@ -40,6 +40,10 @@ function explain(segment: AvailabilitySegment, facilityName: string): string {
       return 'A booking request is pending and is holding this time for now. It is released if the request lapses.';
     case 'buffer':
       return 'Set-up or clear-down time for a neighbouring booking, so the venue is occupied even though no event is running.';
+    case 'closure':
+      return segment.reason
+        ? `Closed for this time: ${segment.reason}`
+        : 'The venue is closed for this time.';
     case 'blocked_by_related': {
       const related = segment.relatedFacility;
       if (!related) return 'A related space is booked.';

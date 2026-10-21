@@ -102,3 +102,15 @@ export { MasterDetailLayout, useSplitView } from './backoffice/MasterDetailLayou
 export { QueueItem } from './backoffice/QueueItem';
 export { isTypingTarget, useKeyboardShortcuts } from './backoffice/useKeyboardShortcuts';
 export type { ShortcutBinding } from './backoffice/useKeyboardShortcuts';
+export { ArchiveConfirm } from './admin/ArchiveConfirm';
+export { DateRangeField, EMPTY_DATE_RANGE, rangeToInstants } from './admin/DateRangeField';
+export type { DateRangeValue } from './admin/DateRangeField';
+export { HierarchySelect } from './admin/HierarchySelect';
+export { ImageManager } from './admin/ImageManager';
+export type { ManagedImage, PendingImage } from './admin/ImageManager';
+export { ImpactDialog, ImpactList } from './admin/ImpactDialog';
+export { DAY_NAMES, ScheduleEditor } from './admin/ScheduleEditor';
+export { SectionedEditLayout } from './admin/SectionedEditLayout';
+export type { EditSection } from './admin/SectionedEditLayout';
+export { useImpactGuard } from './admin/useImpactGuard';
+export type { GuardOutcome, GuardRequest } from './admin/useImpactGuard';

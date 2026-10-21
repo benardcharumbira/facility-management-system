@@ -48,6 +48,8 @@ export function segmentPhrase(segment: AvailabilitySegment): string {
       return 'held pending a request';
     case 'buffer':
       return 'set-up or clear-down time';
+    case 'closure':
+      return segment.reason ? `closed: ${segment.reason}` : 'closed';
     case 'blocked_by_related':
       return `${segment.relatedFacility?.name ?? 'A related space'} is booked`;
   }

@@ -43,6 +43,7 @@ const LEGEND_ORDER: Reason[] = [
   'held',
   'buffer',
   'blocked_by_related',
+  'closure',
   'closed',
   'past',
   'beyond_horizon',
