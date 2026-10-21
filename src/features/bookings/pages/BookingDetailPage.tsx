@@ -197,7 +197,7 @@ function Loaded({ booking, fromList }: { booking: Booking; fromList: string }) {
               >
                 {booking.facility.name}
               </Link>
-              {` · ${window.date}, ${window.time}`}
+              {` · ${window.text}`}
             </>
           }
         >
@@ -248,7 +248,7 @@ function Loaded({ booking, fromList }: { booking: Booking; fromList: string }) {
                   { replace: true },
                 );
                 setNotice(
-                  `Your request to change the date has been sent. Your booking stays approved on ${window.date}, ${window.time} until the municipality decides.`,
+                  `Your request to change the date has been sent. Your booking stays approved on ${window.text} until the municipality decides.`,
                 );
               }}
             />
@@ -276,7 +276,7 @@ function Loaded({ booking, fromList }: { booking: Booking; fromList: string }) {
                   }
                 </strong>
                 . The municipality has not decided yet. Until it does, the booking is approved on{' '}
-                {window.date}, {window.time}.
+                {window.text}.
               </p>
             </Section>
           )}

@@ -51,7 +51,10 @@ export default function BookingConfirmationPage() {
       status={<Badge tone="primary">Status: Pending</Badge>}
       details={[
         { label: 'Venue', value: data.facility.name },
-        { label: 'Date', value: window.date },
+        {
+          label: window.span ? 'Dates' : 'Date',
+          value: window.span ? `${window.date}, ${window.length}` : window.date,
+        },
         { label: 'Time', value: `${window.time} (${data.facility.timeZone} time)` },
         { label: 'Status', value: 'Pending approval' },
       ]}

@@ -69,7 +69,14 @@ export function StepWhen({
               'Loading…'
             ),
           },
-          { label: 'Date', value: window?.date ?? 'Loading…' },
+          {
+            label: window?.span ? 'Dates' : 'Date',
+            value: window
+              ? window.span
+                ? `${window.date}, ${window.length}`
+                : window.date
+              : 'Loading…',
+          },
           { label: 'Time', value: window ? `${window.time} (${zone} time)` : 'Loading…' },
         ]}
       />

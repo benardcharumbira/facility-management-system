@@ -34,8 +34,8 @@ export function CancelDialog({
         approved ? (
           <>
             <p>
-              {booking.facility.name} is confirmed for you on {window.date}, {window.time}. If you
-              cancel, your booking ends and the venue is released to other people straight away.
+              {booking.facility.name} is confirmed for you on {window.text}. If you cancel, your
+              booking ends and the venue is released to other people straight away.
             </p>
             <p className="mt-2 font-medium text-ink">
               This cannot be undone. To book again you would have to submit a new request, which may

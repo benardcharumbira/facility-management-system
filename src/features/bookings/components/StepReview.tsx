@@ -49,13 +49,25 @@ export function StepReview({
 
   const items: ReviewItem[] = [
     { key: 'facility', label: 'Venue', value: facility?.name ?? '', onEdit: () => goTo('when') },
-    { key: 'date', label: 'Date', value: window?.date ?? '', onEdit: () => goTo('when') },
-    {
-      key: 'time',
-      label: 'Time',
-      value: window ? `${window.time} (${zone} time)` : '',
-      onEdit: () => goTo('when'),
-    },
+    // A span is one booking, read whole: "Friday 13 November 14:00 to Sunday 15 November 12:00, three days".
+    ...(window?.span
+      ? [
+          {
+            key: 'when',
+            label: 'Dates and times',
+            value: `${window.text} (${zone} time)`,
+            onEdit: () => goTo('when'),
+          },
+        ]
+      : [
+          { key: 'date', label: 'Date', value: window?.date ?? '', onEdit: () => goTo('when') },
+          {
+            key: 'time',
+            label: 'Time',
+            value: window ? `${window.time} (${zone} time)` : '',
+            onEdit: () => goTo('when'),
+          },
+        ]),
     {
       key: 'event-type',
       label: 'Type of meeting or event',

@@ -193,13 +193,11 @@ export function ApprovalDetailPanel({
         <Block title={detail.type === 'booking_request' ? 'When' : 'The change asked for'}>
           {current ? (
             <div className="grid gap-2 sm:grid-cols-2">
-              <WindowCard muted title="Booked now" window={`${current.date}, ${current.time}`} />
-              <WindowCard title="Proposed" window={`${when.date}, ${when.time}`} />
+              <WindowCard muted title="Booked now" window={`${current.text}`} />
+              <WindowCard title="Proposed" window={`${when.text}`} />
             </div>
           ) : (
-            <p className="text-lg font-semibold">
-              {when.date}, {when.time}
-            </p>
+            <p className="text-lg font-semibold">{when.text}</p>
           )}
           {pending && (
             <>

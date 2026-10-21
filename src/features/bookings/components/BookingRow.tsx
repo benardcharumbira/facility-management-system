@@ -60,9 +60,7 @@ export function BookingRow({ item, now }: { item: BookingListItem; now: DateTime
             {item.facility.name}
           </Link>
         </p>
-        <p className="text-muted">
-          {window.date}, {window.time}
-        </p>
+        <p className="text-muted">{window.text}</p>
         {about && <p className="mt-1 [overflow-wrap:anywhere] text-muted">{about}</p>}
         <div className="mt-2 flex flex-wrap gap-2">
           {item.isPast && <Badge>Past event</Badge>}

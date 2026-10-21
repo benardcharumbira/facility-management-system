@@ -110,8 +110,9 @@ const RESERVED_WEEKS: Record<string, number[]> = {
   'loch-wing': [1, 2],
   'city-hall-committee-room': [2, 6],
   'lakeside-hall': [6],
-  'rothdene-hall': [4],
-  'vaal-marina-hall': [1],
+  // Weeks 9 and 10 are where the span requests in facilityAdminSeeds are made.
+  'rothdene-hall': [4, 9],
+  'vaal-marina-hall': [1, 10],
   'vaal-marina-board-room': [1],
 };
 

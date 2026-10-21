@@ -44,7 +44,10 @@ export function PrintBooking({
         <dl className="m-0 mt-4">
           {row('Status', 'Approved')}
           {row('Venue', booking.facility.name)}
-          {row('Date', window.date)}
+          {row(
+            window.span ? 'Dates' : 'Date',
+            window.span ? `${window.date}, ${window.length}` : window.date,
+          )}
           {row('Time', `${window.time} (${booking.facility.timeZone} time)`)}
           {row('Event type', eventTypeName(options, booking.eventTypeId))}
           {row('Event description', booking.description)}

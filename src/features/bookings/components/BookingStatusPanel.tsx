@@ -43,9 +43,7 @@ export function BookingStatusPanel({
       break;
     case 'approved':
       title = 'Your booking is confirmed';
-      lines.push(
-        `${booking.facility.name} is booked for you on ${original.date}, ${original.time}.`,
-      );
+      lines.push(`${booking.facility.name} is booked for you on ${original.text}.`);
       if (booking.rescheduleRequest) {
         const proposed = describeWindow(
           booking.rescheduleRequest.proposedStartsAt,
@@ -53,7 +51,7 @@ export function BookingStatusPanel({
           zone,
         );
         lines.push(
-          `You have asked to move it to ${proposed.date}, ${proposed.time}. Until the municipality decides, your booking stays approved on its original time.`,
+          `You have asked to move it to ${proposed.text}. Until the municipality decides, your booking stays approved on its original time.`,
         );
       }
       break;

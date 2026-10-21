@@ -127,13 +127,11 @@ export function ApprovalDecisions({
           <div className="flex flex-col gap-2 text-ink">
             <p>
               <strong>{item.reference}</strong> for <strong>{item.applicantName}</strong> at{' '}
-              {item.facility.name}, {when.date}, {when.time}.
+              {item.facility.name}, {when.text}.
             </p>
             <ul className="m-0 list-disc pl-5">
               {isMove && now ? (
-                <li>
-                  The booking moves from {now.date}, {now.time}, and that time is released.
-                </li>
+                <li>The booking moves from {now.text}, and that time is released.</li>
               ) : (
                 <li>The slot is confirmed.</li>
               )}
@@ -170,13 +168,11 @@ export function ApprovalDecisions({
         <div className="flex flex-col gap-2 text-ink">
           <p>
             <strong>{item.reference}</strong> for <strong>{item.applicantName}</strong> at{' '}
-            {item.facility.name}, {when.date}, {when.time}.
+            {item.facility.name}, {when.text}.
           </p>
           <ul className="m-0 list-disc pl-5">
             {isMove && now ? (
-              <li>
-                The booking stays approved where it is: {now.date}, {now.time}.
-              </li>
+              <li>The booking stays approved where it is: {now.text}.</li>
             ) : (
               <li>The time held for the applicant is released.</li>
             )}

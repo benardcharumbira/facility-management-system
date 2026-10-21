@@ -67,8 +67,8 @@ export function ReschedulePanel({
         </div>
       </div>
       <p className="font-medium">
-        This sends a request. Your booking stays approved on {current.date}, {current.time} until
-        the municipality decides.
+        This sends a request. Your booking stays approved on {current.text} until the municipality
+        decides.
       </p>
       {problem && (
         <Alert
