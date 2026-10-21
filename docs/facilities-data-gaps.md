@@ -115,6 +115,25 @@ Sicelo Hall, Lakeside Hall.
 26. **Closure wording.** The reason for a closure is shown to the public as written. Should there be
     standard wording, or a check before it is published?
 
+27. **"Dining forks" and "Forks".** The requirements document lists both as separate kitchen
+    items. Is that a real distinction the municipality makes (a place setting against serving forks,
+    perhaps), or a duplication on the paper form? We have kept both, as the source does, and not
+    merged them. If it is a duplication, which should stay?
+
+28. **Counted or not.** We assumed a stage, a podium and a sound system are present or absent, and
+    everything else is counted. Is that right? Does any venue have two podiums, or need the number
+    of stages? And when something stops being counted, we leave a facility that held any marked
+    available and discard the number; when it starts being counted, every facility starts at none.
+    Is that what you want?
+
+29. **Categories.** We have fixed two, venue and kitchen, to match the booking form. Do you need
+    others (audio visual equipment, for instance), and should they appear on the form?
+
+30. **A booking short of what it asked for.** When a venue is left holding fewer chairs than an
+    approved booking requested, or withdraws its stage, the screen names the booking and does
+    nothing else. What should happen next: should the applicant be told, should it be flagged for an
+    approver, or is it handled by hand? (See also Q24.)
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

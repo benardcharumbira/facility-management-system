@@ -490,6 +490,114 @@ Checked under jsdom, which has no layout: I have not opened it in a browser, so 
 and focus behaviour of the dialogs, the date and time inputs, and the layout at tablet and phone
 widths are unconfirmed.
 
+## Resource administration
+
+`/admin/resources` (the catalogue), `/admin/resources/allocation` (the grid), `/admin/resources/new`,
+`/admin/resources/:id` and, for one facility, `/admin/facilities/:id/resources`. The contract is in
+`src/shared/api/contracts/admin-resources.ts`. Resources drive the resource step of the booking form
+and its quantity limits, what each facility shows the public, and the amenity vocabulary of the
+browse filters.
+
+- **Two concepts, kept visibly apart.** The _catalogue_ is what kinds of resource exist, defined
+  once ("Urn"). An _allocation_ is how many of one a given facility holds. They are two tabs, the
+  tab is the route, and each says in a line what it is. Changing the catalogue changes the
+  vocabulary everywhere; changing an allocation changes what one venue can offer.
+- **The seeded catalogue is the nineteen resources in section 8.4** of the requirements document:
+  tables, chairs, stage, podium and sound system; and cups, teaspoons, sugar bowls, glasses, jugs,
+  milk jugs, water jars, dining forks, urn, side plates, dinner plates, knives, forks and bowls. The
+  identifiers existing bookings use are unchanged, and the allocations are what the fixture already
+  gave each of the twelve venues, so nothing on the public screens moved. **"Dining forks" and
+  "Forks" are both seeded and listed separately**, because the source lists both; whether that is a
+  real distinction or a duplication on the paper form is Q27 in `docs/facilities-data-gaps.md`.
+- **Counted or available-or-not.** A resource is `quantified` or not. A stage, podium and sound
+  system are available or not (they are _inferred_ to be: the document's venue list reads as "stage
+  required"); everything else is counted. A counted cell is a number, an uncounted cell is a
+  checkbox, and an uncounted resource is requested on a booking as 1. The booking form shows a stage
+  as a tick with no quantity, and the public page shows it without a count.
+- **Categories are a fixed vocabulary**, venue and kitchen, matching the booking form's grouping.
+  That is a decision, not an omission: adding one would change the form's structure. If the client
+  wants more it is a request (Q29).
+- **Changing whether a resource is counted always asks, even when no booking is affected**, because
+  it overwrites what facilities hold, and says plainly what is lost. Counted to uncounted discards
+  every number; a facility that held any is left marked available. Uncounted to counted leaves
+  every facility at none, and names any booking that asked for it. (What "discards" leaves behind
+  is an assumption: Q28.)
+- **Archive, never delete.** There is no delete endpoint or button. Archiving names the pending and
+  approved bookings that asked for the resource; an archived resource is absent from the booking
+  form, from every facility's resources, from the amenity filters and from the grid, and keeps its
+  name on the bookings that asked for it (the booking options carry `retiredResources` for that).
+  It can be restored, with what facilities held of it.
+- **The grid.** Resources are rows, facilities are columns, in a real table (every cell sits under
+  its column header and its row header). The first column and the header row stick. Resources are
+  grouped by category, and the kitchen group, fourteen of the nineteen rows, starts folded. Facilities
+  and category can be narrowed, in the URL.
+- **Editing is local until one save.** A change is an unsaved edit: the count is shown and announced
+  politely, each changed cell is marked by a dashed outline and a description ("Changed from 250"),
+  so colour is not the only signal, and a cell put back to its saved value stops counting.
+  Nothing is sent while editing. **Row fill** gives one resource the same value across the
+  facilities shown. **Column fill** sets the resources shown for one facility: a number for counted
+  ones, available or not for the rest, since one value cannot mean both. **Copy** takes another
+  facility's values into a column. All three apply to _what is shown_: a facility filtered out and a
+  group folded away are left alone.
+- **One impact check for the whole batch**, naming each affected booking with its reference,
+  applicant, facility and the specific resource and quantity ("Chairs: 140 asked for, 95 would be
+  held"). A booking short on two resources is listed twice and counted once. Only bookings that
+  were met before and are not now are named, so an edit is not blamed for a shortfall already there.
+  A batch that affects nothing saves without a dialog.
+- **Batches are atomic.** The server validates every change first and refuses the whole batch,
+  naming the cells at fault; if applying then fails part way it puts everything back. The screen
+  keeps every pending edit and names the cell. Reviewers: the Bantu Bonke Hall's stock is locked for
+  a stocktake, so a batch that includes it fails after other changes have been applied, and is
+  rolled back.
+- **Unsaved work cannot be lost silently.** Leaving the page, or reloading it, asks first, on the
+  grid and on the per facility form.
+- **Keyboard.** The grid is one tab stop. The arrow keys move between cells, column headers, row
+  headers and group headings, so fill and copy are reachable too. In a number the arrow keys move the
+  caret until it reaches the end, then move on; a number arrived at is selected, so typing replaces
+  it. Home and End jump to the ends of a row. Space toggles a checkbox, Enter commits a number. The
+  dialogs trap focus and give it back. Every cell is named for both its resource and its facility
+  ("Cups, Rothdene Hall").
+- **A form for one facility** is the fallback and the path for changing one venue: counted
+  resources get a stepper, the others a checkbox, kitchen behind a disclosure, as on the booking
+  form. It is linked from the facility's own screen, from each column's actions in the grid, and the
+  grid is linked back from it.
+- **Reviewing it:** the sample bookings (see the top of `src/mocks/data/facilityAdminSeeds.ts`) now
+  ask for resources: taking Rothdene Hall's chairs below 140 reaches MVL-…-9209, withdrawing its
+  stage reaches 9202, archiving the urn reaches 9202, 9209 and the pending 9211, and making the stage
+  a counted resource resets every facility.
+
+### Additions to the contract beyond the brief
+
+`POST /admin/resources/:id/impact` (so a catalogue change can be checked, with `allocationsAffected`),
+the resource reasons and a `resource` detail on an impacted booking, `quantified` on the booking
+form's resources and on a facility's, `retiredResources` on the booking options, and a `quantified`
+flag on an approver's view of the request.
+
+### Design system
+
+**2 components and 1 hook added**: `EditableGrid` and `UnsavedChangesBar`, and `useRestoreFocus`.
+`ImpactDialog`, `ArchiveConfirm`, `QuantityStepper` and the list set were reused. **The slice 5
+quantity stepper does not fit a dense grid cell** (buttons, a note, ArrowUp and ArrowDown stepping
+the number), so it gained a **compact density variant** rather than a second component: at the
+compact density it is the bare number, and the arrow keys are left to the grid. **5 existing pieces
+changed**: `QuantityStepper` (the variant, a label and passthrough props), `ImpactDialog` and
+`useImpactGuard` (resource reasons, a change that asks even when no booking is affected, and a
+generic impact type), `ArchiveConfirm` (its wording is overridable, since a resource is not a
+facility) and `ScheduleEditor` (its copy dialog now returns focus). Details in
+`src/shared/components/README.md`.
+
+### Other changes
+
+The slice 9 facility screen now links to the per facility form. The test suite's asynchronous wait
+was raised from 3 to 6 seconds: the suite had grown enough that its heaviest page tests
+occasionally brushed 3 under load.
+
+### Not verified
+
+Checked under jsdom, which has no layout. I have not opened it in a browser, so the sticky headers
+and scrolling of a wide grid, real arrow-key behaviour in number fields across browsers, and use
+with a screen reader are unconfirmed.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Named exports, except lazy loaded route components (default).
