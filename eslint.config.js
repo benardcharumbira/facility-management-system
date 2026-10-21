@@ -64,6 +64,11 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': 'off' },
   },
   {
+    // Build scripts run in Node.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     // Features never import from one another. Anything shared lives in shared/.
     files: ['src/features/**'],
     rules: {

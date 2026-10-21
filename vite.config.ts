@@ -9,6 +9,8 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   build: {
+    // The bundle budget script reads which chunks each route loads from the manifest.
+    manifest: true,
     // Routes are lazy loaded; vendor code is split so the entry chunk stays small and cacheable.
     rolldownOptions: {
       output: {
