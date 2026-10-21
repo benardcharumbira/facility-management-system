@@ -62,17 +62,20 @@ Tests always use MSW's Node server (`src/mocks/server.ts`), independent of this 
 
 ## Scripts
 
-| Script                 | Does                                         |
-| ---------------------- | -------------------------------------------- |
-| `npm run dev`          | Vite dev server                              |
-| `npm run build`        | Type check, then production build to `dist/` |
-| `npm run preview`      | Serve the production build locally           |
-| `npm run lint`         | ESLint (flat config)                         |
-| `npm run format`       | Prettier, write                              |
-| `npm run format:check` | Prettier, check only (used in CI)            |
-| `npm run typecheck`    | `tsc -b`, strict mode                        |
-| `npm run test`         | Vitest, single run                           |
-| `npm run test:watch`   | Vitest, watch mode                           |
+| Script                 | Does                                                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`          | Vite dev server                                                                                                 |
+| `npm run build`        | Type check, production build to `dist/`, the landing page budget, then the API contract check and its HTML view |
+| `npm run api:generate` | Regenerate `api/openapi.yaml` and the generated guides from the schemas and the mock                            |
+| `npm run api:check`    | Fail if the committed API contract is stale (CI runs this)                                                      |
+| `npm run api:docs`     | Render the contract to `api/build/index.html`                                                                   |
+| `npm run preview`      | Serve the production build locally                                                                              |
+| `npm run lint`         | ESLint (flat config)                                                                                            |
+| `npm run format`       | Prettier, write                                                                                                 |
+| `npm run format:check` | Prettier, check only (used in CI)                                                                               |
+| `npm run typecheck`    | `tsc -b`, strict mode                                                                                           |
+| `npm run test`         | Vitest, single run                                                                                              |
+| `npm run test:watch`   | Vitest, watch mode                                                                                              |
 
 A pre-commit hook (Husky + lint-staged) lints and formats staged files. CI
 (`.github/workflows/ci.yml`) runs install, typecheck, lint, format check, test and build.
@@ -1020,6 +1023,37 @@ Checked under jsdom, which has no layout or pointer geometry. I have not opened 
 browser, so how the week grid looks and scrolls at 360px, how a drag across the month feels, and the
 look of the joined blocks are unconfirmed. The tests prove the structure (what is joined, named and
 tinted), not how it looks.
+
+## API contract
+
+The frontend defined an API across thirteen slices. It is now one document the backend can be built against, in `api/`: start at `api/README.md`. It is **derived from the mock, not written beside it**, and the mock is held to it.
+
+- **`api/openapi.yaml`**: 87 operations (`api/INVENTORY.md` ticks each against the slice that defined it), every schema and status, and an example for each, captured from the real answers of the seeded mock. Generated; never edited by hand.
+- **`api/BEHAVIOUR.md`**: the twelve rules a schema cannot carry (the server resolves hierarchy blocking; holds are placed on submit; impact checks never mutate; and so on), each marked **agreed** or **open** with the client question. It also records that the Backend Specification's recurring series are void and that the Developer Onboarding Brief's weekly league example is wrong.
+- **`api/CONVENTIONS.md`** (envelope, filtering, sorting, identifiers, authentication, and a section on dates and times), **`api/ERRORS.md`** (the error catalogue, generated), **`api/DISCREPANCIES.md`** (twenty places a slice prompt and its handler disagreed, and what was decided), **`api/CHANGELOG.md`**.
+- **`api/build/index.html`**: the contract rendered with Redoc, one self contained page, built by `npm run build` (`npm run api:docs`), which also checks the page shows every operation.
+
+### Schemas are the source
+
+Every request and response shape is a Zod schema in `src/shared/api/schemas`, and `operations.ts` there lists every operation. Three things come from that: runtime validation, the published contract, and the guarantee that the TypeScript interfaces in `src/shared/api/contracts` (which the application imports, and which carry the prose) cannot drift: each schema file ends with compile time checks that schema and interface are assignable to each other. **That is two definitions held equal by the compiler, not one**; replacing the interfaces by `z.infer` would have touched nearly every import in the application for no gain. Nothing needed distorting to be expressed as a schema. What a schema cannot say is in `BEHAVIOUR.md`, and a CSV or a file download is described in the registry rather than as a schema.
+
+### Contract tests
+
+- **Every response a default handler sends, and every request the client makes, is validated in every test run** (`src/test/contract.ts`). Objects are strict, so a field the contract does not describe, an unlisted status, a problem without a catalogue `type`, or a query parameter an operation does not list fails the test it happened in. The first run found nothing wrong with the responses, and 22 tests that deliberately send the server something invalid now say so with `sendsInvalidRequests()`. A test that installs its own handler with `server.use` is making the server misbehave on purpose, so its responses are not checked (its requests still are).
+- **A deliberate mismatch fails**, shown by tests that drive the check by hand with a response carrying an extra field, a wrong kind of value, a non UTC instant, an unlisted status and a missing conflict window.
+- **The committed contract is checked for staleness** by a test, and by `npm run api:check`, which CI runs and `npm run build` ends with. A test also checks the registry is exactly the set of routes the mock serves, and that the document is a valid OpenAPI 3.1 document.
+
+### Problem types
+
+Only a slot conflict, an already decided item and an action not allowed had a stable `type` URI. Every problem now has one from the catalogue (`src/shared/api/contracts/problem-types.ts`), and allocation batch failures are their own type. That is a change to the mock, recorded in the changelog; the three existing URIs are unchanged, and the client behaves as before.
+
+### Changing the contract
+
+**A change to the contract requires a changelog entry and a message to the backend developer before merging. Breaking changes are flagged as such.** Change the schema and the operation, run `npm run api:generate`, commit the result, add the changelog line.
+
+### Not verified
+
+The rendered page is checked in a simulated browser, not a real one. No backend exists to build against it yet, so whether the contract is _sufficient_ is untested: the first real friction will tell. The `1.0.0` version is a label until the backend first builds against it.
 
 ## Conventions
 

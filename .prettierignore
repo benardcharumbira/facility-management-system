@@ -3,3 +3,7 @@ coverage
 node_modules
 package-lock.json
 public/mockServiceWorker.js
+api/openapi.yaml
+api/ERRORS.md
+api/INVENTORY.md
+api/build

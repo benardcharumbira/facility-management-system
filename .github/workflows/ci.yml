@@ -19,4 +19,6 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run test
+      # Regenerates the API contract from the schemas and the mock and fails if the committed copy differs.
+      - run: npm run api:check
       - run: npm run build

@@ -6,9 +6,255 @@ info:
   description: |-
     The API for the Midvaal facilities booking service. **Generated** from the schemas in `src/shared/api/schemas`; do not edit by hand. Examples are real responses captured from the mock.
 
-    Read `api/BEHAVIOUR.md` alongside this document: it carries the rules a schema cannot, such as that the server resolves facility hierarchy and that an impact check never changes anything.
+    The conventions, the error catalogue and the behaviour rules follow. The rules matter as much as the shapes: they carry what a schema cannot, such as that the server resolves facility hierarchy and that an impact check never changes anything.
 
-    **Conventions.** Collections use one envelope (`items`, `page`, `pageSize`, `totalItems`, `totalPages`). Multi value filters repeat the parameter. `sort` takes a field, with a leading `-` for descending. Every instant is UTC ISO 8601 ending in `Z`; a date with no time is an ISO date in the facility time zone; wall clock times are `HH:mm` in the facility time zone. Errors are RFC 7807 problem documents with a stable `type` URI.
+    # Conventions
+
+    These recur across the whole API. They are stated once here; the examples in `openapi.yaml` follow them.
+
+    ## Base URL and versioning
+
+    All paths are relative to `/api`. There is no version segment yet. A breaking change is announced under the change process in `api/README.md` and recorded in `api/CHANGELOG.md`.
+
+    ## Authentication
+
+    Clerk issues a session JWT to the browser, which sends it as `Authorization: Bearer <token>`. The backend validates the signature against Clerk’s published JWKS, checks the issuer and expiry, and takes the **Clerk subject** as the user’s identity.
+
+    **Application roles are never in the token.** The backend resolves the role (`applicant`, `internal`, `facility_admin`, `system_admin`) from the subject, from its own data, on every request. The client reads it from `GET /me` for display only; the server enforces it. `public` operations need no token.
+
+    The mock accepts `Authorization: Bearer user:<id>` to act as a named user. That is a mock convention only: do not implement it.
+
+    ## Identifiers
+
+    Opaque strings, stable for the life of the record, never reused, and not to be parsed by clients. The mock’s readable ids (`rothdene-hall`, `bk-12`) are for readability; the real ones may be anything. A booking’s `reference` (for example `MVL-2026-00417`) is a different thing: it is shown to people, assigned when the draft is created, and never changes.
+
+    ## Collections
+
+    Every list that can grow returns **one envelope** and nothing else:
+
+    ```json
+    { "items": [], "page": 1, "pageSize": 24, "totalItems": 0, "totalPages": 0 }
+    ```
+
+    `page` is 1 based. `totalPages` is **0** when there are no items. `pageSize` has a default per endpoint and a maximum of 100; a larger value is clamped, a malformed one is a 400. What a page past the end returns is not part of the contract (the mock is not consistent about it); clients never ask for one. Small fixed lists (the vocabularies, the terms versions, a facility’s blackouts) are plain arrays and say so.
+
+    ## Filtering
+
+    - A multi value filter is sent as **a repeated parameter**: `type=hall&type=room`. Never comma separated.
+    - **Different filters combine with AND.** How the values of one filter combine is stated on that parameter. The rule differs by filter and is not to be assumed:
+      - `GET /facilities`: `type` and `locality` are OR (any of them); `amenities` is AND (all of them); `minCapacity` and `maxCapacity` are inclusive and exclude facilities with no capacity.
+      - Lists elsewhere (`status`, `role`, `category`, `facilityId`, `entityType`, `action`): values are OR.
+    - `q` is free text. It is split on whitespace and **every word must match** (case insensitive substring) one of the fields the endpoint names.
+    - `from` and `to` on a list are inclusive **dates** in the facility time zone.
+    - An unknown parameter is a 400. A client must not send a parameter an endpoint does not list.
+
+    ## Sorting
+
+    `sort` takes one field name from the endpoint’s list. A leading `-` is descending: `-capacity`. Each endpoint states its default. Ties break by a stable secondary key so paging is repeatable.
+
+    ## Dates and times
+
+    This is the part most likely to be gotten wrong, so it is stated without exceptions.
+
+    1. **Every instant that crosses the API is UTC ISO 8601, ending in `Z`**: `2026-11-14T06:00:00Z`. No offsets, no local times, no milliseconds required. This covers `startsAt`, `endsAt`, `submittedAt`, `holdExpiresAt`, `occurredAt`, segment bounds and every other `…At`.
+    2. **A facility has one time zone** (`Africa/Johannesburg`), returned wherever it matters as `timeZone` (on a booking’s `facility`, on an availability response, on an impacted booking). Clients do all display and selection in that zone and never in the browser’s. A facility’s zone does not change.
+    3. **A date with no time is an ISO date in the facility zone**: `2026-11-14`. That is what `date`, `from` and `to` mean on availability, on lists and on the audit trail. “The 14th” is the 14th in Johannesburg, whatever the caller’s zone.
+    4. **A wall clock time with no date is `HH:mm`, 24 hour, in the facility zone**: operating hours (`opensAt`, `closesAt`) and nothing else.
+    5. **Which day an instant is on** is decided by converting it to the facility zone. A booking from Friday 14:00 to Sunday 12:00 is `2026-11-27T12:00:00Z` to `2026-11-29T10:00:00Z` and covers the local days 27, 28 and 29. An end at exactly local midnight does not cover the next day.
+    6. **Daylight saving.** South Africa has none, but nothing may depend on that: arithmetic on local days is done in the zone, not by adding 24 hours to an instant.
+    7. **“Now”** is the server’s clock. The client never sends it. Rules that depend on it (minimum notice, the horizon, hold expiry) are decided on the server.
+
+    ## Errors
+
+    RFC 7807 problem documents, `application/problem+json`, with a stable `type` URI. The full catalogue, with when each is sent and what the client does with it, is `api/ERRORS.md`. In short: 400 invalid query, 401 no session, 403 role not allowed, 404 not found (also used where telling someone a record exists would leak it), 409 a state conflict (with specific types for a slot conflict, an already decided item, an action not allowed and a batch not saved), 422 validation with field level `errors`, 5xx failure.
+
+    ## Permissions
+
+    Stated per operation (`Roles:` in its description). They are enforced on the server from the resolved role; the interface hiding a control is a courtesy, not a control. Collection endpoints scope by the caller’s identity on the server and never take a user parameter.
+
+    ## Uploads and downloads
+
+    Uploads are `multipart/form-data` with a part named `file`. Downloads send the file with `Content-Disposition: attachment`. Both go through the same authentication as everything else; a document is never a public URL.
+
+    ## Idempotence and concurrency
+
+    `submit`, `approve`, `reject` and the other state changes are safe to repeat: repeating one that has already happened returns the current state, or a 409 saying someone else got there first (`already decided`). Nothing in the API relies on optimistic locking tokens yet.
+
+    # Error catalogue
+
+    Every error is an [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) problem document with media type `application/problem+json`, a `type` URI from the list below, a `title`, the HTTP `status`, and a `detail` an end user can read. A problem whose shape matches but whose `type` or status differs from what is listed here is behaviourally wrong: the client keys on the `type`, not the text. A generic 400 where a specific type is listed is a bug.
+
+    ## 409 That time is no longer available
+
+    `https://midvaal.example/problems/slot-conflict`
+
+    - **When:** A booking is submitted, or a move requested, for a window that is no longer free on any day it covers. Includes a day taken by a related facility.
+    - **Extension members:** `conflictingWindow` (the part no longer free), `relatedFacility` (when the block comes from a parent or child), `reason` (in words).
+    - **What the client does:** Keeps every answer on the form, explains which time and why, names the related facility, and offers the calendar with the draft carried back.
+    - **Operations:** `submitBooking`, `rescheduleBooking`
+
+    ## 409 Already decided
+
+    `https://midvaal.example/problems/already-decided`
+
+    - **When:** An approver decides a work item that someone else has already decided.
+    - **Extension members:** `decision` (`outcome`, `decidedBy`, `decidedAt`).
+    - **What the client does:** Says who decided it, what they decided and when, and refreshes the item. Keeps the text the approver wrote.
+    - **Operations:** `approveBooking`, `rejectBooking`, `approveRescheduleRequest`, `rejectRescheduleRequest`
+
+    ## 409 That is not allowed
+
+    `https://midvaal.example/problems/action-not-allowed`
+
+    - **When:** A cancellation or move the rules do not allow; approving a request an approved booking already stands in the way of; removing a role or deactivating an account a guard rail protects.
+    - **Extension members:** `code` for the guard rails: `own_system_administrator_role`, `last_system_administrator`, `self`. The `detail` is the reason, in words.
+    - **What the client does:** Shows the reason. For the guard rails the interface has already declined to offer the action, using `protections`, so this is the backstop.
+    - **Operations:** `cancelBooking`, `rescheduleBooking`, `approveBooking`, `approveRescheduleRequest`, `changeUserRole`, `deactivateUser`
+
+    ## 422 Validation failed
+
+    `https://midvaal.example/problems/validation-failed`
+
+    - **When:** A request body is understood but a field is not acceptable.
+    - **Extension members:** `errors`: messages keyed by the name of the field at fault (for a list, `field.index`).
+    - **What the client does:** Puts each message on its field, moves focus to the first, and keeps what the person typed.
+    - **Operations:** 39 of the 87 (every operation that takes a path identifier, a body or a query, as applicable).
+
+    ## 409 The batch was not saved
+
+    `https://midvaal.example/problems/batch-not-saved`
+
+    - **When:** An allocation batch passed validation but failed while being applied. Everything has been put back.
+    - **Extension members:** None. `detail` names the facility at fault.
+    - **What the client does:** Keeps every pending edit, says nothing was saved, and names the facility.
+    - **Operations:** `saveAllocationBatch`, `saveFacilityAllocations`
+
+    ## 404 Not found
+
+    `https://midvaal.example/problems/not-found`
+
+    - **When:** No such record; or one the caller must not be able to tell exists (another applicant’s booking, a work item outside the approver’s scope).
+    - **Extension members:** None.
+    - **What the client does:** Shows a not found state. Never distinguishes "does not exist" from "not yours".
+    - **Operations:** 56 of the 87 (every operation that takes a path identifier, a body or a query, as applicable).
+
+    ## 403 Forbidden
+
+    `https://midvaal.example/problems/forbidden`
+
+    - **When:** The caller is signed in but their role does not allow the operation (a facility administrator calling a system administrator route).
+    - **Extension members:** None.
+    - **What the client does:** The interface already hides what the role cannot reach; this is the backstop.
+
+    ## 401 No valid session
+
+    `https://midvaal.example/problems/unauthenticated`
+
+    - **When:** The token is missing, expired or not valid.
+    - **Extension members:** None.
+    - **What the client does:** Sends the person to sign in.
+
+    ## 400 Invalid query
+
+    `https://midvaal.example/problems/invalid-query`
+
+    - **When:** A query parameter is malformed, unknown to the endpoint, or outside what it allows.
+    - **Extension members:** None. `detail` names the parameter.
+    - **What the client does:** A bug in the client, not a case it handles. Shown as a general failure.
+    - **Operations:** `listFacilities`, `getAvailability`, `listBookings`, `getBookingsSummary`, `listApprovals`, `listAdminFacilities`, `listResources`, `getAllocationMatrix`, `listUsers`, `listAudit`, `exportAudit`
+
+    ## 409 Conflict
+
+    `https://midvaal.example/problems/conflict`
+
+    - **When:** A state conflict that none of the above covers: changing an archived record, editing a published terms version (`code: terms_immutable`), publishing a version that is not a draft (`code: terms_not_draft`).
+    - **Extension members:** `code`, where one is documented.
+    - **What the client does:** Shows the `detail`.
+    - **Operations:** 20 of the 87 (every operation that takes a path identifier, a body or a query, as applicable).
+
+    ## 500 Internal error
+
+    `https://midvaal.example/problems/internal-error`
+
+    - **When:** The service failed. Any 5xx.
+    - **Extension members:** None.
+    - **What the client does:** Shows a general failure with a retry; a failed save keeps what was entered.
+
+    # Behaviour the schema cannot carry
+
+    `openapi.yaml` says what the shapes are. It cannot say what the backend must **do**. These rules were specified, one slice at a time, in prompts the backend developer has never read, and none survives in a schema. A backend can match every shape and still be wrong: double book a hall, hold a slot for a draft nobody finished, or let an "impact check" cancel the bookings it was warning about.
+
+    Each rule is one line of what, one of why, and a status:
+
+    - **Agreed**: specified in a slice brief and not in question.
+    - **Open**: a recommendation the client has not yet confirmed. Build it as written, but keep it easy to change. The number refers to the question in `docs/facilities-data-gaps.md`.
+
+    Everything the frontend does is implemented by the mock in `src/mocks`, and the contract tests hold the mock to `openapi.yaml`, so the mock is the executable reference for any rule below that is unclear.
+
+    ## 1. Hierarchy blocking is resolved server side. — Agreed
+
+    Facilities nest: a hall contains wings; a civic centre contains a committee room. Booking a parent blocks every child, and booking any child blocks the parent, for that window plus its buffers. `GET /facilities/{id}/availability` returns the result as `blocked_by_related` segments **naming the related facility** (`relatedFacility`, with its `relationship` to the one asked about), and the client draws what it is given. _Why:_ this system's main failure mode is double booking, and two implementations of containment (one in the client, one on the server) will eventually disagree.
+
+    ## 2. Holds are placed on submit, never on draft save. — Agreed
+
+    `POST /bookings` and `PATCH /bookings/{id}` never hold or reserve time. Only `POST /bookings/{id}/submit` checks availability, across every day of the window, and places the hold (setting `holdExpiresAt`, then releasing the slot if it lapses undecided). A draft whose slot is taken in the meantime fails at `submit` with the slot conflict problem. _Why:_ otherwise every abandoned draft silently blocks a slot. (How long a hold lasts, and whether a long booking should hold for the same time, is open: Q47. The mock uses 72 hours.)
+
+    ## 3. Competing requests must be hierarchy aware. — Agreed
+
+    `GET /approvals/{id}` returns `context.competingRequests` (other pending items that approving this one would make impossible) and `context.blockedBy` (approved bookings already in the way), computed on the **same facility, its parent and its children**, with each one’s `relationship` to the item being decided. A competing request is **not** rejected automatically when its rival is approved: it stays in the queue, can no longer be approved (`actions.approve.allowed` is false, with a reason), and needs a reason of its own to be rejected. _Why:_ an approver deciding one request must see everything it affects, and an applicant must be told by a person.
+
+    ## 4. Impact checks never mutate. — Agreed
+
+    Every `…/impact` operation previews and returns. It does not cancel a booking, notify an applicant, or change any state, and it is safe to call as often as you like. It names the approved and pending bookings that have not yet ended and would be affected. A client calls it first and confirms before making the change; the change itself decides nothing about those bookings either. _Why:_ an administrator needs to see the consequence of a change before making it, and a check that acted would remove the choice.
+
+    ## 5. Archive, never hard delete. — Agreed
+
+    Facilities, resources, seating arrangements, event types and users are archived (or deactivated), never deleted. There is no delete operation for any of them; the only deletes are a draft booking, a document, a blackout and an image. An archived record leaves the public estate and the booking form and keeps its name on everything that refers to it. _Why:_ they all appear in bookings and in the audit trail, which must stay readable. (How long archived personal data is kept is open: Q36.)
+
+    ## 6. Published terms are immutable, and a booking records the version current at submission. — Agreed
+
+    A terms version is `draft`, `published` or `superseded`. Only a draft can be edited (`PATCH` on anything else is 409). Publishing supersedes the previous version in the same step, so exactly one version is published. A submission carrying any version other than the one published at that moment is refused (422 on `termsAccepted`), so the version recorded on a booking is the one the applicant was shown, not the one current when their draft was started. _Why:_ applicants accepted specific words.
+
+    ## 7. Audit exports are themselves audited. — Agreed
+
+    `GET /admin/audit/export` records an `audit.exported` event with the actor, the filters and the row count, and requires both ends of a date range (422 otherwise): there is no unfiltered export. A refused export records nothing, because nothing was exported. _Why:_ an export of personal data that leaves no trace is the problem the audit trail exists to prevent.
+
+    ## 8. Allocation batch saves are atomic. — Agreed
+
+    `PUT /admin/resource-allocations` (and the per facility form) applies every change or none. The server validates every change first and refuses the whole batch with 422, naming the cells at fault. If applying then fails part way, it puts everything back and answers 409 `batch-not-saved`. _Why:_ a partial save across a grid of edits is worse than a failed one, because nobody can tell what was applied.
+
+    ## 9. Collection endpoints scope by identity on the server. — Agreed
+
+    `GET /bookings` returns the caller’s bookings; `GET /approvals` returns the queue of the facilities the caller is designated against (a system administrator sees all). Neither takes a user parameter, and the contract tests reject one. Asking for a record outside the caller’s scope answers **404**, not 403. _Why:_ identity comes from the session, and identifiers must not be probeable.
+
+    ## 10. Recurring bookings are out of scope. — Agreed
+
+    Every booking is a single occurrence. There are no series, no occurrences, no partial availability within a booking and no per day cancellation. A booking over several days is **one** continuous span, with one reference, one approval decision and one status, which either fits or does not. If the client ever asks for any of those, it is recurring bookings returning under another name and should be re-scoped, not absorbed.
+
+    ## 11. Operating hours constrain the first and last day of a span only. — Open (Q44)
+
+    Hours bind the **start** on the first day and the **end** on the last. Days wholly inside a span are occupied in full, whatever the venue’s hours, so a venue closed on Sundays can take a Friday to Sunday wedding; such a day appears in availability as `fully_booked` with `closedBy: "schedule"` and a segment covering the whole local day. A span cannot start or end on a closed day. **Blackouts still block the whole span** (`closedBy: "blackout"`). A public holiday is treated like weekly hours, not like a blackout. A booking may cover at most the facility’s `maximumBookingDays` calendar days. _Why:_ the common multi day case is a weekend event at a venue not staffed on Sundays.
+
+    ## 12. Buffers apply at the outer edges of a booking. — Open (Q45)
+
+    A facility’s set-up and clear-down time are added **before the booking’s first moment and after its last**, never between the days of a span, and must be reflected in what availability returns (as `buffer` segments, or as `blocked_by_related` for a related facility’s buffer). A moment is never blocked twice: where intervals overlap the engine returns one segment by priority (closure, booked, held, blocked by related, buffer). Buffers do not count toward a span’s length. Whether a day to decorate should be a booked day or a buffer is open (Q45); today the applicant’s days and the municipality’s buffer are separate things.
+
+    ---
+
+    ## Also worth knowing
+
+    - **Roles are enforced on the server** from the resolved role, per operation. A grant (raising someone’s role) needs `confirmGrant: true`. Nobody can remove their own system administrator role or deactivate themselves, and the last active system administrator cannot be removed; `GET /admin/users/{id}` says so in advance in `protections`.
+    - **Deactivating a user, or removing the facility administrator role, removes their designations**, and reactivating does not restore them (Q33). Both can leave a facility with no approver, which `…/roles/impact` reports.
+    - **Clerk owns identity.** No endpoint writes a name, email address, password or contact detail held by Clerk. The only profile field this service owns is the optional contact telephone number (`/me/profile`), which is an addition the client has yet to confirm (Q41).
+    - **Placeholder content.** The legal pages and the terms wording in the mock are stand-ins (`status: placeholder`, `placeholder: true`). The real ones are the municipality’s to supply (Q37, Q38, Q39). The client withholds placeholder legal text in a production build.
+    - **What the mock does that the real API must not.** It accepts `Bearer user:<id>`; it returns facility images as `data:` URIs and `provisionalFields` on facilities; it has a `?mock=` switch; some operations are not authenticated that the contract says are.
+
+    ## Corrections to earlier documents
+
+    Two delivered documents contradict this contract. **This contract supersedes them on these points:**
+
+    - **The Backend Specification** says the model must carry recurring series that expand into occurrences, and asks whether approval applies to a series or an occurrence. **Both are void.** Recurring bookings are out of scope (rule 10); the question does not arise. A booking is one occurrence and is approved as one.
+    - **The Developer Onboarding Brief** uses a nine month weekly league as its example of varied booking shapes. **The example is wrong** (it is a recurring series). The point it makes still holds for three shapes: an **hourly** booking, a **session** (a morning or an evening) and a **multi day** span. Those are all one start and one end instant; what differs is the rules around them.
 servers:
   - url: /api
     description: Relative to the host
