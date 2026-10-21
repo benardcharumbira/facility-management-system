@@ -288,7 +288,7 @@ describe('terms and conditions', () => {
     ).toBeVisible();
     expect(within(dialog).getByText(/Once published, these words cannot be edited/)).toBeVisible();
     // Not yet.
-    expect((await api.get<PublishedTerms>('/terms/current')).version).toBe('2026-1');
+    expect((await api.get<PublishedTerms>('/public/terms')).version).toBe('2026-1');
   });
 
   it('publishes, supersedes the previous version, and the public terms follow', async () => {
@@ -300,7 +300,7 @@ describe('terms and conditions', () => {
       within(await alertdialog()).getByRole('button', { name: 'Publish version 2026-2' }),
     );
     expect(await screen.findByText('Version 2026-2 is now the current terms.')).toBeVisible();
-    expect((await api.get<PublishedTerms>('/terms/current')).version).toBe('2026-2');
+    expect((await api.get<PublishedTerms>('/public/terms')).version).toBe('2026-2');
     expect((await api.get<BookingOptions>('/booking-options')).terms.version).toBe('2026-2');
     const all = await api.get<TermsVersion[]>('/admin/terms');
     expect(all.find((t) => t.version === '2026-1')?.status).toBe('superseded');
@@ -330,9 +330,13 @@ describe('who can reach it', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'Terms and conditions' }),
     ).toBeVisible();
-    expect(screen.getByRole('link', { name: 'Terms and conditions' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    expect(
+      within(screen.getByRole('navigation', { name: 'Reference data sections' })).getByRole(
+        'link',
+        {
+          name: 'Terms and conditions',
+        },
+      ),
+    ).toHaveAttribute('aria-current', 'page');
   });
 });

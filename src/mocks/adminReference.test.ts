@@ -337,9 +337,9 @@ describe('terms and conditions', () => {
   });
 
   it('is followed by the public terms and the booking form', async () => {
-    expect((await applicant.get<PublishedTerms>('/terms/current')).version).toBe('2026-1');
+    expect((await applicant.get<PublishedTerms>('/public/terms')).version).toBe('2026-1');
     await sysadmin.post('/admin/terms/terms-2026-2/publish');
-    const current = await applicant.get<PublishedTerms>('/terms/current');
+    const current = await applicant.get<PublishedTerms>('/public/terms');
     expect(current.version).toBe('2026-2');
     expect(current.paragraphs).toHaveLength(4);
     expect((await options()).terms.version).toBe('2026-2');

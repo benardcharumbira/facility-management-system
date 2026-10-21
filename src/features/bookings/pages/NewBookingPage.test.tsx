@@ -589,6 +589,21 @@ describe('step 5: review and submit', () => {
     });
   });
 
+  it('opens the full terms in a new tab, so the part completed form is left alone', async () => {
+    const { router } = await toReview();
+    await userEvent.click(screen.getByLabelText(/I accept the terms and conditions/));
+    const link = screen.getByRole('link', { name: /Open the terms and conditions in a new tab/ });
+    expect(link).toHaveAttribute('href', '/terms');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+
+    await userEvent.click(link);
+    // Nothing navigated, and nothing was lost.
+    expect(router.state.location.pathname).toBe('/bookings/new');
+    expect(screen.getByRole('heading', { level: 2, name: 'Review and submit' })).toBeVisible();
+    expect(screen.getByLabelText(/I accept the terms and conditions/)).toBeChecked();
+  });
+
   it('asks for the new terms to be accepted when they were replaced during the request', async () => {
     const { router } = await toReview();
     // Someone publishes new terms while this applicant is on the review step.
