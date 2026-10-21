@@ -1,7 +1,12 @@
 import { Columns3, Rows3 } from 'lucide-react';
 import { useState } from 'react';
 import type { AllocationMatrix, AllocationValue, ResourceCategory } from '@/shared/api';
-import { DensityProvider, EditableGrid, QuantityStepper } from '@/shared/components';
+import {
+  DensityProvider,
+  EditableGrid,
+  QuantityStepper,
+  useRestoreFocus,
+} from '@/shared/components';
 import { MAX_ALLOCATION } from '@/shared/api';
 import {
   copyColumn,
@@ -49,6 +54,11 @@ export function AllocationGrid({
   const [dialog, setDialog] = useState<
     { kind: 'row'; resource: Resource } | { kind: 'column'; facility: Facility } | null
   >(null);
+  const { remember } = useRestoreFocus(dialog);
+  const show = (next: NonNullable<typeof dialog>) => {
+    remember();
+    setDialog(next);
+  };
 
   const groups = (['venue', 'kitchen'] as const)
     .map((category) => {
@@ -82,7 +92,7 @@ export function AllocationGrid({
             <button
               type="button"
               {...focus}
-              onClick={() => setDialog({ kind: 'column', facility })}
+              onClick={() => show({ kind: 'column', facility })}
               aria-haspopup="dialog"
               aria-label={`Column actions for ${facility.name}`}
               className="inline-flex items-center gap-1 rounded-sm text-xs font-medium text-primary underline underline-offset-2"
@@ -103,7 +113,7 @@ export function AllocationGrid({
             <button
               type="button"
               {...focus}
-              onClick={() => setDialog({ kind: 'row', resource })}
+              onClick={() => show({ kind: 'row', resource })}
               aria-haspopup="dialog"
               aria-label={`Fill ${resource.name} across the facilities shown`}
               className="inline-flex items-center gap-1 rounded-sm text-xs font-medium text-primary underline underline-offset-2"
