@@ -6,11 +6,12 @@ import {
   type AdminFacility,
   type ApiProblem,
   type ApprovalDetail,
-  type ApprovalList,
+  type ApprovalListItem,
   type Booking,
   type FacilityAvailability,
   type ImpactResult,
 } from '@/shared/api';
+import type { Paginated } from '@/shared/types/pagination';
 import { FIXED_NOW } from '@/test/clock';
 import { seedFacilityAdmin, seedSpanRequests } from './data/facilityAdminSeeds';
 import { TERMS_VERSION } from './data/bookingOptions';
@@ -376,7 +377,9 @@ describe('set-up and clear-down time', () => {
 
 describe('a span competing with another request', () => {
   it('is listed against a single day request in the middle of it, and the other way round', async () => {
-    const list = await vaalApprover.get<ApprovalList>('/approvals', { query: { pageSize: 50 } });
+    const list = await vaalApprover.get<Paginated<ApprovalListItem>>('/approvals', {
+      query: { pageSize: 50 },
+    });
     const span = list.items.find((i) => i.reference.endsWith('9302'));
     const single = list.items.find((i) => i.reference.endsWith('9303'));
     expect(span && single).toBeTruthy();
@@ -391,7 +394,9 @@ describe('a span competing with another request', () => {
   });
 
   it('is one work item: one reference and one decision', async () => {
-    const list = await vaalApprover.get<ApprovalList>('/approvals', { query: { pageSize: 50 } });
+    const list = await vaalApprover.get<Paginated<ApprovalListItem>>('/approvals', {
+      query: { pageSize: 50 },
+    });
     const span = list.items.find((i) => i.reference.endsWith('9302'));
     expect(list.items.filter((i) => i.reference.endsWith('9302'))).toHaveLength(1);
     const approved = await vaalApprover.post<ApprovalDetail>(`/bookings/${span?.id}/approve`, {
