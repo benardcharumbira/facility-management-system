@@ -21,6 +21,8 @@ const BookingConfirmationPage = lazy(
 const BookingDetailPage = lazy(() => import('@/features/bookings/pages/BookingDetailPage'));
 const ApprovalsPage = lazy(() => import('@/features/approvals/pages/ApprovalsPage'));
 const AdminFacilitiesPage = lazy(() => import('@/features/admin/pages/AdminFacilitiesPage'));
+const AdminFacilityNewPage = lazy(() => import('@/features/admin/pages/AdminFacilityNewPage'));
+const AdminFacilityEditPage = lazy(() => import('@/features/admin/pages/AdminFacilityEditPage'));
 const AdminResourcesPage = lazy(() => import('@/features/admin/pages/AdminResourcesPage'));
 const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'));
 
@@ -59,9 +61,14 @@ export const routes: RouteObject[] = [
               },
               {
                 element: <RequireRole roles={ACCESS.facilityAdmins} />,
+                children: [{ path: 'admin/resources', element: <AdminResourcesPage /> }],
+              },
+              {
+                element: <RequireRole roles={ACCESS.estateAdmins} />,
                 children: [
                   { path: 'admin/facilities', element: <AdminFacilitiesPage /> },
-                  { path: 'admin/resources', element: <AdminResourcesPage /> },
+                  { path: 'admin/facilities/new', element: <AdminFacilityNewPage /> },
+                  { path: 'admin/facilities/:id', element: <AdminFacilityEditPage /> },
                 ],
               },
               {

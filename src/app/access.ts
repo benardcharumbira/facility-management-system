@@ -20,6 +20,8 @@ export const ACCESS = {
   facilityAdmins: [ROLES.facilityAdmin],
   /** A facility administrator sees the requests for their facilities; a system administrator sees all. */
   approvers: [ROLES.facilityAdmin, ROLES.systemAdmin],
+  /** Who maintains the estate of facilities: both kinds of administrator. */
+  estateAdmins: [ROLES.facilityAdmin, ROLES.systemAdmin],
   systemAdmins: [ROLES.systemAdmin],
 } as const satisfies Record<string, readonly Role[]>;
 
