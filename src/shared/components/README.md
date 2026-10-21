@@ -122,6 +122,14 @@ dialog with a field and a failure. The difference is that this one blocks a requ
 treats some failures as final and keeps the text, and takes over where focus returns. If a third
 screen needs either, merge them.
 
+**Added for resource administration: 2 components and 1 hook; 5 existing pieces changed.** The
+slice 5 `QuantityStepper` does not fit a dense grid cell, so it gained a **compact density variant**
+(the bare number, with the arrow keys left to whatever moves between cells) rather than a second
+component. `ImpactDialog` and `useImpactGuard` learned the resource reasons, to ask even where no
+booking is affected (a catalogue change that discards what facilities hold), and became generic over
+the impact type; `ArchiveConfirm`'s sentence can be replaced for something that is not a facility;
+`ScheduleEditor`'s copy dialog returns focus. `EditableGrid` is generic and holds no resource logic.
+
 **Still open, unchanged:** two disclosure primitives, two sheet primitives (the filter side sheet
 is a third presentation of one), three skeleton patterns, and field errors styled apart from
 `Alert`.

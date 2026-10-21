@@ -9,6 +9,7 @@ import { HierarchySelect } from './HierarchySelect';
 import { ImpactList } from './ImpactDialog';
 import { ScheduleEditor } from './ScheduleEditor';
 import { SectionedEditLayout } from './SectionedEditLayout';
+import { UnsavedChangesBar } from './UnsavedChangesBar';
 import { useImpactGuard, type GuardOutcome } from './useImpactGuard';
 
 const booking = (id: string, reason: ImpactResult['affectedBookings'][number]['reason']) => ({
@@ -309,5 +310,47 @@ describe('SectionedEditLayout', () => {
     expect(screen.getByRole('link', { name: 'Beta None' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Alpha' })).toHaveAttribute('href', '/x?section=a');
     expect(screen.getByRole('link', { name: 'Alpha' })).not.toHaveAttribute('aria-current');
+  });
+});
+
+describe('UnsavedChangesBar', () => {
+  it('announces the count politely, and offers nothing to save when there is nothing', () => {
+    const { rerender } = render(
+      <UnsavedChangesBar count={0} onSave={() => {}} onDiscard={() => {}} />,
+    );
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('No unsaved changes');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    rerender(<UnsavedChangesBar count={1} onSave={() => {}} onDiscard={() => {}} />);
+    expect(screen.getByRole('status')).toHaveTextContent('1 unsaved change');
+    rerender(<UnsavedChangesBar count={12} onSave={() => {}} onDiscard={() => {}} />);
+    expect(screen.getByRole('status')).toHaveTextContent('12 unsaved changes');
+    expect(screen.getByRole('button', { name: 'Save 12 changes' })).toBeEnabled();
+  });
+
+  it('saves and discards on request, and shows a failed save without losing the count', async () => {
+    const onSave = vi.fn();
+    const onDiscard = vi.fn();
+    render(
+      <UnsavedChangesBar
+        count={2}
+        onSave={onSave}
+        onDiscard={onDiscard}
+        error="Nothing was saved."
+      />,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Nothing was saved.');
+    expect(screen.getByRole('status')).toHaveTextContent('2 unsaved changes');
+    await userEvent.click(screen.getByRole('button', { name: 'Save 2 changes' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onDiscard).toHaveBeenCalledOnce();
+  });
+
+  it('cannot be used twice while saving', () => {
+    render(<UnsavedChangesBar count={2} saving onSave={() => {}} onDiscard={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
   });
 });

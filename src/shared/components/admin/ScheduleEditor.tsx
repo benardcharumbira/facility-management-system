@@ -3,6 +3,7 @@ import { Dialog } from 'radix-ui';
 import { useId, useState } from 'react';
 import type { OperatingDay } from '@/shared/api';
 import { controlStyles } from '../form/FormField';
+import { useRestoreFocus } from './useRestoreFocus';
 import { Button } from '../ui/Button';
 
 export const DAY_NAMES = [
@@ -32,6 +33,7 @@ export interface ScheduleEditorProps {
  */
 export function ScheduleEditor({ value, onChange, errors = {}, disabled }: ScheduleEditorProps) {
   const [copyFrom, setCopyFrom] = useState<number | null>(null);
+  const { remember } = useRestoreFocus(copyFrom);
 
   const update = (dayOfWeek: number, patch: Partial<OperatingDay>) =>
     onChange(value.map((d) => (d.dayOfWeek === dayOfWeek ? { ...d, ...patch } : d)));
@@ -46,7 +48,10 @@ export function ScheduleEditor({ value, onChange, errors = {}, disabled }: Sched
             error={errors[day.dayOfWeek]}
             disabled={disabled}
             onChange={(patch) => update(day.dayOfWeek, patch)}
-            onCopy={() => setCopyFrom(day.dayOfWeek)}
+            onCopy={() => {
+              remember();
+              setCopyFrom(day.dayOfWeek);
+            }}
           />
         ))}
       </ul>

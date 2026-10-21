@@ -117,3 +117,4 @@ export type { GuardOutcome, GuardRequest } from './admin/useImpactGuard';
 export { EditableGrid } from './admin/EditableGrid';
 export type { GridFocusProps, GridGroup } from './admin/EditableGrid';
 export { UnsavedChangesBar } from './admin/UnsavedChangesBar';
+export { useRestoreFocus } from './admin/useRestoreFocus';
