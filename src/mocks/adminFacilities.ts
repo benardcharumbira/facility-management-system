@@ -35,10 +35,12 @@ import {
   type UpdateImageRequest,
 } from '@/shared/api';
 import { FACILITY_TIME_ZONE } from './data/bookingLedger';
-import { BOOKING_OPTIONS } from './data/bookingOptions';
+import { referenceStore } from './data/referenceStore';
 import { computeImpact } from './data/facilityImpact';
 import { facilityStore, type StoredFacility } from './data/facilityStore';
-import { approverCandidates, STAFF } from './data/staff';
+import { designationsOf, recordDesignationChange } from './data/designations';
+import { approverCandidates, userIdOf } from './data/staff';
+import { userStore } from './data/userStore';
 import { addError as add, invalid, problem, requireAdmin, type Errors } from './adminGuard';
 
 const MAX_NAME = 80;
@@ -52,8 +54,7 @@ const notFound = () => problem(404, 'Facility not found');
 const iso = (value: string) => DateTime.fromISO(value, { zone: 'utc' });
 const validInstant = (value: unknown): value is string =>
   typeof value === 'string' && iso(value).isValid;
-const arrangementName = (id: string | null) =>
-  BOOKING_OPTIONS.seatingArrangements.find((s) => s.id === id)?.name ?? null;
+const arrangementName = (id: string | null) => referenceStore.nameOf('seating_arrangement', id);
 
 // --- projections --------------------------------------------------------------------------------
 
@@ -119,7 +120,7 @@ function toDetail(f: StoredFacility, now: DateTime): AdminFacility {
     schedule: f.schedule,
     capacity: f.capacity,
     approvers: f.approverIds.flatMap((id) => {
-      const member = STAFF[id];
+      const member = userStore.get(id);
       return member ? [{ id, name: member.name, email: member.email }] : [];
     }),
     futureBookings: futureBookingCount(f.id, now),
@@ -350,7 +351,20 @@ function validateCapacity(body: unknown, facility: StoredFacility): Errors {
   capacity.byArrangement.forEach((row, index) => {
     const name = typeof row.arrangement === 'string' ? row.arrangement.trim() : '';
     if (name === '') add(errors, `byArrangement.${index}`, 'Choose a seating arrangement.');
-    else if (seen.has(name.toLowerCase())) {
+    else if (
+      !referenceStore
+        .active('seating_arrangement')
+        .some((r) => r.name.toLowerCase() === name.toLowerCase()) &&
+      !facility.capacity.byArrangement.some(
+        (c) => c.arrangement.toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      add(
+        errors,
+        `byArrangement.${index}`,
+        `${name} is not a seating arrangement that can be chosen.`,
+      );
+    } else if (seen.has(name.toLowerCase())) {
       add(errors, `byArrangement.${index}`, `${name} is listed twice.`);
     }
     seen.add(name.toLowerCase());
@@ -924,8 +938,25 @@ export function createAdminFacilityHandlers(
             ],
           });
         }
+        const before = facility.approverIds;
         const updated = { ...facility, approverIds: ids };
         facilityStore.set(updated);
+        // The same relationship is edited from the user side, so each user it touches has it recorded.
+        for (const userId of new Set([...before, ...ids])) {
+          const was = designationsOf(userId).map((f) => f.id);
+          recordDesignationChange(
+            userId,
+            before.includes(userId) === ids.includes(userId)
+              ? was
+              : ids.includes(userId)
+                ? was.filter((id) => id !== facility.id)
+                : [...was, facility.id],
+            was,
+            userIdOf(request),
+            now(),
+            `Changed from ${facility.name}`,
+          );
+        }
         return HttpResponse.json(toDetail(updated, now()).approvers);
       }),
     ),

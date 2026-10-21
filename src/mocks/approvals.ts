@@ -37,7 +37,8 @@ import {
   type WorkItemType,
 } from '@/shared/api';
 import { FACILITY_TIME_ZONE } from './data/bookingLedger';
-import { BOOKING_OPTIONS } from './data/bookingOptions';
+import { auditStore, bookingState } from './data/auditStore';
+import { referenceStore } from './data/referenceStore';
 import {
   applicantName,
   bookingStore,
@@ -255,8 +256,7 @@ function toListItem(item: Item, competition: Competition): ApprovalListItem {
     endsAt: item.endsAt,
     currentWindow: item.current,
     applicantName: applicantName(item.ownerId),
-    eventTypeName:
-      BOOKING_OPTIONS.eventTypes.find((t) => t.id === item.booking.eventTypeId)?.name ?? null,
+    eventTypeName: referenceStore.nameOf('event_type', item.booking.eventTypeId),
     raisedAt: item.raisedAt,
     decidedAt: item.decidedAt,
     holdExpiresAt: pendingBooking ? item.booking.holdExpiresAt : null,
@@ -283,9 +283,7 @@ function contextFor(
   const detail = facility ? deriveDetail(facility, catalogue) : undefined;
   const booking = item.booking;
 
-  const arrangement =
-    BOOKING_OPTIONS.seatingArrangements.find((s) => s.id === booking.seatingArrangementId)?.name ??
-    null;
+  const arrangement = referenceStore.nameOf('seating_arrangement', booking.seatingArrangementId);
   const limit =
     arrangement && detail?.capacityByArrangement
       ? (detail.capacityByArrangement.find(
@@ -411,9 +409,10 @@ export function toDetail(
     ...list,
     description: booking.description,
     attendeeCount: booking.attendeeCount,
-    seatingArrangementName:
-      BOOKING_OPTIONS.seatingArrangements.find((s) => s.id === booking.seatingArrangementId)
-        ?.name ?? null,
+    seatingArrangementName: referenceStore.nameOf(
+      'seating_arrangement',
+      booking.seatingArrangementId,
+    ),
     resources: booking.resources.flatMap((r) => {
       const option = resourceStore.get(r.resourceId);
       return option
@@ -618,6 +617,7 @@ export function createApprovalHandlers(
     outcome: 'approved' | 'rejected',
     decidedBy: string,
     { note, reason }: { note: string | null; reason: string | null },
+    actorId: string | null,
   ) => {
     const at = instant(now());
     const booking = item.booking;
@@ -674,6 +674,25 @@ export function createApprovalHandlers(
             }
           : undefined,
     });
+
+    const after = bookingStore.all().find((b) => b.booking.id === booking.id)?.booking ?? booking;
+    const reschedule = item.type === 'reschedule_request';
+    const verb = outcome === 'approved' ? 'approved' : reschedule ? 'declined' : 'rejected';
+    auditStore.recordBooking(
+      reschedule
+        ? outcome === 'approved'
+          ? 'booking.reschedule_approved'
+          : 'booking.reschedule_declined'
+        : outcome === 'approved'
+          ? 'booking.approved'
+          : 'booking.rejected',
+      after,
+      actorId,
+      now(),
+      booking,
+      `${decidedBy} ${verb} ${reschedule ? 'moving the booking' : 'the request'}.`,
+      { ...bookingState(after), ...(reason ? { reason } : {}) },
+    );
   };
 
   const decide =
@@ -690,7 +709,7 @@ export function createApprovalHandlers(
       // Another approver got there first: their decision lands, and this one loses.
       if (item.status === 'pending' && bookingStore.isContested(id)) {
         bookingStore.uncontest(id);
-        apply(item, 'approved', RIVAL_APPROVER, { note: null, reason: null });
+        apply(item, 'approved', RIVAL_APPROVER, { note: null, reason: null }, 'approver-vaal');
         item = findItem(id, type, scope) ?? item;
       }
       if (item.status !== 'pending') return alreadyDecided(item);
@@ -710,7 +729,7 @@ export function createApprovalHandlers(
           });
         }
         // Verbatim: stored exactly as written.
-        apply(item, 'rejected', name, { note: null, reason: body.reason });
+        apply(item, 'rejected', name, { note: null, reason: body.reason }, approverId);
       } else {
         const competition = competitionFor(item, allWorkItems(), catalogue(), scope);
         if (competition.blockedBy.length > 0) {
@@ -724,7 +743,7 @@ export function createApprovalHandlers(
             errors: { note: [`Use ${MAX_NOTE} characters or fewer.`] },
           });
         }
-        apply(item, 'approved', name, { note, reason: null });
+        apply(item, 'approved', name, { note, reason: null }, approverId);
       }
       const decided = findItem(id, type, scope);
       return decided

@@ -1,63 +1,50 @@
 /**
  * Controlled lists for the booking form. The resources and the kitchen items are the confirmed
- * lists from BRD section 8.4. Everything else is PROVISIONAL: the event types and seating
- * arrangements are not in the document, the terms text is placeholder wording, the upload rules
- * and the turnaround are assumed. See docs/facilities-data-gaps.md.
+ * lists from BRD section 8.4, kept in the resource catalogue. The event types, seating
+ * arrangements and terms are maintained by administrators (reference data); their seed values are
+ * PROVISIONAL, since the municipality has not supplied them. The upload rules and the turnaround
+ * are assumed. See docs/facilities-data-gaps.md.
  */
-import type { BookingOptions } from '@/shared/api';
+import type { BookingOptionItem, BookingOptions } from '@/shared/api';
+import { referenceStore } from './referenceStore';
+import { termsStore, TERMS_VERSION } from './termsStore';
 
-export const TERMS_VERSION = '2026-1';
+export { TERMS_VERSION };
 
-/** The lists that do not change; the resources come from the catalogue, which administrators maintain. */
-export const BOOKING_OPTIONS: Omit<BookingOptions, 'resources' | 'retiredResources'> = {
-  eventTypes: [
-    { id: 'meeting', name: 'Meeting' },
-    { id: 'workshop', name: 'Workshop or training' },
-    { id: 'conference', name: 'Conference' },
-    { id: 'wedding', name: 'Wedding' },
-    { id: 'family-function', name: 'Birthday or family function' },
-    { id: 'memorial', name: 'Funeral or memorial service' },
-    { id: 'religious', name: 'Church or community gathering' },
-    { id: 'fundraiser', name: 'Fundraiser' },
-    { id: 'other', name: 'Other' },
-  ],
-  seatingArrangements: [
-    { id: 'cinema', name: 'Cinema' },
-    { id: 'banquet', name: 'Banquet' },
-    { id: 'school-room', name: 'School room' },
-    { id: 'u-shape', name: 'U-shape' },
-    { id: 'boardroom', name: 'Boardroom' },
-  ],
-  terms: {
-    version: TERMS_VERSION,
-    title: 'Terms and conditions of hire',
-    paragraphs: [
-      'This is placeholder wording. The municipality will supply the terms and conditions that apply to the hire of its venues.',
-      'A booking request is not a confirmed booking. The venue is reserved for you only once the request has been approved.',
-      'You are responsible for the venue, its contents and the conduct of your guests for the duration of the hire, including set-up and clear-down time.',
-    ],
-  },
-  uploads: {
-    maxFileSizeBytes: 10 * 1024 * 1024,
-    maxFiles: 5,
-    acceptedTypes: [
-      { extension: '.pdf', contentType: 'application/pdf', label: 'PDF' },
-      { extension: '.jpg', contentType: 'image/jpeg', label: 'JPEG' },
-      { extension: '.jpeg', contentType: 'image/jpeg', label: 'JPEG' },
-      { extension: '.png', contentType: 'image/png', label: 'PNG' },
-      { extension: '.doc', contentType: 'application/msword', label: 'Word' },
-      {
-        extension: '.docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        label: 'Word',
-      },
-      { extension: '.xls', contentType: 'application/vnd.ms-excel', label: 'Excel' },
-      {
-        extension: '.xlsx',
-        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        label: 'Excel',
-      },
-    ],
-  },
-  expectedTurnaround: 'within 5 working days',
-};
+const asOptions = (items: Array<{ id: string; name: string }>): BookingOptionItem[] =>
+  items.map(({ id, name }) => ({ id, name }));
+
+/** What the booking form is offered now, and the archived entries only so old bookings can name them. */
+export function bookingOptions(): Omit<BookingOptions, 'resources' | 'retiredResources'> {
+  const current = termsStore.published();
+  return {
+    eventTypes: asOptions(referenceStore.active('event_type')),
+    seatingArrangements: asOptions(referenceStore.active('seating_arrangement')),
+    retiredEventTypes: asOptions(referenceStore.archived('event_type')),
+    retiredSeatingArrangements: asOptions(referenceStore.archived('seating_arrangement')),
+    terms: { version: current.version, title: current.title, paragraphs: current.paragraphs },
+    uploads: {
+      maxFileSizeBytes: 10 * 1024 * 1024,
+      maxFiles: 5,
+      acceptedTypes: [
+        { extension: '.pdf', contentType: 'application/pdf', label: 'PDF' },
+        { extension: '.jpg', contentType: 'image/jpeg', label: 'JPEG' },
+        { extension: '.jpeg', contentType: 'image/jpeg', label: 'JPEG' },
+        { extension: '.png', contentType: 'image/png', label: 'PNG' },
+        { extension: '.doc', contentType: 'application/msword', label: 'Word' },
+        {
+          extension: '.docx',
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          label: 'Word',
+        },
+        { extension: '.xls', contentType: 'application/vnd.ms-excel', label: 'Excel' },
+        {
+          extension: '.xlsx',
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          label: 'Excel',
+        },
+      ],
+    },
+    expectedTurnaround: 'within 5 working days',
+  };
+}

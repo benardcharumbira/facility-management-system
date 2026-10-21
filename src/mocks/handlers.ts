@@ -2,7 +2,9 @@ import { DateTime } from 'luxon';
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@/shared/auth/roles';
 import { seedApprovals } from './data/approvalSeeds';
-import { seedFacilityAdmin } from './data/facilityAdminSeeds';
+import { seedAudit } from './data/auditSeeds';
+import { setDefaultCaller } from './data/staff';
+import { seedFacilityAdmin, seedUnroutedRequests } from './data/facilityAdminSeeds';
 import { seedBookings } from './data/bookingSeeds';
 import { createFacilityHandlers, type MockDatasetName, type MockScenario } from './facilities';
 
@@ -31,12 +33,15 @@ export function createHandlers(
   }: HandlerOptions = {},
 ) {
   const root = baseUrl.replace(/\/+$/, '');
+  setDefaultCaller(role);
   // Building the facility handlers loads the estate, which the sample data below then builds on.
   const facilityHandlers = createFacilityHandlers(root, { delayMs, getScenario, dataset, now });
   if (seed) {
     seedBookings(now?.() ?? DateTime.now());
     seedApprovals(now?.() ?? DateTime.now());
     seedFacilityAdmin(now?.() ?? DateTime.now());
+    seedUnroutedRequests(now?.() ?? DateTime.now());
+    seedAudit(now?.() ?? DateTime.now());
   }
 
   return [

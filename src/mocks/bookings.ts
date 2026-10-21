@@ -35,7 +35,11 @@ import { rulesOf, windowProblem } from '@/shared/utils/availability';
 import { bufferOf, computeAvailability, MOCK_AVAILABILITY_RULES } from './availability';
 import { FACILITY_TIME_ZONE, buildLedger } from './data/bookingLedger';
 import type { FacilitySettings } from './data/facilityStore';
-import { BOOKING_OPTIONS, TERMS_VERSION } from './data/bookingOptions';
+import { auditStore } from './data/auditStore';
+import { bookingOptions } from './data/bookingOptions';
+import { referenceStore } from './data/referenceStore';
+import { termsStore } from './data/termsStore';
+import { userStore } from './data/userStore';
 import { resourceStore } from './data/resourceStore';
 import { HOLD_HOURS, MOCK_USER_ID, bookingStore, type StoredBooking } from './data/bookingStore';
 
@@ -61,6 +65,8 @@ const validationProblem = (errors: Record<string, string[]>) =>
 
 const notFound = () => problem(404, 'Booking not found');
 
+const actorName = (request: Request) => userStore.get(callerOf(request))?.name ?? 'The applicant';
+
 /** Who is calling: a token of the form `user:<id>`, else the default mock applicant. */
 export function callerOf(request: Request): string {
   const match = /^Bearer user:(.+)$/.exec(request.headers.get('Authorization') ?? '');
@@ -78,7 +84,7 @@ export function validateForSubmit(booking: StoredBooking): Record<string, string
   const errors: Record<string, string[]> = {};
   const add = (field: string, message: string) => (errors[field] ??= []).push(message);
 
-  if (!BOOKING_OPTIONS.eventTypes.some((t) => t.id === booking.eventTypeId)) {
+  if (!referenceStore.active('event_type').some((t) => t.id === booking.eventTypeId)) {
     add('eventTypeId', 'Choose the type of meeting or event.');
   }
   const description = booking.description.trim();
@@ -93,7 +99,9 @@ export function validateForSubmit(booking: StoredBooking): Record<string, string
   } else if (booking.attendeeCount > MAX_ATTENDEES) {
     add('attendeeCount', `No venue holds more than ${MAX_ATTENDEES} people.`);
   }
-  if (!BOOKING_OPTIONS.seatingArrangements.some((s) => s.id === booking.seatingArrangementId)) {
+  if (
+    !referenceStore.active('seating_arrangement').some((s) => s.id === booking.seatingArrangementId)
+  ) {
     add('seatingArrangement', 'Choose a seating arrangement.');
     add('seatingArrangementId', 'Choose a seating arrangement.');
   }
@@ -107,8 +115,16 @@ export function validateForSubmit(booking: StoredBooking): Record<string, string
   } else if (booking.resources.some((r) => !known.has(r.resourceId) || r.quantity < 1)) {
     add('resources', 'One or more requested resources are not valid.');
   }
-  if (booking.acceptedTermsVersion !== TERMS_VERSION) {
-    add('termsAccepted', 'Accept the current terms and conditions.');
+  // The version recorded is the one current at the moment of submission, which is the one the
+  // applicant must have been shown. If the terms changed under them, they read and accept again.
+  const currentTerms = termsStore.published().version;
+  if (booking.acceptedTermsVersion !== currentTerms) {
+    add(
+      'termsAccepted',
+      booking.acceptedTermsVersion
+        ? `The terms and conditions were updated while you were completing this request (now version ${currentTerms}). Read the new terms and accept them to continue.`
+        : 'Accept the current terms and conditions.',
+    );
   }
   return errors;
 }
@@ -190,8 +206,7 @@ function toListItem(booking: StoredBooking, now: DateTime): BookingListItem {
     facility: booking.facility,
     startsAt: booking.startsAt,
     endsAt: booking.endsAt,
-    eventTypeName:
-      BOOKING_OPTIONS.eventTypes.find((t) => t.id === booking.eventTypeId)?.name ?? null,
+    eventTypeName: referenceStore.nameOf('event_type', booking.eventTypeId),
     description: booking.description,
     submittedAt: booking.submittedAt,
     updatedAt: booking.updatedAt,
@@ -417,7 +432,7 @@ export function createBookingHandlers(
       await wait();
       if (fail?.()) return failure();
       return HttpResponse.json({
-        ...BOOKING_OPTIONS,
+        ...bookingOptions(),
         resources: resourceStore.options(),
         retiredResources: resourceStore.retired(),
       });
@@ -494,6 +509,14 @@ export function createBookingHandlers(
       };
       booking.history = history(booking, 'created', 'applicant');
       bookingStore.set(booking, callerOf(request));
+      auditStore.recordBooking(
+        'booking.created',
+        booking,
+        callerOf(request),
+        now(),
+        null,
+        `${actorName(request)} started a booking request.`,
+      );
       return HttpResponse.json(present(booking, now()), { status: 201 });
     }),
 
@@ -558,7 +581,7 @@ export function createBookingHandlers(
       }
       const file = entry as { name: string; size: number };
 
-      const { uploads } = BOOKING_OPTIONS;
+      const { uploads } = bookingOptions();
       const extension = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
       const accepted = uploads.acceptedTypes.find((t) => t.extension === extension);
       if (!accepted) {
@@ -648,6 +671,15 @@ export function createBookingHandlers(
       };
       submitted.history = history(submitted, 'submitted', 'applicant');
       bookingStore.update(submitted);
+      auditStore.recordBooking(
+        'booking.submitted',
+        submitted,
+        callerOf(request),
+        now(),
+        booking,
+        `${actorName(request)} submitted the request.`,
+        { acceptedTermsVersion: submitted.acceptedTermsVersion },
+      );
       return HttpResponse.json(present(submitted, now()));
     }),
 
@@ -672,6 +704,15 @@ export function createBookingHandlers(
       };
       cancelled.history = history(cancelled, 'cancelled', 'applicant', reason);
       bookingStore.update(cancelled);
+      auditStore.recordBooking(
+        'booking.cancelled',
+        cancelled,
+        callerOf(request),
+        now(),
+        booking,
+        `${actorName(request)} cancelled the booking.`,
+        reason ? { reason } : {},
+      );
       return HttpResponse.json(present(cancelled, now()));
     }),
 
@@ -714,6 +755,15 @@ export function createBookingHandlers(
       };
       moved.history = history(moved, 'reschedule_requested', 'applicant');
       bookingStore.update(moved);
+      auditStore.recordBooking(
+        'booking.reschedule_requested',
+        moved,
+        callerOf(request),
+        now(),
+        booking,
+        `${actorName(request)} asked to move the booking.`,
+        { proposedStartsAt: body.startsAt, proposedEndsAt: body.endsAt },
+      );
       return HttpResponse.json(present(moved, now()));
     }),
   ];

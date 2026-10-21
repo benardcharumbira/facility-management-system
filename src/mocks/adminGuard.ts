@@ -33,3 +33,13 @@ export function requireAdmin(request: Request, what: string): Response | null {
     ? null
     : problem(403, 'Not allowed', `Only administrators can manage ${what}.`);
 }
+
+/**
+ * Users, reference data and the audit trail are for system administrators alone. A facility
+ * administrator is refused, whatever the screen shows.
+ */
+export function requireSystemAdmin(request: Request, what: string): Response | null {
+  return roleOfUser(userIdOf(request)) === ROLES.systemAdmin
+    ? null
+    : problem(403, 'Not allowed', `Only system administrators can manage ${what}.`);
+}

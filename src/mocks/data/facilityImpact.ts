@@ -19,7 +19,7 @@ import { FACILITY_TIME_ZONE } from './bookingLedger';
 import { applicantName, type StoredBooking } from './bookingStore';
 import { facilityStore } from './facilityStore';
 
-interface Live {
+export interface Live {
   booking: StoredBooking;
   ownerId: string;
 }
@@ -34,7 +34,7 @@ type ParentOf = (facilityId: string) => string | null;
 
 const iso = (value: string) => DateTime.fromISO(value, { zone: 'utc' });
 
-function toImpacted(
+export function toImpacted(
   live: Live,
   reason: ImpactReason,
   conflictsWith: Live | null = null,

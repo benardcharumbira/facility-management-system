@@ -217,7 +217,63 @@ const SPECS: Spec[] = [
   },
 ];
 
+/**
+ * Pending requests for the two Vaal Marina rooms, whose only designated approver is Pieter van
+ * Wyk: what is left with nobody to decide it if he is removed. Seeded apart from the rest, because
+ * the facility administration screens count the bookings they reach.
+ */
+const ROUTING_SPECS: Spec[] = [
+  {
+    n: 9212,
+    owner: 'applicant-grace',
+    facilityId: 'vaal-marina-hall',
+    days: 21,
+    from: '10:00',
+    to: '12:00',
+    attendees: 30,
+    seating: 'school-room',
+    pending: true,
+    description: 'Youth club meeting',
+    submittedHoursAgo: 24 * 3,
+  },
+  {
+    n: 9213,
+    owner: 'applicant-priya',
+    facilityId: 'vaal-marina-hall',
+    days: 22,
+    from: '10:00',
+    to: '12:00',
+    attendees: 60,
+    seating: 'banquet',
+    pending: true,
+    description: 'Charity breakfast',
+    submittedHoursAgo: 24 * 2,
+  },
+  {
+    n: 9214,
+    owner: 'applicant-tebogo',
+    facilityId: 'vaal-marina-board-room',
+    days: 23,
+    from: '14:00',
+    to: '16:00',
+    attendees: 8,
+    seating: 'boardroom',
+    pending: true,
+    description: 'Directors meeting',
+    submittedHoursAgo: 24,
+  },
+];
+
 export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
+  seedSpecs(SPECS, now);
+}
+
+/** The pending requests that a change to an approver's role would leave unrouted. */
+export function seedUnroutedRequests(now: DateTime = DateTime.now()) {
+  seedSpecs(ROUTING_SPECS, now);
+}
+
+function seedSpecs(specs: readonly Spec[], now: DateTime) {
   for (const [id, name] of Object.entries(APPLICANTS)) registerApplicant(id, name);
 
   const today = now.setZone(FACILITY_TIME_ZONE).startOf('day');
@@ -234,7 +290,7 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
     );
   };
 
-  for (const spec of SPECS) {
+  for (const spec of specs) {
     const id = `adm-${spec.n}`;
     const history: BookingHistoryEntry[] = [
       {
@@ -251,13 +307,17 @@ export function seedFacilityAdmin(now: DateTime = DateTime.now()) {
         actor: 'applicant',
         note: null,
       },
-      {
-        id: 'h-3',
-        type: 'approved',
-        at: ago(spec.submittedHoursAgo - 24),
-        actor: 'municipality',
-        note: null,
-      },
+      ...(spec.pending
+        ? []
+        : [
+            {
+              id: 'h-3',
+              type: 'approved' as const,
+              at: ago(spec.submittedHoursAgo - 24),
+              actor: 'municipality' as const,
+              note: null,
+            },
+          ]),
     ];
     const booking: StoredBooking = {
       id,
