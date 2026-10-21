@@ -1,5 +1,6 @@
 import { Children, type ReactNode } from 'react';
 import { cn } from '@/shared/utils/cn';
+import { useDensity } from '../backoffice/Density';
 
 export interface ResultsGridProps {
   children: ReactNode;
@@ -21,9 +22,13 @@ const LAYOUTS = {
  * share this component so the layout does not shift between them.
  */
 export function ResultsGrid({ children, layout = 'cards', label }: ResultsGridProps) {
+  const compact = useDensity() === 'compact';
   return (
     <div className="@container">
-      <ul aria-label={label} className={cn('grid list-none gap-4 p-0', LAYOUTS[layout])}>
+      <ul
+        aria-label={label}
+        className={cn('grid list-none p-0', compact ? 'gap-1' : 'gap-4', LAYOUTS[layout])}
+      >
         {Children.map(children, (child) => (
           <li className="flex min-w-0">{child}</li>
         ))}

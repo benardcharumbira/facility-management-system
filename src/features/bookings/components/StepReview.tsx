@@ -8,7 +8,7 @@ import {
   type UploadItem,
 } from '@/shared/components';
 import type { StepId } from '../config';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 import { fieldId, type BookingFormValues } from '../schema';
 
 export function StepReview({

@@ -84,7 +84,15 @@ export type BookingActor = 'applicant' | 'municipality';
 
 export interface BookingHistoryEntry {
   id: string;
-  type: 'created' | 'submitted' | 'approved' | 'rejected' | 'cancelled' | 'reschedule_requested';
+  type:
+    | 'created'
+    | 'submitted'
+    | 'approved'
+    | 'rejected'
+    | 'cancelled'
+    | 'reschedule_requested'
+    | 'reschedule_approved'
+    | 'reschedule_declined';
   /** A UTC instant. */
   at: string;
   /** Who did it, where known. */

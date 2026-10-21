@@ -32,11 +32,11 @@ import { HierarchyNote } from '../components/HierarchyNote';
 import { PrintBooking } from '../components/PrintBooking';
 import { ReschedulePanel } from '../components/ReschedulePanel';
 import { ConfirmDialog } from '@/shared/components';
-import { saveBlob } from '../downloads';
-import { describeWindow } from '../format';
+import { saveBlob } from '@/shared/utils/saveBlob';
+import { describeWindow } from '@/shared/utils/format';
 import { useBooking, useBookingOptions, useFacilityDetail } from '../hooks';
 import { facilityLink } from '../links';
-import { BookingStatusBadge } from '../status';
+import { BookingStatusBadge } from '@/shared/components';
 
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?Z$/;
 const proposalCodec = createParamsCodec<{

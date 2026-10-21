@@ -1,5 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { useId } from 'react';
+import { cn } from '@/shared/utils/cn';
+import { useDensity } from '../backoffice/Density';
 
 export interface SortOption<V extends string> {
   value: V;
@@ -20,6 +22,7 @@ export function SortSelect<V extends string>({
   label = 'Sort by',
 }: SortSelectProps<V>) {
   const id = useId();
+  const compact = useDensity() === 'compact';
   return (
     <div className="flex items-center gap-2">
       <label htmlFor={id} className="text-sm text-muted">
@@ -30,7 +33,10 @@ export function SortSelect<V extends string>({
           id={id}
           value={value}
           onChange={(event) => onChange(event.target.value as V)}
-          className="h-10 appearance-none rounded-md border border-line-strong bg-surface pr-9 pl-3 text-sm"
+          className={cn(
+            'appearance-none rounded-md border border-line-strong bg-surface pr-9 pl-3 text-sm',
+            compact ? 'h-8' : 'h-10',
+          )}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>

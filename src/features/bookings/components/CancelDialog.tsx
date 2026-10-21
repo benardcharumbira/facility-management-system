@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Booking } from '@/shared/api';
 import { ConfirmDialog, controlStyles, FormField } from '@/shared/components';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 
 /**
  * Cancelling a request and cancelling a confirmed booking are different acts, and the words say

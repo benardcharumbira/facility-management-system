@@ -9,7 +9,7 @@ import {
   NotFoundState,
   usePageHeader,
 } from '@/shared/components';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 import { useBooking, useBookingOptions } from '../hooks';
 import { bookingLink } from '../links';
 

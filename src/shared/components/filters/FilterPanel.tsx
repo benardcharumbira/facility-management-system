@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
 import type { ReactNode, RefObject } from 'react';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { cn } from '@/shared/utils/cn';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 
@@ -20,6 +21,11 @@ export interface FilterPanelProps {
   onClearAll?: () => void;
   /** The button that opened the drawer; focus is returned to it once the drawer closes. */
   returnFocusRef?: RefObject<HTMLElement | null>;
+  /**
+   * `auto` (default): a sidebar from wide screens, a full screen drawer below. `overlay`: always
+   * a drawer, a side sheet from tablet width up, for a screen with no room for a sidebar.
+   */
+  placement?: 'auto' | 'overlay';
 }
 
 export function FilterPanel({
@@ -30,8 +36,9 @@ export function FilterPanel({
   closeLabel = 'Show results',
   onClearAll,
   returnFocusRef,
+  placement = 'auto',
 }: FilterPanelProps) {
-  const isSidebar = useMediaQuery(FILTER_PANEL_QUERY);
+  const isSidebar = useMediaQuery(FILTER_PANEL_QUERY) && placement === 'auto';
 
   if (isSidebar) {
     return (
@@ -56,7 +63,12 @@ export function FilterPanel({
               returnFocusRef.current.focus();
             }
           }}
-          className="fixed inset-0 z-50 flex flex-col bg-surface"
+          className={cn(
+            'fixed z-50 flex flex-col bg-surface',
+            placement === 'overlay'
+              ? 'inset-0 md:right-auto md:w-96 md:border-r md:border-line md:shadow-overlay'
+              : 'inset-0',
+          )}
         >
           <div className="flex items-center justify-between border-b border-line px-4 py-2">
             <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>

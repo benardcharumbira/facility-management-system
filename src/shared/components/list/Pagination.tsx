@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Paginated } from '@/shared/types/pagination';
 import { cn } from '@/shared/utils/cn';
+import { useDensity } from '../backoffice/Density';
 
 export interface PaginationProps {
   /** The response envelope, or anything with its page fields. */
@@ -22,15 +23,21 @@ function visiblePages(page: number, total: number): Array<number | null> {
 }
 
 const item =
-  'flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-sm font-medium disabled:opacity-40';
+  'flex items-center justify-center rounded-md px-2 text-sm font-medium disabled:opacity-40';
+const SIZES = { comfortable: 'h-10 min-w-10', compact: 'h-8 min-w-8' } as const;
 
 /** Renders nothing when everything fits on one page. */
 export function Pagination({ envelope, onChange }: PaginationProps) {
   const { page, totalPages } = envelope;
+  const density = useDensity();
   if (totalPages <= 1) return null;
+  const size = SIZES[density];
 
   return (
-    <nav aria-label="Pagination" className="mt-6 flex justify-center">
+    <nav
+      aria-label="Pagination"
+      className={cn('flex justify-center', density === 'compact' ? 'mt-2' : 'mt-6')}
+    >
       <ul className="flex items-center gap-1">
         <li>
           <button
@@ -38,7 +45,7 @@ export function Pagination({ envelope, onChange }: PaginationProps) {
             aria-label="Go to previous page"
             disabled={page <= 1}
             onClick={() => onChange(page - 1)}
-            className={cn(item, 'text-muted hover:bg-sunken')}
+            className={cn(item, size, 'text-muted hover:bg-sunken')}
           >
             <ChevronLeft aria-hidden className="size-5" />
           </button>
@@ -57,6 +64,7 @@ export function Pagination({ envelope, onChange }: PaginationProps) {
                 onClick={() => onChange(n)}
                 className={cn(
                   item,
+                  size,
                   n === page ? 'bg-primary text-on-primary' : 'text-ink hover:bg-sunken',
                 )}
               >
@@ -71,7 +79,7 @@ export function Pagination({ envelope, onChange }: PaginationProps) {
             aria-label="Go to next page"
             disabled={page >= totalPages}
             onClick={() => onChange(page + 1)}
-            className={cn(item, 'text-muted hover:bg-sunken')}
+            className={cn(item, size, 'text-muted hover:bg-sunken')}
           >
             <ChevronRight aria-hidden className="size-5" />
           </button>

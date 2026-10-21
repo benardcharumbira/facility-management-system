@@ -1,6 +1,6 @@
 import type { DateTime } from 'luxon';
 import type { Booking } from '@/shared/api';
-import { describeWindow, elapsed, shortDate } from '../format';
+import { describeWindow, elapsed, shortDate } from '@/shared/utils/format';
 
 /**
  * The answer to "has it been approved", and what happens next, in words, directly under the

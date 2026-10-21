@@ -1,6 +1,6 @@
 import type { Booking, BookingOptions } from '@/shared/api';
 import { PrintOnly } from '@/shared/components';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 
 /**
  * The record a person takes to the venue: reference, venue, time, event details and the approved

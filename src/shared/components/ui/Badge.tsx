@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/utils/cn';
 
-type Tone = 'neutral' | 'primary' | 'danger';
+type Tone = 'neutral' | 'primary' | 'warning' | 'danger';
 
 const tones: Record<Tone, string> = {
   neutral: 'bg-sunken text-muted',
   primary: 'bg-primary-soft text-primary',
+  warning: 'bg-warning-soft text-warning',
   danger: 'bg-danger-soft text-danger',
 };
 

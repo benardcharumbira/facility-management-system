@@ -1,4 +1,6 @@
 import { X } from 'lucide-react';
+import { cn } from '@/shared/utils/cn';
+import { useDensity } from '../backoffice/Density';
 import { Button } from '../ui/Button';
 
 export interface ActiveFilter {
@@ -15,6 +17,7 @@ export interface ActiveFilterChipsProps {
 
 /** One removable chip per applied filter value, plus "Clear all" while any are applied. */
 export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProps) {
+  const compact = useDensity() === 'compact';
   if (filters.length === 0) return null;
 
   return (
@@ -25,7 +28,10 @@ export function ActiveFilterChips({ filters, onClearAll }: ActiveFilterChipsProp
             type="button"
             onClick={filter.onRemove}
             aria-label={`Remove filter: ${filter.label}`}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary-line bg-primary-soft pr-2 pl-3 text-sm font-medium text-primary hover:bg-primary-line/60"
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border border-primary-line bg-primary-soft font-medium text-primary hover:bg-primary-line/60',
+              compact ? 'h-6 pr-1.5 pl-2.5 text-xs' : 'h-8 pr-2 pl-3 text-sm',
+            )}
           >
             {filter.label}
             <X aria-hidden className="size-4" />

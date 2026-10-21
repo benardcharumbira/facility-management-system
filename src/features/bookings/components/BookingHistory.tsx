@@ -1,7 +1,16 @@
-import { Ban, CalendarClock, CircleCheck, CircleX, FilePlus2, Send } from 'lucide-react';
+import {
+  Ban,
+  CalendarCheck,
+  CalendarClock,
+  CalendarX,
+  CircleCheck,
+  CircleX,
+  FilePlus2,
+  Send,
+} from 'lucide-react';
 import type { Booking, BookingHistoryEntry } from '@/shared/api';
 import { ActivityLog, type ActivityEntry } from '@/shared/components';
-import { dateAndTime } from '../format';
+import { dateAndTime } from '@/shared/utils/format';
 
 const TITLES: Record<BookingHistoryEntry['type'], string> = {
   created: 'Request started',
@@ -10,6 +19,8 @@ const TITLES: Record<BookingHistoryEntry['type'], string> = {
   rejected: 'Rejected',
   cancelled: 'Cancelled',
   reschedule_requested: 'Change of date requested',
+  reschedule_approved: 'Change of date approved',
+  reschedule_declined: 'Change of date declined',
 };
 const ICONS: Record<BookingHistoryEntry['type'], React.ReactNode> = {
   created: <FilePlus2 className="size-3.5" />,
@@ -18,6 +29,8 @@ const ICONS: Record<BookingHistoryEntry['type'], React.ReactNode> = {
   rejected: <CircleX className="size-3.5" />,
   cancelled: <Ban className="size-3.5" />,
   reschedule_requested: <CalendarClock className="size-3.5" />,
+  reschedule_approved: <CalendarCheck className="size-3.5" />,
+  reschedule_declined: <CalendarX className="size-3.5" />,
 };
 
 /** The applicant facing view of the audit trail: what happened, when, and who did it. */

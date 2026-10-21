@@ -87,6 +87,45 @@ three skeleton patterns, and field errors styled apart from `Alert`. `ConfirmDia
 beside the older `useConfirm` hook; the hook is simpler (no fields, no failure state) and
 nothing in the app uses it yet, so consider retiring it.
 
+## Back-office primitives (`backoffice/`)
+
+For the approval queue: an internal tool used all day by someone who already knows what
+everything means. These live in their own directory so the public screens' set stays legible.
+
+| Piece                            | Props                                                                                                                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DensityProvider` / `useDensity` | `density: comfortable \| compact`. Set once around a screen; the list primitives read it.                                                                             |
+| `MasterDetailLayout`             | `master`, `detail`, `hasSelection`, `masterLabel`, `detailLabel`. Side by side from 768px, each scrolling alone; below it one column. `useSplitView()` reports which. |
+| `QueueItem`                      | `to`, `selected`, `label`, `leading?`, `title`, `lines`, `flags?`, `itemId`, `linkRef?`. One link; the selected row is marked by bar and fill and `aria-current`.     |
+| `DecisionDialog`                 | `title`, `description`, `tone?`, `confirmLabel`, `field` (label, value, required...), `initialFocus`, `onConfirm`, `describeFailure?`, `onContinue?`, `returnFocus?`. |
+| `KeyboardShortcutHelp` / `Kbd`   | `open`, `onOpenChange`, `groups`. The reference opened with `?`.                                                                                                      |
+| `useKeyboardShortcuts`           | `bindings: {keys, handler, when?}[]`. Never fires from a field, with Ctrl/Cmd/Alt, or while a dialog is open.                                                         |
+
+**The density variant** is a context, not a prop on each primitive and not a fork. `compact` is
+read by `SearchField`, `SortSelect`, `ResultsToolbar`, `ResultsGrid`, `Pagination`,
+`ActiveFilterChips`, `CardSkeleton` (row) and `FilterButton`. `FilterPanel` gained
+`placement="overlay"` (always a drawer, a side sheet from tablet width) because a queue and a
+detail pane leave no room for a sidebar, `FilterButton` gained `alwaysVisible`, `SearchField`
+gained `inputRef` (for the `/` shortcut) and `Badge` gained a `warning` tone.
+
+**How well did the list primitives generalise?** Without a fork. The queue reuses `PageLayout`,
+`SearchField`, `FilterPanel`, `FilterButton`, `FilterSection`, `CheckboxGroupFilter`,
+`DateRangeFilter`, `ActiveFilterChips`, `ResultsToolbar`, `SortSelect`, `ResultsGrid` (rows),
+`Pagination`, `EmptyState`, `SkeletonGrid`, `ErrorState`, `ReviewList`, `Alert` and `useUrlState`.
+
+**Count for this slice: 4 components, 1 hook and 1 context added; 10 existing pieces changed**
+(the eight density readers, `FilterPanel`, `Badge`); 3 modules moved to `shared` because a second
+feature needed them (`BookingStatusBadge` and `STATUS_STYLES` to `ui/`; `describeWindow`,
+`elapsed`, `joinNames`, `shortDate`, `dateAndTime` to `shared/utils/format`; `saveBlob` to
+`shared/utils`). `DecisionDialog` overlaps `ConfirmDialog` from the last slice: both are an alert
+dialog with a field and a failure. The difference is that this one blocks a required field,
+treats some failures as final and keeps the text, and takes over where focus returns. If a third
+screen needs either, merge them.
+
+**Still open, unchanged:** two disclosure primitives, two sheet primitives (the filter side sheet
+is a third presentation of one), three skeleton patterns, and field errors styled apart from
+`Alert`.
+
 ## Form primitives (`form/`)
 
 | Component           | Props                                                                                                                                              |

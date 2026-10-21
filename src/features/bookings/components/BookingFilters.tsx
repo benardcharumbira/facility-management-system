@@ -1,7 +1,7 @@
 import { BOOKING_STATUSES, type BookingsSummary } from '@/shared/api';
 import { CheckboxGroupFilter, DateRangeFilter, FilterSection, Skeleton } from '@/shared/components';
 import type { BookingListState } from '../listState';
-import { STATUS_STYLES } from '../status';
+import { STATUS_STYLES } from '@/shared/components';
 
 interface BookingFiltersProps {
   summary: BookingsSummary | undefined;

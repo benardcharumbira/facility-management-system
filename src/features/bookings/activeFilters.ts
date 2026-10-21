@@ -1,8 +1,8 @@
 import type { BookingsSummary } from '@/shared/api';
 import type { ActiveFilter } from '@/shared/components';
-import { shortDate } from './format';
+import { shortDate } from '@/shared/utils/format';
 import { CLEARED_BOOKING_FILTERS, type BookingListState } from './listState';
-import { STATUS_STYLES } from './status';
+import { STATUS_STYLES } from '@/shared/components';
 
 type Update = (patch: Partial<BookingListState>) => void;
 

@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { FacilityDetail } from '@/shared/api';
 import { Alert, buttonStyles, KeyFacts } from '@/shared/components';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 import type { SlotCheck } from '../hooks';
 import { facilityLink } from '../links';
 import { FacilityPicker } from './FacilityPicker';

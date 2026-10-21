@@ -1,6 +1,7 @@
 import { Ban, CircleCheck, CircleX, FilePenLine, Hourglass, type LucideIcon } from 'lucide-react';
 import type { BookingStatus } from '@/shared/api';
-import { StatusBadge, type Pattern } from '@/shared/components';
+import type { Pattern } from '../calendar/patterns';
+import { StatusBadge } from './StatusBadge';
 
 /**
  * How each booking status looks. Built only from the existing vocabulary: the calendar's fill

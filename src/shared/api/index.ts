@@ -7,3 +7,4 @@ export { createQueryKeys } from './query-keys';
 export * from './contracts/facilities';
 export * from './contracts/availability';
 export * from './contracts/bookings';
+export * from './contracts/approvals';

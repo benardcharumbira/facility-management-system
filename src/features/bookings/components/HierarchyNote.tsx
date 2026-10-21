@@ -1,6 +1,6 @@
 import { Layers } from 'lucide-react';
 import type { FacilityDetail } from '@/shared/api';
-import { joinNames } from '../format';
+import { joinNames } from '@/shared/utils/format';
 
 /** What this request takes with it, in plain words, where the venue is part of a hierarchy. */
 export function HierarchyNote({ facility }: { facility: FacilityDetail }) {

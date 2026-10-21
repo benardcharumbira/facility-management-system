@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { ApiProblem, SLOT_CONFLICT_PROBLEM_TYPE, type Booking } from '@/shared/api';
 import { Alert, Button, buttonStyles } from '@/shared/components';
-import { describeWindow } from '../format';
+import { describeWindow } from '@/shared/utils/format';
 
 /**
  * A proposed move, shown beside what is held now, for confirmation. It is a request: the booking

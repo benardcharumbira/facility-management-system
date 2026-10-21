@@ -1,5 +1,7 @@
 import { Search, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react';
+import { cn } from '@/shared/utils/cn';
+import { useDensity } from '../backoffice/Density';
 
 export interface SearchFieldProps {
   /** The committed value, typically from the URL. */
@@ -8,6 +10,8 @@ export interface SearchFieldProps {
   label: string;
   placeholder?: string;
   debounceMs?: number;
+  /** Lets a screen focus the field, for a keyboard shortcut. */
+  inputRef?: Ref<HTMLInputElement>;
 }
 
 const DEFAULT_DEBOUNCE_MS = 300;
@@ -23,8 +27,10 @@ export function SearchField({
   label,
   placeholder,
   debounceMs = DEFAULT_DEBOUNCE_MS,
+  inputRef,
 }: SearchFieldProps) {
   const id = useId();
+  const compact = useDensity() === 'compact';
   const [draft, setDraft] = useState(value);
   const [seenValue, setSeenValue] = useState(value);
   if (value !== seenValue) {
@@ -50,21 +56,31 @@ export function SearchField({
 
   return (
     <form role="search" onSubmit={handleSubmit}>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium">
+      <label
+        htmlFor={id}
+        className={cn('block font-medium', compact ? 'mb-0.5 text-xs' : 'mb-1 text-sm')}
+      >
         {label}
       </label>
       <div className="relative">
         <Search
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-subtle"
+          className={cn(
+            'pointer-events-none absolute top-1/2 -translate-y-1/2 text-subtle',
+            compact ? 'left-2.5 size-4' : 'left-3 size-5',
+          )}
         />
         <input
           id={id}
+          ref={inputRef}
           type="search"
           value={draft}
           placeholder={placeholder}
           onChange={(event) => setDraft(event.target.value)}
-          className="h-11 w-full rounded-md border border-line-strong bg-surface pr-10 pl-10 text-base placeholder:text-subtle [&::-webkit-search-cancel-button]:appearance-none"
+          className={cn(
+            'w-full rounded-md border border-line-strong bg-surface placeholder:text-subtle [&::-webkit-search-cancel-button]:appearance-none',
+            compact ? 'h-9 pr-9 pl-8 text-sm' : 'h-11 pr-10 pl-10 text-base',
+          )}
         />
         {draft && (
           <button
@@ -74,9 +90,12 @@ export function SearchField({
               setDraft('');
               onChange('');
             }}
-            className="absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-sunken hover:text-ink"
+            className={cn(
+              'absolute top-1/2 right-1 flex -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-sunken hover:text-ink',
+              compact ? 'size-7' : 'size-9',
+            )}
           >
-            <X aria-hidden className="size-5" />
+            <X aria-hidden className={compact ? 'size-4' : 'size-5'} />
           </button>
         )}
       </div>

@@ -2,9 +2,9 @@ import type { DateTime } from 'luxon';
 import { Link, useLocation } from 'react-router';
 import type { BookingListItem } from '@/shared/api';
 import { Badge, buttonStyles } from '@/shared/components';
-import { describeWindow, elapsed, shortDate } from '../format';
+import { describeWindow, elapsed, shortDate } from '@/shared/utils/format';
 import { bookingLink, facilityLink } from '../links';
-import { BookingStatusBadge, STATUS_STYLES } from '../status';
+import { BookingStatusBadge, STATUS_STYLES } from '@/shared/components';
 
 const brief = (text: string) => (text.length > 100 ? `${text.slice(0, 97)}…` : text);
 
