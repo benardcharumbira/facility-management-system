@@ -14,6 +14,7 @@ import {
 import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
 import { createAvailabilityHandlers } from './availability';
+import { createApprovalHandlers } from './approvals';
 import { createBookingHandlers } from './bookings';
 import { bookingStore } from './data/bookingStore';
 import { deriveDetail } from './data/facilityDetail';
@@ -214,6 +215,14 @@ export function createFacilityHandlers(
       catalogue,
       now,
       forceConflict: () => getScenario?.() === 'conflict',
+      empty: () => getScenario?.() === 'empty',
+      fail: () => getScenario?.() === 'error',
+    }),
+
+    ...createApprovalHandlers(root, {
+      delayMs,
+      catalogue,
+      now,
       empty: () => getScenario?.() === 'empty',
       fail: () => getScenario?.() === 'error',
     }),

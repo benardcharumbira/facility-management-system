@@ -17,9 +17,52 @@ export const MOCK_USER_ID = 'mock-user-1';
 const entries = new Map<string, Entry>();
 let counter = 0;
 
+/** What an approver decided, kept beside the booking because the booking itself must not leak it. */
+export interface StoredDecision {
+  /** The work item's id: a booking id, or a reschedule request id. */
+  workItemId: string;
+  type: 'booking_request' | 'reschedule_request';
+  bookingId: string;
+  outcome: 'approved' | 'rejected';
+  decidedBy: string;
+  decidedAt: string;
+  internalNote: string | null;
+  reason: string | null;
+  /** For a reschedule: what was asked, since the booking no longer carries it. */
+  reschedule?: {
+    proposedStartsAt: string;
+    proposedEndsAt: string;
+    requestedAt: string;
+    previousStartsAt: string;
+    previousEndsAt: string;
+  };
+}
+
+const decisions = new Map<string, StoredDecision>();
+/** Work items another approver "gets to first": the first decision attempt on one loses the race. */
+const contested = new Set<string>();
+
+/** Who the applicants are. The booking carries only an owner id. */
+const APPLICANT_NAMES: Record<string, string> = {
+  [MOCK_USER_ID]: 'Mock User',
+};
+export const registerApplicant = (ownerId: string, name: string) => {
+  APPLICANT_NAMES[ownerId] = name;
+};
+export const applicantName = (ownerId: string) => APPLICANT_NAMES[ownerId] ?? 'An applicant';
+
 export const HOLD_HOURS = 72;
 
 export const bookingStore = {
+  /** Every booking with its owner. For the back office, which sees across applicants. */
+  all: (): Array<{ booking: StoredBooking; ownerId: string }> =>
+    [...entries.values()].map((e) => ({ booking: e.booking, ownerId: e.ownerId })),
+  decisions: (): StoredDecision[] => [...decisions.values()],
+  decisionFor: (workItemId: string): StoredDecision | undefined => decisions.get(workItemId),
+  recordDecision: (decision: StoredDecision) => decisions.set(decision.workItemId, decision),
+  contest: (workItemId: string) => contested.add(workItemId),
+  isContested: (workItemId: string) => contested.has(workItemId),
+  uncontest: (workItemId: string) => contested.delete(workItemId),
   ownedBy: (ownerId: string): StoredBooking[] =>
     [...entries.values()].filter((e) => e.ownerId === ownerId).map((e) => e.booking),
   /** The booking if, and only if, it belongs to the caller. Anyone else's looks like no booking. */
@@ -75,5 +118,7 @@ export const bookingStore = {
 
 export function resetBookingStore() {
   entries.clear();
+  decisions.clear();
+  contested.clear();
   counter = 0;
 }

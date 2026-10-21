@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { http, HttpResponse } from 'msw';
 import { ROLES, type Role } from '@/shared/auth/roles';
+import { seedApprovals } from './data/approvalSeeds';
 import { seedBookings } from './data/bookingSeeds';
 import { createFacilityHandlers, type MockDatasetName, type MockScenario } from './facilities';
 
@@ -29,7 +30,10 @@ export function createHandlers(
   }: HandlerOptions = {},
 ) {
   const root = baseUrl.replace(/\/+$/, '');
-  if (seed) seedBookings(now?.() ?? DateTime.now());
+  if (seed) {
+    seedBookings(now?.() ?? DateTime.now());
+    seedApprovals(now?.() ?? DateTime.now());
+  }
 
   return [
     http.get(`${root}/me`, () =>

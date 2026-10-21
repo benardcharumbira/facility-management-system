@@ -22,7 +22,7 @@ import {
   type LedgerBooking,
 } from './data/bookingLedger';
 import { scheduleFor } from './data/facilityDetail';
-
+import { ancestorsOf } from './data/hierarchy';
 export const MOCK_AVAILABILITY_RULES = {
   minimumNoticeHours: 48,
   maximumHorizonDays: 90,
@@ -50,18 +50,6 @@ function activeBookings(ledger: Ledger, facilityId: string, now: DateTime) {
       b.facilityId === facilityId &&
       (b.status === 'approved' || (b.holdExpiresAt !== null && b.holdExpiresAt > now)),
   );
-}
-
-function ancestorsOf(facility: FacilitySummary, catalogue: readonly FacilitySummary[]) {
-  const chain: FacilitySummary[] = [];
-  let parentId = facility.parentFacility?.id;
-  while (parentId !== undefined) {
-    const parent = catalogue.find((f) => f.id === parentId);
-    if (!parent || chain.includes(parent)) break;
-    chain.push(parent);
-    parentId = parent.parentFacility?.id;
-  }
-  return chain;
 }
 
 function intervalsFor(
