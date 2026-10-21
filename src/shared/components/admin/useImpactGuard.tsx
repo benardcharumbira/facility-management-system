@@ -11,6 +11,13 @@ export interface GuardRequest {
   summary: ReactNode;
   confirmLabel: string;
   describeReason?: (item: ImpactedBooking) => string;
+  /**
+   * Whether to ask. By default only when a booking is affected. A change that loses something that
+   * is not a booking, like discarded allocations, asks regardless.
+   */
+  requiresConfirmation?: (impact: ImpactResult) => boolean;
+  /** What else is lost, shown above the bookings. */
+  details?: (impact: ImpactResult) => ReactNode;
 }
 
 export type GuardOutcome = 'applied' | 'cancelled';
@@ -37,7 +44,7 @@ export function useImpactGuard(): {
 
   const guard = useCallback(async (request: GuardRequest): Promise<GuardOutcome> => {
     const impact = await request.check();
-    if (impact.totalAffected === 0) {
+    if (!(request.requiresConfirmation?.(impact) ?? impact.totalAffected > 0)) {
       await request.apply();
       return 'applied';
     }
@@ -61,6 +68,7 @@ export function useImpactGuard(): {
       impact={pending.impact}
       confirmLabel={pending.request.confirmLabel}
       describeReason={pending.request.describeReason}
+      details={pending.request.details?.(pending.impact)}
       onConfirm={async () => {
         await pending.request.apply();
         applied.current = true;

@@ -178,6 +178,8 @@ export interface ApprovalResource {
   name: string;
   category: 'venue' | 'kitchen';
   quantity: number;
+  /** False for something that is asked for or not, like a stage. */
+  quantified: boolean;
 }
 
 /** `GET /api/approvals/{id}`. Names are resolved by the server, so the screen needs no other lookup. */

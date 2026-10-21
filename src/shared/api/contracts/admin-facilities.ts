@@ -272,7 +272,12 @@ export type ImpactReason =
   | 'outside_operating_hours'
   | 'new_conflict'
   | 'over_capacity'
-  | 'facility_unavailable';
+  | 'facility_unavailable'
+  /** The facility would hold fewer of a resource than a booking asked for. */
+  | 'resource_shortfall'
+  /** A resource that is present or absent would no longer be offered at a facility. */
+  | 'resource_withdrawn'
+  | 'resource_archived';
 
 export interface ImpactedBooking {
   bookingId: string;
@@ -284,6 +289,14 @@ export interface ImpactedBooking {
   /** `approved` or `pending`. */
   status: string;
   reason: ImpactReason;
+  /** For the resource reasons: which resource, how much was asked for, and what would be held. (An addition.) */
+  resource?: {
+    id: string;
+    name: string;
+    requested: number;
+    /** What would be held; null for a resource that is simply present or absent. */
+    available: number | null;
+  };
   /** For `new_conflict`: the other booking it would now clash with. (An addition.) */
   conflictsWith: {
     bookingId: string;

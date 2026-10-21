@@ -215,6 +215,8 @@ export interface BookingOptionItem {
 
 export interface BookingResourceOption extends BookingOptionItem {
   category: 'venue' | 'kitchen';
+  /** False for a stage or a podium: it is asked for or not, never counted. */
+  quantified: boolean;
 }
 
 export interface AcceptedUploadType {
@@ -235,6 +237,11 @@ export interface BookingOptions {
    * from `FacilityDetail.resources`. (An addition to the brief: keeps the list out of the client.)
    */
   resources: BookingResourceOption[];
+  /**
+   * Resources that have been archived. They cannot be requested, but earlier bookings that asked
+   * for them still need a name. (An addition.)
+   */
+  retiredResources: BookingResourceOption[];
   terms: { version: string; title: string; paragraphs: string[] };
   uploads: {
     maxFileSizeBytes: number;

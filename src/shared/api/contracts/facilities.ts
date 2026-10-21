@@ -122,8 +122,10 @@ export interface FacilityResource {
   name: string;
   /** `kitchen` items are itemised and long; the UI collapses them. */
   category: 'venue' | 'kitchen';
-  /** Null where the quantity is not known or not meaningful. */
+  /** Null where the quantity is not known or not meaningful. 1 for a resource that is simply present. */
   quantity: number | null;
+  /** False for a resource that is present or absent, like a stage, where a count means nothing. */
+  quantified: boolean;
 }
 
 /** One entry per day. `opensAt` and `closesAt` are null when closed. */
