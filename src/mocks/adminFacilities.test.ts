@@ -667,6 +667,7 @@ describe('approvers', () => {
     const candidates = await admin.get<Array<{ id: string }>>('/admin/approver-candidates');
     expect(candidates.map((c) => c.id).sort()).toEqual([
       'approver-empty',
+      'approver-idle',
       'approver-partial',
       'approver-vaal',
       'mock-approver-1',
