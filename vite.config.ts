@@ -16,6 +16,11 @@ export default defineConfig({
           groups: [
             { name: 'vendor-clerk', test: /node_modules[\\/]@clerk/ },
             { name: 'vendor-radix', test: /node_modules[\\/](@radix-ui|radix-ui)/ },
+            // The mock API's own libraries, apart from its data, which goes when the real API arrives.
+            {
+              name: 'vendor-msw',
+              test: /node_modules[\\/](msw|@mswjs|until-async|outvariant|strict-event-emitter)/,
+            },
           ],
         },
       },
