@@ -139,6 +139,15 @@ archived; `ImpactDialog` gained the `no_approver` and `arrangement_archived` rea
 the unsaved-changes blocker (`useBlocker` plus a `ConfirmDialog`), now written out in six screens: the
 next candidate to extract.
 
+**Added for public content, landing and account: 3 components, 1 hook, 1 existing piece changed.**
+`Footer` (on every route, and deliberately only the five public links, the municipality and the
+year), `ContentPage` with `ContentSection` (a title, a readable measure, headed sections, and a print
+masthead) and `PlaceholderNotice` (says on the page that its words are not the municipality's yet).
+`useDocumentMeta` sets a route's title and description, and `usePageHeader` now uses it.
+`ConfirmProvider` loads its dialog (`ConfirmPrompt`) the first time something asks, so the dialog
+library is not part of what a visitor to the landing page downloads. `Hero` and `StepsList`, which
+the brief expected, are in `features/public` because each is used once.
+
 **Still open, unchanged:** two disclosure primitives, two sheet primitives (the filter side sheet
 is a third presentation of one), three skeleton patterns, and field errors styled apart from
 `Alert`.

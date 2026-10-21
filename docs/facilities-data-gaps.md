@@ -163,6 +163,43 @@ Sicelo Hall, Lakeside Hall.
     be kept, who besides system administrators (an auditor, say) may read it, and is a written
     reason needed to export it? An export is recorded with who, the filters and the row count.
 
+37. **The privacy notice (a client deliverable).** The municipality must issue a POPIA privacy notice
+    and name its **Information Officer**. Owner: the Information Officer or the municipal legal
+    office. We need: the personal information collected, the purposes, the lawful basis, who it is
+    shared with (including Clerk and any hosting or email provider as operators), retention periods,
+    and how a data subject asks to see, correct or delete their information. The page is built with
+    headings and no words. It will not be published as it is.
+
+38. **The terms and conditions of hire (a client deliverable).** These govern the hire of municipal
+    property and carry legal weight. Owner: the municipal legal office, with the department that
+    manages the venues. The wording in the system is a stand-in written by us and must not be relied
+    on. Also: does anything differ by venue (a deposit, a kitchen, alcohol), and is acceptance by a
+    tick enough?
+
+39. **Contact details (a client deliverable).** Owner: the office that answers booking enquiries. We
+    need its name, telephone number, email address, physical address and the hours someone answers.
+    We have invented none of them. And who answers a question about a particular venue: the office,
+    or the department that manages it?
+
+40. **The accessibility statement.** We state WCAG 2.2 AA as the aim and leave the conformance claim
+    and the review date until the slice 15 audit. Who at the municipality signs it off, and is there
+    a contact for accessibility complaints separate from the general one?
+
+41. **A contact telephone number (an addition).** Not in your field list. We added an optional
+    number on the applicant's account so the municipality can phone about a booking, because for part
+    of the audience email is not always enough. Is that wanted? Who may see it (only the approver of
+    that booking, or any staff member), how long is it kept, and does it duplicate a number the sign-in
+    service holds? It is not shown to approvers yet.
+
+42. **Browsing before signing in.** Today a visitor sees four chosen venues on the landing page and
+    must sign in to see the rest. Should anyone be able to browse every venue and its calendar without
+    an account? If so the landing page's action becomes "Browse venues" (a one line change) and the
+    facility routes must be opened up.
+
+43. **The municipality’s description of its service, and the featured venues.** The landing page and the
+    help page are our wording ("Book a hall or meeting room in Midvaal"). Please review them, tell us
+    which four venues to feature, and supply photographs of them (we have placeholders).
+
 ## What we assumed, for reference
 
 | Detail                                          | Assumption                                  |

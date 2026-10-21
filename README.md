@@ -684,7 +684,7 @@ email change and no invitation: "Invite staff in Clerk" is a link out.
   "updated while you were completing this request"), so the recorded version is always the one the
   applicant was shown. The booking form then unticks the box, refetches, and asks them to read and
   accept the new words.
-- **`GET /terms/current`** (public, an addition) is what slice 12's terms page renders.
+- **`GET /public/terms`** (public) is what the terms page renders (slice 12; it began in slice 11 as `/terms/current`).
 
 ### The audit trail
 
@@ -722,7 +722,7 @@ Archiving Banquet reaches many facilities and bookings. The audit trail holds a 
 `confirmGrant` on a role change; `roles/impact` takes a role change, a deactivation or a designation
 edit (one endpoint for all three); `designationsRemoved` on the impact; `protections` on the user
 detail; `POST /admin/seating-arrangements/:id/impact`; `restore` for both vocabularies; the
-`no_approver` and `arrangement_archived` impact reasons; `GET /terms/current`; and the retired
+`no_approver` and `arrangement_archived` impact reasons; `GET /public/terms`; and the retired
 lists on the booking options.
 
 ### Design system
@@ -745,6 +745,147 @@ the first thing to extract, as a hook, when anything next touches those screens.
 Checked under jsdom, which has no layout. I have not opened it in a browser: how the audit table
 and the role radios look and wrap on a small screen, real keyboard focus order across the dialogs,
 the CSV opening in a spreadsheet, and use with a screen reader are unconfirmed.
+
+## Public content, landing and account
+
+Everything below except `/account` is reachable without signing in: `/` (the landing page for a
+visitor; someone signed in is sent to the home of their role, as before), `/terms`, `/privacy`,
+`/accessibility`, `/help` and `/contact`. `/account` is in the app, reached from the account menu in
+the bar. The contracts are `public.ts` and `profile.ts` in `src/shared/api/contracts`.
+
+**Do not write the legal text.** The privacy notice is a POPIA compliance document and the terms
+govern the hire of municipal property; both must be issued by the municipality, and the privacy
+notice must name its Information Officer. So the delivery team supplied structure and the
+municipality supplies words:
+
+- The privacy notice has the headings POPIA asks a responsible party to disclose (what is collected,
+  why, the lawful basis, who it is shared with, how long it is kept, data subject rights, the
+  Information Officer). Under each is a line saying the municipality has to supply it. No name,
+  number, address or retention period is invented. The contact page is the same.
+- Every such page says so on the page. **In development and review builds a dashed notice states the
+  content is awaiting the municipality** (`Placeholder: awaiting the municipality`; for the help page
+  and the accessibility statement, which the delivery team wrote, `Draft: awaiting municipal review`).
+- **In a production build, stand-in legal text is withheld altogether**: the page says "This page is
+  being prepared", with no notice and none of the placeholder wording. The brief asked only for the
+  notice to be absent from production, but that would have put the stand-in text on a municipal site
+  with nothing to say what it was; withholding it is the safe reading. The terms follow the same rule
+  through `placeholder` on the published version: the two seeded versions are stand-ins, a version
+  published by an administrator is not. Both documents, and who must supply them, are Q37 and Q38 in
+  `docs/facilities-data-gaps.md`.
+
+**Served, not hardcoded.** The pages come from `GET /public/content/:slug`, so the municipality can
+correct a privacy notice without a deployment. That was a deliberate choice, not overengineering for
+this client: the notice may need changing at short notice, and the same endpoint costs nothing to
+mock. It does mean the content is data a backend must hold and an administrator must be able to edit,
+which no screen here does (out of scope).
+
+### Landing page
+
+- **What it says:** "Book a hall or meeting room in Midvaal", a sentence a resident understands, and
+  a boxed statement that **a booking is a request, not an instant confirmation**. Four numbered steps
+  (find a venue, check when it is free, send a request, wait for the answer), four venues, one primary
+  action, and links to help, terms, privacy and contact.
+- **The venue preview** is `GET /public/facilities/featured`: four, fixed and chosen by the
+  municipality, public, and nothing like browsing. The mock picks Rothdene, Lakeside, Vaal Marina and
+  City Hall. The images are small SVG illustrations in `public/images/venues/`, standing in until the
+  municipality has photographs. The card renders a `<picture>` with AVIF and WebP sources whenever the
+  API supplies them, with width and height set, `loading="lazy"` and `decoding="async"`; the hero is
+  text, so nothing above the fold waits for an image.
+- **The primary action is a one line change.** `ANONYMOUS_BROWSING` in `src/app/access.ts` is `false`,
+  so the action is "Sign in to book a venue". Set it to `true` and it becomes "Browse venues", linking
+  to `/facilities`. (The facility routes would also have to move out from behind sign in, which is a
+  separate change to the router; the constant only decides what the landing page offers.)
+- **Legible in bright light:** body text is the full ink colour (not the muted grey), the headline is
+  large, and the action is 56px high. Not checked outdoors.
+
+### Terms, and the others
+
+- `/terms` renders the published version from slice 11 with its **version and publication date**,
+  and says the version shown is the one accepted when a request is sent. No published version is its
+  own state ("No terms are published yet"). It prints as a document: the bar, footer, notice and print
+  button are left off the page and the municipality's name heads it.
+- **From the booking form**, the review step links to the terms **in a new tab** (`target="_blank"`,
+  `rel="noopener"`, and the link says so), so a part completed five step form is never navigated away
+  from. That is the simpler of the two options in the brief; a dialog would also have worked.
+- **The accessibility statement** states WCAG 2.2 AA as the standard aimed for, what has been designed
+  for, what is known not to conform (no screen reader testing on real devices, the staff tables and
+  calendar on touch, Clerk's own screens), how to report a problem, and **says the conformance claim
+  and review date will be written after the slice 15 audit**. It asserts no compliance.
+- **Help** is one page, written by the delivery team and marked for review. **Contact** says to quote
+  the booking reference and to ask the department that manages the venue, which the venue's own page
+  names under "Managed by"; the details themselves are the municipality's to supply.
+
+### Account (`/account`)
+
+- **Clerk fields are read only**: name, email address, whether it is verified, and the role (read only,
+  and for an applicant uninteresting, as intended). "Manage your sign-in details" opens Clerk's own
+  profile screens (`openUserProfile`, through `useCurrentUser` so only the auth layer touches Clerk).
+  There is no password or email change here and a test checks it.
+- **One application owned field: a contact telephone number** (`GET`/`PATCH /me/profile`), for the
+  municipality to phone about a booking. **It is not in the client's field list, so it is an addition to
+  confirm (Q41).** It is optional, validated on both sides, and a failed save keeps what was typed and
+  says nothing was changed. In the mock, a number of all zeros stands for the service failing, and
+  Priya Naidoo (`user:applicant-priya`) has one. It is **not yet shown to approvers**; wiring it into
+  the approval view is the obvious next step if the client confirms it.
+- A link to the user's bookings (for roles that make them), and sign out. No notification
+  preferences: email is the only channel and all of it is transactional.
+
+### Footer and navigation
+
+The footer is on every route, signed in or not: the five public pages, the municipality's name and
+the year, and nothing else. It is not a second navigation. The public pages sit in their own layout
+(the same bar, an account area with Sign in and Register, or "Open the service" and the account menu
+for someone signed in, then the footer), and the sign in and register pages and the app shell carry
+the footer too.
+
+### Page metadata
+
+`useDocumentMeta(title, description)` sets the document title and meta description; `usePageHeader`
+uses it too, so every routed page gets a title in the one pattern, "Page · Facilities Booking". The
+public pages each have their own description. Nothing further for search engines.
+
+### Landing page performance
+
+The landing route loads the entry chunk, what the entry imports statically and the landing page, and
+nothing of the signed in app. `npm run build` now ends with `scripts/check-bundle-budget.mjs`, which
+reads the build manifest, adds up the gzipped JavaScript that route loads, and **fails the build** if
+it is over budget or if the route's chunks include the signed in shell, any feature's pages or the
+mock API. Its logic is unit tested against fake manifests.
+
+- **Verified, not assumed.** The first measurement showed the claim did not hold: the route loaded
+  **248 KB**, including the dialog library, the schema library and all the shared components, pulled
+  in by barrel imports and by an eagerly imported shell. Fixed by making the shell a lazy route,
+  loading the confirm dialog on first use, importing directly rather than through the components barrel
+  on the landing path, loading the account menu only for someone signed in, and checking `/me` and
+  the environment by hand rather than with the schema library. It now loads **168.8 KB**.
+- **The agreed budget is 175 KB, not 150.** Of the 168.8 KB, **98 KB is the Clerk SDK**, which the root
+  must have to know whether to redirect someone signed in; the application's own code is about 71 KB.
+  150 KB is out of reach while Clerk is in the entry. To get under it, the only real option is to defer
+  Clerk for a visitor with no session (Clerk sets a cookie that says so) and load it when they go to
+  sign in, which is a change to how the root works and worth deciding deliberately. Clerk's own
+  script (clerk-js) is fetched from Clerk at run time and is not in our bundle or this number.
+- **Mock chunks are excluded by construction**, since they load only when mocking is on.
+
+### Additions to the contract beyond the brief
+
+`placeholder` on the published terms; `status` and `reviewedAt` on a served page; a `404` when there are
+no terms; `PublishedTerms` moved from `/terms/current` (slice 11) to `/public/terms`; the
+`?mock=empty` scenario now also publishes no terms and no featured venues.
+
+### Design system
+
+**3 components added to the shared kit, 2 more kept in the feature.** In `shared/components`:
+`Footer`, `ContentPage` (with `ContentSection`) and `PlaceholderNotice`. In `features/public`: `StepsList`
+and the venue cards, because the brief's `Hero` and `StepsList` have one use, on one page, and I did
+not build a marketing set. The print layout is slice 7's `PrintOnly`/`print:hidden` convention, not a
+new thing. One existing piece changed: `ConfirmProvider` now loads its dialog on demand
+(`ConfirmPrompt`). Also added: `useDocumentMeta`, `setDocumentMeta` and `isProductionBuild`.
+
+### Not verified
+
+Checked under jsdom, which has no layout or print engine. I have not opened any of it in a browser:
+how the landing page looks at 360px and in sunlight, what the print stylesheet produces, how Clerk's
+profile screens open, and the real transferred sizes of images (there are none yet beyond the SVGs).
 
 ## Conventions
 
