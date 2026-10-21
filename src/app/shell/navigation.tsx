@@ -3,7 +3,9 @@ import {
   CalendarDays,
   ClipboardCheck,
   DoorOpen,
+  ListChecks,
   Package,
+  ScrollText,
   UsersRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -54,6 +56,18 @@ const NAV_ITEMS: readonly NavItem[] = [
     label: 'Users',
     to: PATHS.adminUsers,
     icon: <UsersRound aria-hidden className={icon} />,
+    roles: ACCESS.systemAdmins,
+  },
+  {
+    label: 'Reference data',
+    to: PATHS.adminReference,
+    icon: <ListChecks aria-hidden className={icon} />,
+    roles: ACCESS.systemAdmins,
+  },
+  {
+    label: 'Audit trail',
+    to: PATHS.adminAudit,
+    icon: <ScrollText aria-hidden className={icon} />,
     roles: ACCESS.systemAdmins,
   },
 ];

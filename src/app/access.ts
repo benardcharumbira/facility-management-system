@@ -12,6 +12,8 @@ export const PATHS = {
   adminFacilities: '/admin/facilities',
   adminResources: '/admin/resources',
   adminUsers: '/admin/users',
+  adminReference: '/admin/reference',
+  adminAudit: '/admin/audit',
 } as const;
 
 /** Who may use each segment of the route tree. Used by both the router and the navigation. */

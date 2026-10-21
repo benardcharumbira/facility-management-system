@@ -31,6 +31,9 @@ const AdminFacilityResourcesPage = lazy(
   () => import('@/features/admin/pages/AdminFacilityResourcesPage'),
 );
 const AdminUsersPage = lazy(() => import('@/features/admin/pages/AdminUsersPage'));
+const AdminUserDetailPage = lazy(() => import('@/features/admin/pages/AdminUserDetailPage'));
+const AdminReferencePage = lazy(() => import('@/features/admin/pages/AdminReferencePage'));
+const AdminAuditPage = lazy(() => import('@/features/admin/pages/AdminAuditPage'));
 
 export const routes: RouteObject[] = [
   {
@@ -83,7 +86,12 @@ export const routes: RouteObject[] = [
               },
               {
                 element: <RequireRole roles={ACCESS.systemAdmins} />,
-                children: [{ path: 'admin/users', element: <AdminUsersPage /> }],
+                children: [
+                  { path: 'admin/users', element: <AdminUsersPage /> },
+                  { path: 'admin/users/:id', element: <AdminUserDetailPage /> },
+                  { path: 'admin/reference', element: <AdminReferencePage /> },
+                  { path: 'admin/audit', element: <AdminAuditPage /> },
+                ],
               },
               { path: '*', element: <NotFoundPage /> },
             ],

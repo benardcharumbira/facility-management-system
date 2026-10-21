@@ -75,7 +75,9 @@ describe('the query', () => {
     const second = await audit({ pageSize: 25, page: 2 });
     expect(second.page).toBe(2);
     expect(second.items[0]?.id).not.toBe(first.items[0]?.id);
-    expect(second.items[0]?.occurredAt <= (first.items.at(-1)?.occurredAt ?? '')).toBe(true);
+    expect((second.items[0]?.occurredAt ?? '') <= (first.items.at(-1)?.occurredAt ?? '')).toBe(
+      true,
+    );
   });
 
   it('finds what happened to one booking by its reference', async () => {
@@ -181,7 +183,9 @@ describe('the export', () => {
   const range = { from: '2026-08-01', to: '2026-11-02' };
 
   it('will not export everything: it needs both ends of a date range', async () => {
-    for (const query of [{}, { from: '2026-10-01' }, { to: '2026-10-31' }]) {
+    for (const query of [{}, { from: '2026-10-01' }, { to: '2026-10-31' }] as Array<
+      Record<string, string>
+    >) {
       const refused = await failure(
         sysadmin.download(`/admin/audit/export?${new URLSearchParams(query)}`),
       );
