@@ -30,7 +30,7 @@
     "msw": "^3.0.3",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "redoc": "^3.0.1",
+    "redoc": "^2.5.1",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2",
@@ -62,7 +62,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/check-bundle-budget.mjs",
+    "build": "tsc -b && vite build && node scripts/check-bundle-budget.mjs && npm run api:check && npm run api:docs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -70,7 +70,10 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "api:generate": "tsx --tsconfig tsconfig.app.json scripts/generate-api.ts",
+    "api:check": "tsx --tsconfig tsconfig.app.json scripts/generate-api.ts --check",
+    "api:docs": "node scripts/build-api-docs.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": [

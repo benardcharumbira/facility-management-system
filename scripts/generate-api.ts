@@ -28,6 +28,7 @@ try {
   const files: Array<[string, string]> = [
     ['openapi.yaml', artifacts.openapi],
     ['INVENTORY.md', artifacts.inventory],
+    ['ERRORS.md', artifacts.errors],
   ];
   const stale: string[] = [];
   for (const [name, content] of files) {

@@ -269,6 +269,8 @@ function responsesFor(operation: Operation, examples: CapturedExample[]): Json {
 
 export function buildOpenApi(
   captured: CapturedExample[],
+  /** Markdown guides that go in the description, after the introduction. */
+  guides: string[] = [],
   operations: Operation[] = OPERATIONS,
 ): Json {
   const paths: Record<string, Json> = {};
@@ -344,8 +346,8 @@ export function buildOpenApi(
       version: '1.0.0',
       description: [
         'The API for the Midvaal facilities booking service. **Generated** from the schemas in `src/shared/api/schemas`; do not edit by hand. Examples are real responses captured from the mock.',
-        'Read `api/BEHAVIOUR.md` alongside this document: it carries the rules a schema cannot, such as that the server resolves facility hierarchy and that an impact check never changes anything.',
-        '**Conventions.** Collections use one envelope (`items`, `page`, `pageSize`, `totalItems`, `totalPages`). Multi value filters repeat the parameter. `sort` takes a field, with a leading `-` for descending. Every instant is UTC ISO 8601 ending in `Z`; a date with no time is an ISO date in the facility time zone; wall clock times are `HH:mm` in the facility time zone. Errors are RFC 7807 problem documents with a stable `type` URI.',
+        'The conventions, the error catalogue and the behaviour rules follow. The rules matter as much as the shapes: they carry what a schema cannot, such as that the server resolves facility hierarchy and that an impact check never changes anything.',
+        ...guides,
       ].join('\n\n'),
     },
     servers: [{ url: '/api', description: 'Relative to the host' }],
