@@ -112,10 +112,16 @@ export function buildLedger({
   now,
   startedAt,
   catalogue,
+  bufferOf,
 }: {
   now: DateTime;
   startedAt: DateTime;
   catalogue: readonly FacilitySummary[];
+  /**
+   * Each facility's own set-up and clear-down time, from administration. Without it, buffers come
+   * from the venue type, as in the fixture. A scenario that sets its own keeps it.
+   */
+  bufferOf?: (facilityId: string) => { setup: number; teardown: number };
 }): Ledger {
   const today = now.setZone(FACILITY_TIME_ZONE).startOf('day');
   const week0 = today.startOf('week');
@@ -140,8 +146,8 @@ export function buildLedger({
       endsAt: at(date, to),
       status: 'approved',
       holdExpiresAt: null,
-      setupMinutes: 0,
-      teardownMinutes: 0,
+      setupMinutes: bufferOf?.(facilityId).setup ?? 0,
+      teardownMinutes: bufferOf?.(facilityId).teardown ?? 0,
       ...extra,
     });
   };
@@ -164,8 +170,7 @@ export function buildLedger({
       weekday % 2 === 0 ? '09:00' : '13:00',
       weekday % 2 === 0 ? '13:00' : '21:00',
       {
-        setupMinutes: 30,
-        teardownMinutes: 30,
+        ...(bufferOf ? {} : { setupMinutes: 30, teardownMinutes: 30 }),
       },
     );
   }
@@ -192,8 +197,7 @@ export function buildLedger({
         add(facility.id, day(week, weekday), slot[0], slot[1], {
           status: pending ? 'pending' : 'approved',
           holdExpiresAt: pending ? startedAt.plus({ days: 2 }) : null,
-          setupMinutes: hall ? 30 : 0,
-          teardownMinutes: hall ? 30 : 0,
+          ...(bufferOf ? {} : { setupMinutes: hall ? 30 : 0, teardownMinutes: hall ? 30 : 0 }),
         });
       }
     }

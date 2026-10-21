@@ -13,11 +13,12 @@ import {
 } from '@/shared/api';
 import { REAL_FACILITIES } from './data/facilities.real';
 import { VOLUME_FACILITIES } from './data/facilities.volume';
-import { createAvailabilityHandlers } from './availability';
+import { bufferOf, createAvailabilityHandlers } from './availability';
+import { createAdminFacilityHandlers } from './adminFacilities';
 import { createApprovalHandlers } from './approvals';
 import { createBookingHandlers } from './bookings';
 import { bookingStore } from './data/bookingStore';
-import { deriveDetail } from './data/facilityDetail';
+import { facilityStore } from './data/facilityStore';
 import { slugify } from './data/slug';
 
 /** The server side behaviour the real backend must reproduce. See the contract in shared/api. */
@@ -199,7 +200,18 @@ export function createFacilityHandlers(
   root: string,
   { delayMs, getScenario, dataset = 'real', now }: FacilityHandlerOptions,
 ) {
-  const catalogue = () => (getScenario?.() === 'empty' ? [] : DATASETS[dataset]);
+  /** Loads this set of handlers' fixture if a different one is in the store. */
+  const ready = () => facilityStore.ensure(dataset, DATASETS[dataset]);
+  ready();
+  /** The public estate: what browsing, availability and new bookings see. Archived facilities are gone. */
+  const catalogue = () => {
+    ready();
+    return getScenario?.() === 'empty' ? [] : facilityStore.publicCatalogue();
+  };
+  const settings = (id: string) => {
+    ready();
+    return facilityStore.settingsOf(id);
+  };
   const wait = () => (delayMs > 0 ? delay(delayMs) : Promise.resolve());
 
   return [
@@ -208,7 +220,8 @@ export function createFacilityHandlers(
       catalogue,
       fail: () => getScenario?.() === 'error',
       now,
-      extraBookings: () => bookingStore.holds(),
+      extraBookings: () => bookingStore.holds(undefined, bufferOf(settings)),
+      settings,
     }),
     ...createBookingHandlers(root, {
       delayMs,
@@ -217,13 +230,25 @@ export function createFacilityHandlers(
       forceConflict: () => getScenario?.() === 'conflict',
       empty: () => getScenario?.() === 'empty',
       fail: () => getScenario?.() === 'error',
+      settings,
     }),
 
     ...createApprovalHandlers(root, {
       delayMs,
-      catalogue,
+      // Archived facilities still have bookings to decide.
+      catalogue: () => {
+        ready();
+        return facilityStore.allSummaries();
+      },
       now,
       empty: () => getScenario?.() === 'empty',
+      fail: () => getScenario?.() === 'error',
+    }),
+
+    ...createAdminFacilityHandlers(root, {
+      delayMs,
+      now,
+      ready,
       fail: () => getScenario?.() === 'error',
     }),
 
@@ -250,9 +275,12 @@ export function createFacilityHandlers(
     http.get(`${root}/facilities/:id`, async ({ params }) => {
       await wait();
       if (getScenario?.() === 'error') return problem(500, 'Mock failure');
-      const facility = catalogue().find((f) => f.id === params.id);
-      return facility
-        ? HttpResponse.json(deriveDetail(facility, catalogue()))
+      const detail =
+        getScenario?.() === 'empty'
+          ? undefined
+          : (ready(), facilityStore.publicDetail(String(params.id)));
+      return detail
+        ? HttpResponse.json(detail)
         : problem(404, 'Facility not found', 'No facility exists with that id.');
     }),
   ];

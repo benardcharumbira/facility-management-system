@@ -86,7 +86,10 @@ export const bookingStore = {
    * Time that is taken: approved bookings, and pending requests until their hold lapses. The
    * availability calendar shows these. `excludeId` leaves one booking out, for checking a move.
    */
-  holds(excludeId?: string): LedgerBooking[] {
+  holds(
+    excludeId?: string,
+    bufferOf?: (facilityId: string) => { setup: number; teardown: number },
+  ): LedgerBooking[] {
     return [...entries.values()]
       .map((e) => e.booking)
       .filter((b) => b.id !== excludeId)
@@ -96,8 +99,8 @@ export const bookingStore = {
           facilityId: b.facilityId,
           startsAt: DateTime.fromISO(b.startsAt, { zone: 'utc' }),
           endsAt: DateTime.fromISO(b.endsAt, { zone: 'utc' }),
-          setupMinutes: 0,
-          teardownMinutes: 0,
+          setupMinutes: bufferOf?.(b.facilityId).setup ?? 0,
+          teardownMinutes: bufferOf?.(b.facilityId).teardown ?? 0,
         };
         if (b.status === 'approved') {
           return [{ ...base, status: 'approved', holdExpiresAt: null }];

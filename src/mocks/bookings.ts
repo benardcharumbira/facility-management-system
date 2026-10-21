@@ -32,8 +32,9 @@ import {
   type SlotConflictExtensions,
 } from '@/shared/api';
 import { rulesOf, windowProblem } from '@/shared/utils/availability';
-import { computeAvailability, MOCK_AVAILABILITY_RULES } from './availability';
+import { bufferOf, computeAvailability, MOCK_AVAILABILITY_RULES } from './availability';
 import { FACILITY_TIME_ZONE, buildLedger } from './data/bookingLedger';
+import type { FacilitySettings } from './data/facilityStore';
 import { BOOKING_OPTIONS, TERMS_VERSION } from './data/bookingOptions';
 import { HOLD_HOURS, MOCK_USER_ID, bookingStore, type StoredBooking } from './data/bookingStore';
 
@@ -318,6 +319,8 @@ export interface BookingHandlerOptions {
   /** Makes the caller look like an applicant with no bookings. */
   empty?: () => boolean;
   fail?: () => boolean;
+  /** Each facility's own rules from administration. */
+  settings?: (facilityId: string) => FacilitySettings | undefined;
 }
 
 export function createBookingHandlers(
@@ -329,6 +332,7 @@ export function createBookingHandlers(
     forceConflict,
     empty,
     fail,
+    settings,
   }: BookingHandlerOptions,
 ) {
   const wait = () => (delayMs > 0 ? delay(delayMs) : Promise.resolve());
@@ -350,8 +354,13 @@ export function createBookingHandlers(
   const availabilityFor = (facility: FacilitySummary, date: string, excludeId?: string) => {
     const current = now();
     startedAt ??= current;
-    const ledger = buildLedger({ now: current, startedAt, catalogue: catalogue() });
-    ledger.bookings.push(...bookingStore.holds(excludeId));
+    const ledger = buildLedger({
+      now: current,
+      startedAt,
+      catalogue: catalogue(),
+      bufferOf: bufferOf(settings),
+    });
+    ledger.bookings.push(...bookingStore.holds(excludeId, bufferOf(settings)));
     return computeAvailability({
       facility,
       catalogue: catalogue(),
@@ -359,6 +368,7 @@ export function createBookingHandlers(
       from: date,
       to: date,
       now: current,
+      settings,
     });
   };
 

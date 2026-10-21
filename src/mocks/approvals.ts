@@ -45,32 +45,10 @@ import {
   type StoredDecision,
 } from './data/bookingStore';
 import { deriveDetail } from './data/facilityDetail';
+import { facilityStore } from './data/facilityStore';
 import { relationOf } from './data/hierarchy';
-
-/** The approver the mock signs in as, unless a token of the form `user:<id>` says otherwise. */
-export const MOCK_APPROVER_ID = 'mock-approver-1';
-
-const CITY_HALL_FAMILY = ['city-hall', 'mitchell-wing', 'loch-wing', 'city-hall-committee-room'];
-
-/**
- * Which facilities each approver is designated against. PROVISIONAL: who covers what is a question
- * for the client. An identity not listed here is designated against nothing.
- */
-export const DESIGNATIONS: Record<string, readonly string[] | 'all'> = {
-  [MOCK_APPROVER_ID]: [...CITY_HALL_FAMILY, 'rothdene-hall', 'lakeside-hall'],
-  'approver-vaal': ['vaal-marina-hall', 'vaal-marina-board-room'],
-  'approver-empty': ['sicelo-hall'],
-  'approver-partial': ['city-hall-committee-room'],
-  'mock-sysadmin': 'all',
-};
-
-export const APPROVER_NAMES: Record<string, string> = {
-  [MOCK_APPROVER_ID]: 'Nomsa Dlamini',
-  'approver-vaal': 'Pieter van Wyk',
-  'approver-empty': 'Lerato Sithole',
-  'approver-partial': 'Kagiso Mahlangu',
-  'mock-sysadmin': 'Sipho Nkosi',
-};
+import { roleOfUser, staffName, userIdOf } from './data/staff';
+import { ROLES } from '@/shared/auth/roles';
 
 /** The approver who "gets there first" on a contested request. */
 export const RIVAL_APPROVER = 'Pieter van Wyk';
@@ -94,12 +72,19 @@ function problem(
 }
 
 /** Who is calling: a token of the form `user:<id>`, else the default mock approver. */
-export function approverOf(request: Request): string {
-  const match = /^Bearer user:(.+)$/.exec(request.headers.get('Authorization') ?? '');
-  return match?.[1] ?? MOCK_APPROVER_ID;
-}
+export const approverOf = userIdOf;
 
-const scopeOf = (approverId: string): readonly string[] | 'all' => DESIGNATIONS[approverId] ?? [];
+/**
+ * What an approver may see: the facilities that name them as an approver (set in administration),
+ * or everything for a system administrator. Anyone else is designated against nothing.
+ */
+const scopeOf = (approverId: string): readonly string[] | 'all' =>
+  roleOfUser(approverId) === ROLES.systemAdmin
+    ? 'all'
+    : facilityStore
+        .all()
+        .filter((f) => f.approverIds.includes(approverId))
+        .map((f) => f.id);
 const inScope = (scope: readonly string[] | 'all', facilityId: string) =>
   scope === 'all' || scope.includes(facilityId);
 
@@ -699,7 +684,7 @@ export function createApprovalHandlers(
       if (item.status !== 'pending') return alreadyDecided(item);
 
       const body = (await request.json().catch(() => ({}))) as { note?: unknown; reason?: unknown };
-      const name = APPROVER_NAMES[approverId] ?? 'An approver';
+      const name = staffName(approverId);
 
       if (outcome === 'rejected') {
         if (typeof body.reason !== 'string' || body.reason.trim() === '') {

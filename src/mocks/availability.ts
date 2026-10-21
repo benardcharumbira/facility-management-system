@@ -22,15 +22,15 @@ import {
   type LedgerBooking,
 } from './data/bookingLedger';
 import { scheduleFor } from './data/facilityDetail';
+import type { FacilitySettings } from './data/facilityStore';
 import { ancestorsOf } from './data/hierarchy';
-export const MOCK_AVAILABILITY_RULES = {
-  minimumNoticeHours: 48,
-  maximumHorizonDays: 90,
-  minimumDurationMinutes: 60,
-} as const;
+import { MOCK_AVAILABILITY_RULES } from './availabilityRules';
+
+export { MOCK_AVAILABILITY_RULES };
 
 /** Higher wins where intervals overlap. */
 const PRIORITY: Record<AvailabilitySegmentStatus, number> = {
+  closure: 5,
   booked: 4,
   held: 3,
   blocked_by_related: 2,
@@ -42,6 +42,8 @@ interface Interval {
   end: number;
   status: AvailabilitySegmentStatus;
   related: RelatedFacility | null;
+  /** For a closure: why. */
+  reason?: string;
 }
 
 function activeBookings(ledger: Ledger, facilityId: string, now: DateTime) {
@@ -138,11 +140,18 @@ function resolve(intervals: Interval[], windowStart: number, windowEnd: number):
       previous &&
       previous.end === start &&
       previous.status === winner.status &&
-      previous.related?.id === winner.related?.id
+      previous.related?.id === winner.related?.id &&
+      previous.reason === winner.reason
     ) {
       previous.end = end;
     } else {
-      pieces.push({ start, end, status: winner.status, related: winner.related });
+      pieces.push({
+        start,
+        end,
+        status: winner.status,
+        related: winner.related,
+        reason: winner.reason,
+      });
     }
   }
   return pieces;
@@ -158,6 +167,7 @@ export function computeAvailability({
   from,
   to,
   now,
+  settings,
 }: {
   facility: FacilitySummary;
   catalogue: readonly FacilitySummary[];
@@ -165,9 +175,19 @@ export function computeAvailability({
   from: string;
   to: string;
   now: DateTime;
+  /** Each facility's own hours, notice, horizon and blackouts. Without it, the fixture's defaults. */
+  settings?: (facilityId: string) => FacilitySettings | undefined;
 }): FacilityAvailability {
   const zone = FACILITY_TIME_ZONE;
-  const schedule = scheduleFor(facility);
+  const own = settings?.(facility.id);
+  const schedule = own?.schedule ?? scheduleFor(facility);
+  const rules = own
+    ? {
+        minimumNoticeHours: own.minimumNoticeHours,
+        maximumHorizonDays: own.maximumHorizonDays,
+        minimumDurationMinutes: MOCK_AVAILABILITY_RULES.minimumDurationMinutes,
+      }
+    : MOCK_AVAILABILITY_RULES;
   const intervals = intervalsFor(facility, catalogue, ledger, now);
   const days: AvailabilityDay[] = [];
 
@@ -205,7 +225,40 @@ export function computeAvailability({
     const [ch = 0, cm = 0] = hours.closesAt.split(':').map(Number);
     const windowStart = day.set({ hour: oh, minute: om }).toMillis();
     const windowEnd = day.set({ hour: ch, minute: cm }).toMillis();
-    const pieces = resolve(intervals, windowStart, windowEnd);
+
+    // Blackouts set in administration: the whole operating day closes the day, part of it closes
+    // that part.
+    const closures = (own?.blackouts ?? []).filter(
+      (b) => b.startsAt.toMillis() < windowEnd && b.endsAt.toMillis() > windowStart,
+    );
+    const total = closures.find(
+      (b) => b.startsAt.toMillis() <= windowStart && b.endsAt.toMillis() >= windowEnd,
+    );
+    if (total) {
+      days.push({
+        date,
+        status: 'closed',
+        opensAt: null,
+        closesAt: null,
+        closedReason: total.reason,
+        segments: [],
+      });
+      continue;
+    }
+    const pieces = resolve(
+      [
+        ...intervals,
+        ...closures.map((b) => ({
+          start: b.startsAt.toMillis(),
+          end: b.endsAt.toMillis(),
+          status: 'closure' as const,
+          related: null,
+          reason: b.reason,
+        })),
+      ],
+      windowStart,
+      windowEnd,
+    );
     const covered = pieces.reduce((sum, p) => sum + (p.end - p.start), 0);
 
     const segments: AvailabilitySegment[] = pieces.map((p) => ({
@@ -213,6 +266,7 @@ export function computeAvailability({
       endsAt: iso(p.end),
       status: p.status,
       relatedFacility: p.status === 'blocked_by_related' ? p.related : null,
+      ...(p.status === 'closure' && p.reason ? { reason: p.reason } : {}),
     }));
     days.push({
       date,
@@ -229,7 +283,7 @@ export function computeAvailability({
     });
   }
 
-  return { facilityId: facility.id, timeZone: zone, ...MOCK_AVAILABILITY_RULES, days };
+  return { facilityId: facility.id, timeZone: zone, ...rules, days };
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -249,6 +303,8 @@ export interface AvailabilityHandlerOptions {
   extraBookings?: () => LedgerBooking[];
   /** The current instant. Injectable so tests can pin the calendar. */
   now?: () => DateTime;
+  /** Each facility's own rules. */
+  settings?: (facilityId: string) => FacilitySettings | undefined;
 }
 
 export function createAvailabilityHandlers(
@@ -259,6 +315,7 @@ export function createAvailabilityHandlers(
     fail,
     extraBookings,
     now = () => DateTime.now(),
+    settings,
   }: AvailabilityHandlerOptions,
 ) {
   let startedAt: DateTime | undefined;
@@ -297,11 +354,35 @@ export function createAvailabilityHandlers(
         );
       }
 
-      const ledger = buildLedger({ now: current, startedAt, catalogue: catalogue() });
+      const ledger = buildLedger({
+        now: current,
+        startedAt,
+        catalogue: catalogue(),
+        bufferOf: bufferOf(settings),
+      });
       ledger.bookings.push(...(extraBookings?.() ?? []));
       return HttpResponse.json(
-        computeAvailability({ facility, catalogue: catalogue(), ledger, from, to, now: current }),
+        computeAvailability({
+          facility,
+          catalogue: catalogue(),
+          ledger,
+          from,
+          to,
+          now: current,
+          settings,
+        }),
       );
     }),
   ];
 }
+
+/** A facility's set-up and clear-down time, for bookings that do not carry their own. */
+export const bufferOf = (
+  settings: ((facilityId: string) => FacilitySettings | undefined) | undefined,
+) =>
+  settings
+    ? (facilityId: string) => ({
+        setup: settings(facilityId)?.setupMinutes ?? 0,
+        teardown: settings(facilityId)?.teardownMinutes ?? 0,
+      })
+    : undefined;
